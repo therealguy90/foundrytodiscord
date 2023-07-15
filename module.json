@@ -1,0 +1,25 @@
+{
+  "title": "Foundry to Discord",
+  "description": "Send Foundry chat to Discord!",
+  "version": "0.0.1",
+  "scripts": [
+  ],
+  "url": "https://github.com/therealguy90/FoundryToDiscord",
+  "manifest": "",
+  "download": "",
+  "id": "foundrytodiscord",
+  "authors": [
+    {
+      "name": "Loki123",
+      "flags": {}
+    },
+    {
+      "name": "NW_Rave",
+      "flags": {}
+    }
+  ],
+  "compatibility": {
+    "minimum": "11",
+    "verified": "11"
+  }
+}
