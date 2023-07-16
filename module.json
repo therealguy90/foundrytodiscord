@@ -48,6 +48,17 @@
           "verified": "1.4.0"
         }
       }
+    ],
+    "optional": [
+      {
+        "id": "polyglot",
+        "type": "module",
+        "manifest": "https://github.com/League-of-Foundry-Developers/fvtt-module-polyglot/releases/latest/download/module.json",
+        "compatibility": {
+          "verified": "1.9"
+        }
+      }
     ]
+
   }
 }

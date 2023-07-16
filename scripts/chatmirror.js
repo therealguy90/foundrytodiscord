@@ -47,6 +47,16 @@ Hooks.on("init", function () {
     default: "",
     type: String
   });
+  if (game.modules.get("polyglot")) {
+    game.settings.register('foundrytodiscord', 'includeOnly', {
+      name: "Include only these languages:",
+      hint: "A list of languages that you wish to only be understood to be sent in Discord, separated by commas. Leave blank for normal Polyglot behavior.",
+      scope: "world",
+      config: true,
+      default: "",
+      type: String
+    });
+  }
 });
 
 Hooks.on("ready", function () {
@@ -73,7 +83,18 @@ Hooks.on('createChatMessage', (msg, options, userId) => {
   var hookEmbed = [];
 
   if (!msg.isRoll) {
-    constructedMessage = msg.content;
+    if (game.modules.get("polyglot") && msg.flags.polyglot.language != "common") {
+      if(game.settings.get("foundrytodiscord", "includeOnly") == ""){
+        constructedMessage = polyglotize(msg);
+      }
+      else{
+        listLanguages = game.settings.get("foundrytodiscord", "includeOnly").split(",").map(item => item.trim().toLowerCase());
+        constructedMessage = polyglotize(msg, listLanguages);
+      }
+    }
+    else {
+      constructedMessage = msg.content;
+    }
   }
   else {
     if (msg.flavor != null && msg.flavor.length > 0) {
@@ -193,7 +214,7 @@ function createSpellEmbed(spellcard) {
   var tagsSection = doc.querySelector(".item-properties.tags");
   var tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
   var traits = "";
-  for(let i = 0; i < tags.length; i++){
+  for (let i = 0; i < tags.length; i++) {
     traits = traits + "[" + tags[i] + "] ";
   }
 
@@ -318,5 +339,35 @@ function isSpellCard(htmlString) {
   } else {
     console.log('The <div> does not have the class "pf2e chat-card item-card"');
     return false;
+  }
+}
+
+function polyglotize(message, playerlanguages = []) {
+  //get a list of all PCs
+  if (playerlanguages == []) {
+    let characters = game.actors.filter(a => a.type === "character");
+    let languages = new Set();
+
+    for (let character of characters) {
+      let characterLanguages = character.system.traits.languages.value;
+      for (let language of characterLanguages) {
+        languages.add(language);
+      }
+    }
+
+    if (languages.has(message.flags.polyglot.language)) {
+      return message.content;
+    }
+    else {
+      return "*Unintelligible*"
+    }
+  }
+  else {
+    if (playerlanguages.includes(message.flags.polyglot.language)) {
+      return message.content;
+    }
+    else {
+      return "*Unintelligible*"
+    }
   }
 }
