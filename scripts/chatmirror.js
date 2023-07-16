@@ -82,6 +82,11 @@ Hooks.on('createChatMessage', (msg, options, userId) => {
   var constructedMessage = '';
   var hookEmbed = [];
 
+  if(msg.content == "dc getID"){
+		sendMessage(msg, "UserId: " + game.userId, hookEmbed, options);
+		return;
+	}
+
   if (!msg.isRoll) {
     if (game.modules.get("polyglot") && msg.flags.polyglot.language != "common") {
       if(game.settings.get("foundrytodiscord", "includeOnly") == ""){
