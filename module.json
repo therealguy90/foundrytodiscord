@@ -3,7 +3,7 @@
   "description": "Send Foundry chat to Discord!",
   "version": "0.0.1",
   "scripts": [
-    "fvtttodiscord/chatmirror.js"
+    "scripts/chatmirror.js"
   ],
   "url": "https://github.com/therealguy90/FoundryToDiscord",
   "manifest": "",
@@ -13,14 +13,23 @@
     {
       "name": "Loki123",
       "flags": {}
-    },
-    {
-      "name": "NW_Rave",
-      "flags": {}
     }
   ],
   "compatibility": {
     "minimum": "11",
     "verified": "11"
-  }
+  },
+  "dependencies": [
+    {
+      "name": "PF2e Target Damage",
+      "manifest": "https://github.com/MrVauxs/PF2e-Target-Damage/releases/download/2.4.13/module.json",
+      "minimumVersion": "2.4.13"
+    },
+    {
+      "name": "Anonymous",
+      "manifest": "https://github.com/reonZ/anonymous/releases/download/1.4.0/module.json",
+      "minimumVersion": "1.4.0"
+    }
+  ],
+  "system": "pf2e"
 }
