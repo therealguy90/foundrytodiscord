@@ -19,17 +19,35 @@
     "minimum": "11",
     "verified": "11"
   },
-  "dependencies": [
-    {
-      "name": "PF2e Target Damage",
-      "manifest": "https://github.com/MrVauxs/PF2e-Target-Damage/releases/download/2.4.13/module.json",
-      "minimumVersion": "2.4.13"
-    },
-    {
-      "name": "Anonymous",
-      "manifest": "https://github.com/reonZ/anonymous/releases/download/1.4.0/module.json",
-      "minimumVersion": "1.4.0"
-    }
-  ],
-  "system": "pf2e"
+  "relationships": {
+    "systems": [
+      {
+        "id": "pf2e",
+        "type": "system",
+        "manifest": "https://github.com/foundryvtt/pf2e/releases/latest/download/system.json",
+        "compatibility": {
+          "minimum": "5.1.0",
+          "verified": "5.1.2"
+        }
+      }
+    ],
+    "requires": [
+      {
+        "id": "pf2e-target-damage",
+        "type": "module",
+        "manifest": "https://github.com/MrVauxs/PF2e-Target-Damage/releases/download/2.4.13/module.json",
+        "compatibility": {
+          "verified": "2.4.13"
+        }
+      },
+      {
+        "id": "anonymous",
+        "type": "module",
+        "manifest": "https://github.com/reonZ/anonymous/releases/download/1.4.0/module.json",
+        "compatibility": {
+          "verified": "1.4.0"
+        }
+      }
+    ]
+  }
 }
