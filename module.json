@@ -1,13 +1,13 @@
 {
   "title": "Foundry to Discord",
   "description": "Send Foundry chat to Discord!",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "scripts": [
     "scripts/chatmirror.js"
   ],
   "url": "https://github.com/therealguy90/FoundryToDiscord",
-  "manifest": "",
-  "download": "",
+  "manifest": "https://github.com/foundryvtt/pf2e/releases/latest/download/module.json",
+  "download": "https://github.com/foundryvtt/pf2e/releases/latest/download/foundrytodiscord.zip",
   "id": "foundrytodiscord",
   "authors": [
     {
