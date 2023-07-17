@@ -82,19 +82,24 @@ Hooks.on('createChatMessage', (msg, options, userId) => {
   var constructedMessage = '';
   var hookEmbed = [];
 
-  if(msg.content == "dc getID"){
-		sendMessage(msg, "UserId: " + game.userId, hookEmbed, options);
-		return;
-	}
+  if (msg.content == "dc getID") {
+    sendMessage(msg, "UserId: " + game.userId, hookEmbed, options);
+    return;
+  }
 
   if (!msg.isRoll) {
-    if (game.modules.get("polyglot") && msg.flags.polyglot.language != "common") {
-      if(game.settings.get("foundrytodiscord", "includeOnly") == ""){
-        constructedMessage = polyglotize(msg);
+    if (game.modules.get("polyglot") && msg.flags.polyglot) {
+      if (msg.flags.polyglot.language != "common") {
+        if (game.settings.get("foundrytodiscord", "includeOnly") == "") {
+          constructedMessage = polyglotize(msg);
+        }
+        else {
+          listLanguages = game.settings.get("foundrytodiscord", "includeOnly").split(",").map(item => item.trim().toLowerCase());
+          constructedMessage = polyglotize(msg, listLanguages);
+        }
       }
-      else{
-        listLanguages = game.settings.get("foundrytodiscord", "includeOnly").split(",").map(item => item.trim().toLowerCase());
-        constructedMessage = polyglotize(msg, listLanguages);
+      else {
+        constructedMessage = msg.content;
       }
     }
     else {
@@ -115,6 +120,13 @@ Hooks.on('createChatMessage', (msg, options, userId) => {
     constructedMessage = "";
     hookEmbed = createSpellEmbed(msg.content);
   }
+
+  //Fix formatting before sending
+  constructedMessage = reformatMessage(constructedMessage);
+  if (hookEmbed != [] && hookEmbed[0]) {
+    hookEmbed[0].description = reformatMessage(hookEmbed[0].description);
+  }
+
   sendMessage(msg, constructedMessage, hookEmbed, options);
 });
 
@@ -375,4 +387,90 @@ function polyglotize(message, playerlanguages = []) {
       return "*Unintelligible*"
     }
   }
+}
+
+function reformatMessage(text) {
+  var reformattedText = ""
+  console.log(text);
+  //replace UUIDs to be consistent with Foundry
+  var regex = /@UUID\[[^\]]+\]\{([^}]+)\}/g;
+  reformattedText = text.replace(regex, ':baggage_claim: `$1`');
+
+  //replace UUID if custom name is not present (redundancy)
+  regex = /@UUID\[(.*?)\]/g;
+  reformattedText = reformattedText.replace(regex, (_, text) => getNameFromItem(text));
+
+  //replace Checks
+  regex = /@Check\[[^\]]+\]{([^}]+)}/g;
+  reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
+  console.log(reformattedText);
+
+  //replace checks without name labels
+  regex = /@Check\[(.*?)\]/g;
+  reformattedText = reformattedText.replace(regex, (_, text) => getNameFromCheck(text));
+
+
+  return reformattedText;
+}
+
+function getNameFromItem(itempath) {
+  var itemID = ""
+  var itemName = ""
+  var parts = itempath.split('.');
+  if (parts.length > 1) {
+    itemID = parts[parts.length - 1];
+  }
+  if (itemID == "") {
+    itemID = itempath;
+  }
+  console.log("ITEMID: " + itemID);
+  try {
+    itemName = ":baggage_claim: `" + game.items.get(itemID).name + "`";
+    return itemName;
+  }
+  catch (e) {
+    if (parts[0] == "Actor") {
+      let actorID = parts[1];
+      let actor = game.actors.get(actorID);
+      console.log(actor);
+      var item = actor.items.find(item => item._id === itemID);
+      itemName = item ? item.name : undefined;
+    }
+
+    if (itemName) {
+      return ":baggage_claim: `" + itemName + "`";
+    }
+    else { //Failsafe just in case.
+      return ":baggage_claim: `Unknown Item`";
+    }
+  }
+}
+
+function getNameFromCheck(checkString){
+
+  var check = parseCheckString(checkString);
+  if(check.type){
+    skillcheck = check.type.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+    if(check.basic){
+      return ":game_die: `Basic " + skillcheck + "`";
+    }
+    else{
+      return ":game_die: `" + skillcheck + "`";
+    }
+  }
+}
+
+function parseCheckString(checkString) {
+  let check = {};
+
+  // Split the string into an array of key-value pairs
+  let pairs = checkString.split("|");
+
+  // Loop through the pairs and add them to the check object
+  for (let i = 0; i < pairs.length; i++) {
+    let [key, value] = pairs[i].split(":");
+    check[key] = value === "true" ? true : value === "false" ? false : value;
+  }
+
+  return check;
 }
