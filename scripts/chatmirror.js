@@ -63,10 +63,9 @@ Hooks.on("ready", function () {
 });
 
 Hooks.on('createChatMessage', (msg, options, userId) => {
-  console.log(msg)
-  const speaker = ChatMessage.getSpeaker({ actor: options.actor, token: options.token });
-  const actor = ChatMessage.getSpeakerActor(speaker);
-  console.log(actor);
+  //const speaker = ChatMessage.getSpeaker({ actor: options.actor, token: options.token });
+  //const actor = ChatMessage.getSpeakerActor(speaker);
+  //console.log(actor);
   if (!game.user.isGM || (game.settings.get("foundrytodiscord", "ignoreWhispers") && msg.whisper.length > 0)) {
     return;
   }
@@ -95,6 +94,9 @@ Hooks.on('createChatMessage', (msg, options, userId) => {
         }
         else {
           listLanguages = game.settings.get("foundrytodiscord", "includeOnly").split(",").map(item => item.trim().toLowerCase());
+          if(!listLanguages == null){
+            listLanguages = [];
+          }
           constructedMessage = polyglotize(msg, listLanguages);
         }
       }
@@ -170,7 +172,6 @@ function createSpecialRollEmbed(message) {
   //Add targets to embed:
 
   targetActor = parseActorFromTarget(message);
-  console.log(targetActor);
   if (targetActor) {
     if (message.flags['pf2e-target-damage'].targets.length < 2 || targetActor) {
       if (!parseActorFromTargetToken(message).flags.anonymous.showName) {
@@ -325,7 +326,6 @@ function sendToWebhook(message, msgText, hookEmbed, hook, img, actor) {
   request.open('POST', hook);
   request.setRequestHeader('Content-type', 'application/json');
   var alias = message.alias;
-  console.log(actor);
   if (actor) {
     if (!anon.playersSeeName(actor)) {
       alias = "Unknown (" + actor.id + ")";
@@ -351,20 +351,17 @@ function isSpellCard(htmlString) {
   var divElement = temporaryElement.querySelector('div.pf2e.chat-card.item-card');
 
   if (divElement !== null) {
-    console.log('The <div> has the class "pf2e chat-card item-card"');
     return true;
   } else {
-    console.log('The <div> does not have the class "pf2e chat-card item-card"');
     return false;
   }
 }
 
 function polyglotize(message, playerlanguages = []) {
   //get a list of all PCs
-  if (playerlanguages == []) {
+  if (playerlanguages == [] || playerlanguages.length == 0) {
     let characters = game.actors.filter(a => a.type === "character");
     let languages = new Set();
-
     for (let character of characters) {
       let characterLanguages = character.system.traits.languages.value;
       for (let language of characterLanguages) {
@@ -391,7 +388,6 @@ function polyglotize(message, playerlanguages = []) {
 
 function reformatMessage(text) {
   var reformattedText = ""
-  console.log(text);
   //replace UUIDs to be consistent with Foundry
   var regex = /@UUID\[[^\]]+\]\{([^}]+)\}/g;
   reformattedText = text.replace(regex, ':baggage_claim: `$1`');
@@ -403,7 +399,6 @@ function reformatMessage(text) {
   //replace Checks
   regex = /@Check\[[^\]]+\]{([^}]+)}/g;
   reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
-  console.log(reformattedText);
 
   //replace checks without name labels
   regex = /@Check\[(.*?)\]/g;
@@ -427,7 +422,6 @@ function getNameFromItem(itempath) {
   if (itemID == "") {
     itemID = itempath;
   }
-  console.log("ITEMID: " + itemID);
   try {
     itemName = ":baggage_claim: `" + game.items.get(itemID).name + "`";
     return itemName;
@@ -436,7 +430,6 @@ function getNameFromItem(itempath) {
     if (parts[0] == "Actor") {
       let actorID = parts[1];
       let actor = game.actors.get(actorID);
-      console.log(actor);
       var item = actor.items.find(item => item._id === itemID);
       itemName = item ? item.name : undefined;
     }
