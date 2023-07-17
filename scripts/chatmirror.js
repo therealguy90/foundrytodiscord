@@ -409,7 +409,11 @@ function reformatMessage(text) {
   regex = /@Check\[(.*?)\]/g;
   reformattedText = reformattedText.replace(regex, (_, text) => getNameFromCheck(text));
 
-
+  //for de-mystification checks
+  isHtmlFormatted = /<[a-z][\s\S]*>/i.test(reformattedText);
+  if (isHtmlFormatted) {
+    reformattedText = parseMystifiedChecks(reformattedText);
+  }
   return reformattedText;
 }
 
@@ -446,15 +450,15 @@ function getNameFromItem(itempath) {
   }
 }
 
-function getNameFromCheck(checkString){
+function getNameFromCheck(checkString) {
 
   var check = parseCheckString(checkString);
-  if(check.type){
+  if (check.type) {
     skillcheck = check.type.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
-    if(check.basic){
+    if (check.basic) {
       return ":game_die: `Basic " + skillcheck + "`";
     }
-    else{
+    else {
       return ":game_die: `" + skillcheck + "`";
     }
   }
@@ -473,4 +477,22 @@ function parseCheckString(checkString) {
   }
 
   return check;
+}
+
+function parseMystifiedChecks(htmlString) {
+  var tempElement = document.createElement('div');
+tempElement.innerHTML = htmlString;
+
+// Extract the item name
+var itemName = tempElement.querySelector('h4').textContent.trim().replace(/^.+`(.+)`.+$/, "$1");
+
+// Extract the skill checks
+var skillChecks = Array.from(tempElement.querySelectorAll('span[data-pf2-check]'))
+  .map(span => `:game_die:\`${span.textContent.trim()}\``)
+  .join('\n');
+
+// Format the result
+var result = `:baggage_claim:\`${itemName}\`\n\nIdentify item: Skill checks\n${skillChecks}`;
+
+  return result;
 }
