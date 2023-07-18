@@ -1,0 +1,8 @@
+{
+  "name": "foundrytodiscord",
+  "version": "1.0.0",
+  "description": "A FoundryVTT module that sends all FoundryVTT messages to a Discord webhook.",
+  "devDependencies": {
+    "@league-of-foundry-developers/foundry-vtt-types": "^9.280.0"
+  }
+}
