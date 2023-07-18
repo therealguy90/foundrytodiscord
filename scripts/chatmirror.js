@@ -59,10 +59,38 @@ Hooks.on("init", function () {
   }
 });
 
+var damageEmoji = {
+  "bludgeoning": ':hammer:',
+  "slashing": ':axe:',
+  "piercing": ':bow_and_arrow:',
+  "acid": ':test_tube:',
+  "cold": ':snowflake:',
+  "electricity": ':zap:',
+  "fire": ':fire:',
+  "sonic": ':loud_sound:',
+  "chaotic": ':cyclone:',
+  "evil": ':smiling_imp:',
+  "good": ':angel:',
+  "lawful": ':scales:',
+  "mental": ':brain:',
+  "poison": ':biohazard:',
+  "bleed": ':drop_of_blood:',
+  "precision": 'dart',
+  "negative": ':skull_crossbones:',
+  "void": ':skull_crossbones:',
+  "positive": ':sparkling_heart:',
+  "vitality": ':sparkling_heart:',
+  "force": ':boom:',
+  "precision": ':dart:',
+  "persistent": ':hourglass:',
+  "splash": ':sweat_drops:'
+}
+
 Hooks.on("ready", function () {
 });
 
 Hooks.on('createChatMessage', (msg, options, userId) => {
+  console.log(msg);
   //const speaker = ChatMessage.getSpeaker({ actor: options.actor, token: options.token });
   //const actor = ChatMessage.getSpeakerActor(speaker);
   //console.log(actor);
@@ -94,7 +122,7 @@ Hooks.on('createChatMessage', (msg, options, userId) => {
         }
         else {
           listLanguages = game.settings.get("foundrytodiscord", "includeOnly").split(",").map(item => item.trim().toLowerCase());
-          if(!listLanguages == null){
+          if (!listLanguages == null) {
             listLanguages = [];
           }
           constructedMessage = polyglotize(msg, listLanguages);
@@ -175,16 +203,33 @@ function createSpecialRollEmbed(message) {
   if (targetActor) {
     if (message.flags['pf2e-target-damage'].targets.length < 2 || targetActor) {
       if (!parseActorFromTargetToken(message).flags.anonymous.showName) {
-        desc = desc + "**Target:** `Unknown`\n";
+        desc = desc + "**:dart:Target:** `Unknown`\n";
       }
       else {
-        desc = desc + "**Target:** `" + targetActor.name + "`\n";
+        desc = desc + "**:dart:Target:** `" + targetActor.name + "`\n";
       }
     }
     else {
-      desc = desc + "**Targets:** ";
+      if (message.flags['pf2e-target-damage'].targets.length != 0) {
+        desc = desc + "**:dart:Targets:** ";
+        for (let i = 0; i < message.flags['pf2e-target-damage'].targets.length; i++) {
+          var curActor = canvas.tokens.get(message.flags.pf2e - target - damage.targets[i].id).actor;
+          if (!curActor.flags.anonymous.showName) {
+            desc = desc + "`Unknown` ";
+          }
+          else {
+            desc = desc + "`" + curActor.name + "` ";
+          }
+        }
+        desc = desc + "\n";
+      }
+    }
+  }
+  else {
+    if (message.flags['pf2e-target-damage'].targets.length != 0) {
+      desc = desc + "**:dart:Targets:** ";
       for (let i = 0; i < message.flags['pf2e-target-damage'].targets.length; i++) {
-        var curActor = canvas.tokens.get(message.flags.pf2e - target - damage.targets[i].id).actor;
+        var curActor = canvas.tokens.get(message.flags['pf2e-target-damage'].targets[i].id).actor;
         if (!curActor.flags.anonymous.showName) {
           desc = desc + "`Unknown` ";
         }
@@ -195,27 +240,113 @@ function createSpecialRollEmbed(message) {
       desc = desc + "\n";
     }
   }
-  else {
-    desc = desc + "**Targets:** ";
-    for (let i = 0; i < message.flags['pf2e-target-damage'].targets.length; i++) {
-      var curActor = canvas.tokens.get(message.flags['pf2e-target-damage'].targets[i].id).actor;
-      if (!curActor.flags.anonymous.showName) {
-        desc = desc + "`Unknown` ";
-      }
-      else {
-        desc = desc + "`" + curActor.name + "` ";
-      }
+
+  //Add roll information to embed:
+  for (let i = 0; i < message.rolls.length; i++) {
+    desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
+    if (message.flags.pf2e.context.type == "damage-roll") {
+      desc = desc + parseDamageTypes(message.rolls[i]);
+    }
+    else if (parseDegree(message.rolls[i].options.degreeOfSuccess) != "Invalid") {
+      desc = desc + " `(" + parseDegree(message.rolls[i].options.degreeOfSuccess) + ")`";
     }
     desc = desc + "\n";
   }
 
-  //Add roll information to embed:
-  for (let i = 0; i < message.rolls.length; i++) {
-    desc = desc + "**Result: **" + message.content + " `(" + parseDegree(message.rolls[i].options.degreeOfSuccess) + ")`\n";
-  }
-
   embed = [{ title: title, description: desc }];
   return embed;
+}
+
+function parseDamageTypes(baserolls) {
+  var damages = ""
+  if (!baserolls.options.splashOnly) {
+    baserolls.terms.forEach((term, i) => {
+      term.rolls.forEach((roll, j) => {
+        var precision = false;
+        var splash = false;
+        roll.terms.forEach((typeterm, k) => {
+          if (typeterm.term) {
+            if (typeterm.term.options) {
+              if (typeterm.term.options.flavor) {
+                precision = typeterm.term.options.flavor == "precision";
+                splash = typeterm.term.options.flavor == "splash";
+              }
+            }
+          }
+        });
+        if (!roll.persistent) {
+          damages = damages + roll._total.toString();
+
+        }
+        else {
+          var persFormula = roll.formula;
+          console.log(persFormula);
+          var regex = /[^\d+d\d+\s*+-]/g;
+          persFormula = persFormula.replace(regex, '');
+          damages = damages + persFormula.trim();
+        }
+        damages = damages + (roll.persistent ? damageEmoji["persistent"] : "") + (precision ? damageEmoji["precision"] : "") + (splash ? damageEmoji["splash"] : "");
+        if (!damageEmoji[roll.type]) {
+          damages = damages + "[" + roll.type + "]";
+        }
+        else {
+          damages = damages + damageEmoji[roll.type];
+        }
+        /*
+        if (baserolls.options.damage.modifiers[j]) {
+          if (baserolls.options.damage.modifiers[j].category === null) {
+            damages = damages + roll.total;
+            if (!damageEmoji[roll.options.flavor]) {
+              damages = damages + "[" + roll.options.flavor + "]";
+            }
+            else {
+              damages = damages + damageEmoji[roll.options.flavor];
+            }
+          }
+          else {
+            switch (baserolls.options.damage.modifiers[j].category) {
+              case "persistent":
+                damages = damages + baserolls.options.damage.modifiers[i].diceNumber.toString();
+                damages = damages + baserolls.options.damage.modifiers[i].dieSize.toString();
+                damages = damages + ":hourglass:" + damageEmoji[baserolls.options.damage.modifiers[i].damageType];
+                break;
+              case "precision":
+                damages = damages + roll.total;
+                damages = damages + ":dart:";
+                damages = damages + damageEmoji[baserolls.options.damage.modifiers[j].damageType];
+                break;
+              case "splash":
+                damages = damages + roll.total;
+                damages = damages + ":sweat_drops:";
+                damages = damages + damageEmoji[baserolls.options.damage.modifiers[j].damageType];
+                break;
+              default:
+                damages = damages + roll.total;
+                damages = damages + damageEmoji[baserolls.options.damage.modifiers[j].damageType];
+                break;
+            }
+          }
+        }*/
+        if (j != term.rolls.length - 1) {
+          damages = damages + " + ";
+        }
+      });
+    });
+  }
+  else {
+    baserolls.terms.forEach((term, i) => {
+      term.rolls.forEach((roll, j) => {
+        damages = damages + roll.total + ":sweat_drops:";
+        if (damageEmoji[roll.type]) {
+          damages = damages + damageEmoji[roll.type];
+        }
+        else {
+          damages = damages + "[" + roll.type + "]";
+        }
+      });
+    });
+  }
+  return " ||**(" + damages + ")**||";
 }
 
 function createSpellEmbed(spellcard) {
@@ -261,8 +392,9 @@ function createSpellEmbed(spellcard) {
 function parseActorFromTarget(message) {
   if (message.flags.pf2e.context.target) {
     var str = message.flags.pf2e.context.target.actor;
+    console.log(str);
     var arr = str.split('.');
-    var actor = game.actors.get(arr[5]);
+    var actor = game.actors.get(arr[arr.length - 1]);
     return actor;
   }
   else return undefined;
@@ -345,10 +477,10 @@ function sendToWebhook(message, msgText, hookEmbed, hook, img, actor) {
 
 function isSpellCard(htmlString) {
 
-  var temporaryElement = document.createElement('div');
-  temporaryElement.innerHTML = htmlString;
+  var htmldocoraryElement = document.createElement('div');
+  htmldocoraryElement.innerHTML = htmlString;
 
-  var divElement = temporaryElement.querySelector('div.pf2e.chat-card.item-card');
+  var divElement = htmldocoraryElement.querySelector('div.pf2e.chat-card.item-card');
 
   if (divElement !== null) {
     return true;
@@ -388,39 +520,41 @@ function polyglotize(message, playerlanguages = []) {
 
 function reformatMessage(text) {
   var reformattedText = ""
-  //replace UUIDs to be consistent with Foundry
-  var regex = /@UUID\[[^\]]+\]\{([^}]+)\}/g;
-  reformattedText = text.replace(regex, ':baggage_claim: `$1`');
-
-  //replace UUID if custom name is not present (redundancy)
-  regex = /@UUID\[(.*?)\]/g;
-  reformattedText = reformattedText.replace(regex, (_, text) => getNameFromItem(text));
-
-  //replace Checks
-  regex = /@Check\[[^\]]+\]{([^}]+)}/g;
-  reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
-
-  //replace checks without name labels
-  regex = /@Check\[(.*?)\]/g;
-  reformattedText = reformattedText.replace(regex, (_, text) => getNameFromCheck(text));
-
-  //for de-mystification checks
-  isHtmlFormatted = /<[a-z][\s\S]*>/i.test(reformattedText);
+  //First check if the text is formatted in HTML to use a different function
+  isHtmlFormatted = /<[a-z][\s\S]*>/i.test(text);
   if (isHtmlFormatted) {
-    reformattedText = parseMystifiedChecks(reformattedText);
+    reformattedText = parseHTMLText(text);
   }
+  else {
+    //replace UUIDs to be consistent with Foundry
+    var regex = /@UUID\[[^\]]+\]\{([^}]+)\}/g;
+    reformattedText = text.replace(regex, ':baggage_claim: `$1`');
+
+    //replace UUID if custom name is not present (redundancy)
+    regex = /@UUID\[(.*?)\]/g;
+    reformattedText = reformattedText.replace(regex, (_, text) => getNameFromItem(text));
+
+    //replace Checks
+    regex = /@Check\[[^\]]+\]{([^}]+)}/g;
+    reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
+
+    //replace checks without name labels
+    regex = /@Check\[(.*?)\]/g;
+    reformattedText = reformattedText.replace(regex, (_, text) => getNameFromCheck(text));
+  }
+
   return reformattedText;
 }
 
-function getNameFromItem(itempath) {
+function getNameFromItem(ihtmldocath) {
   var itemID = ""
   var itemName = ""
-  var parts = itempath.split('.');
+  var parts = ihtmldocath.split('.');
   if (parts.length > 1) {
     itemID = parts[parts.length - 1];
   }
   if (itemID == "") {
-    itemID = itempath;
+    itemID = ihtmldocath;
   }
   try {
     itemName = ":baggage_claim: `" + game.items.get(itemID).name + "`";
@@ -472,20 +606,62 @@ function parseCheckString(checkString) {
   return check;
 }
 
-function parseMystifiedChecks(htmlString) {
-  var tempElement = document.createElement('div');
-tempElement.innerHTML = htmlString;
+function parseHTMLText(htmlString) {
+  var reformattedText = htmlString;
 
-// Extract the item name
-var itemName = tempElement.querySelector('h4').textContent.trim().replace(/^.+`(.+)`.+$/, "$1");
+  //cleanup newlines in raw text before parsing
+  var regex = /<[^>]*>[^<]*\n[^<]*<\/[^>]*>/g;
+  reformattedText = reformattedText.replace(regex, (match) => match.replace(/\n/g, ''));
 
-// Extract the skill checks
-var skillChecks = Array.from(tempElement.querySelectorAll('span[data-pf2-check]'))
-  .map(span => `:game_die:\`${span.textContent.trim()}\``)
-  .join('\n');
+  //remove text that is not visible to players
+  var htmldoc = document.createElement('div');
+  htmldoc.innerHTML = reformattedText;
+  var divs = htmldoc.querySelectorAll('div[data-visibility="gm"]');
+  for (var i = 0; i < divs.length; i++) {
+    divs[i].parentNode.removeChild(divs[i]);
+  }
+  reformattedText = htmldoc.innerHTML;
 
-// Format the result
-var result = `:baggage_claim:\`${itemName}\`\n\nIdentify item: Skill checks\n${skillChecks}`;
+  //remove <img> tags
+  htmldoc.innerHTML = reformattedText;
+  htmldoc.querySelectorAll('img').forEach(img => img.remove());
+  reformattedText = htmldoc.innerHTML;
 
-  return result;
+  //format header tags to bold instead
+  regex = /<h[1-6][^>]*>(.*?)<\/h[1-6]>/g;
+  reformattedText = reformattedText.replace(regex, '**$1**');
+
+  regex = /<span\s+[^>]*data-pf2-check="([^"]*)"[^>]*>(.*?)<\/span>/g;
+
+  reformattedText = reformattedText.replace(regex, (match, trait, content) => {
+    const formattedString = `:game_die:\`${content}\``;
+
+    return formattedString;
+  });
+
+  //remove all indentation and formatting, aka just make it ugly so we can actually parse the next part of it
+  reformattedText = reformattedText.replace(/>\s+</g, '><');
+
+  //remove <li>
+  reformattedText = reformattedText.replace(/<li>/g, "");
+  reformattedText = reformattedText.replace(/<\/li>/g, "\n");
+
+  //remove remaining <div> tags
+  reformattedText = reformattedText.replace(/<div>/g, "");
+  reformattedText = reformattedText.replace(/<\/div>/g, "\n");
+
+  //remove <p>
+  reformattedText = reformattedText.replace(/<p>/g, "");
+  reformattedText = reformattedText.replace(/<\/p>/g, "\n");
+
+  //remove the rest
+  reformattedText = reformattedText.replace(/<[^>]*>?/gm, "");
+
+  //cleanup time
+  regex = /\n\s+/g;
+  reformattedText = reformattedText.replace(regex, "\n");
+  regex = / {2,}/g;
+  reformattedText = reformattedText.replace(regex, " ");
+
+  return reformattedText.trim();
 }

@@ -11,7 +11,15 @@
   "id": "foundrytodiscord",
   "authors": [
     {
-      "name": "Loki123",
+      "name": "loki123",
+      "flags": {}
+    },
+    {
+      "name": "nw_rave",
+      "flags": {}
+    },
+    {
+      "name": "jellycanne",
       "flags": {}
     }
   ],
