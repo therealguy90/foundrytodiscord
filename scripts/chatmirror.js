@@ -334,7 +334,7 @@ function parseDamageTypes(baserolls) {
   else {
     baserolls.terms.forEach((term, i) => {
       term.rolls.forEach((roll, j) => {
-        damages = damages + roll.total + ":sweat_drops:";
+        damages = damages + roll.total + damageEmoji["splash"];
         if (damageEmoji[roll.type]) {
           damages = damages + damageEmoji[roll.type];
         }
