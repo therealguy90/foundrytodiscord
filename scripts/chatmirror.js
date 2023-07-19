@@ -83,7 +83,7 @@ var damageEmoji = {
   "force": ':boom:',
   "precision": ':dart:',
   "persistent": ':hourglass:',
-  "splash": ':sweat_drops:'
+  "splash": ':bomb:'
 }
 
 var hookQueue = [];
