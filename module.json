@@ -1,7 +1,7 @@
 {
   "title": "Foundry to Discord",
   "description": "Send Foundry chat to Discord!",
-  "version": "0.1.0",
+  "version": "1.1.1",
   "scripts": [
     "scripts/chatmirror.js"
   ],

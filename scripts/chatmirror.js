@@ -86,14 +86,48 @@ var damageEmoji = {
   "splash": ':sweat_drops:'
 }
 
+var hookQueue = [];
+var isProcessing = false;
+var rateLimitDelay;
+var request;
+
 Hooks.on("ready", function () {
+  request = new XMLHttpRequest();
+  rateLimitDelay = 0;
+  request.onreadystatechange = function () {
+    if (this.readyState == 4) {
+      if (Number(this.getResponseHeader("x-ratelimit-remaining")) == 1 || Number(this.getResponseHeader("x-ratelimit-remaining")) == 0) {
+        console.log("Rate Limit reached! Next request in " + (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) + " seconds.");
+        rateLimitDelay = (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) * 1000;
+      }
+    }
+  };
 });
 
-Hooks.on('createChatMessage', (msg, options, userId) => {
+Hooks.on('createChatMessage', async (msg, options, userId) => {
   console.log(msg);
-  //const speaker = ChatMessage.getSpeaker({ actor: options.actor, token: options.token });
-  //const actor = ChatMessage.getSpeakerActor(speaker);
-  //console.log(actor);
+  hookQueue.push({ msg, options, userId });
+  if (!isProcessing) {
+    isProcessing = true;
+    processHookQueue();
+  }
+  else {
+    console.log("Queue is currently busy.")
+  }
+});
+
+async function processHookQueue() {
+  while (hookQueue.length > 0) {
+    const { msg, options, userId } = hookQueue.shift();
+    setTimeout(function () {
+      processMessage(msg, options, userId);
+      rateLimitDelay = 0;
+    }, rateLimitDelay + 200);
+  }
+}
+
+
+function processMessage(msg, options, userId) {
   if (!game.user.isGM || (game.settings.get("foundrytodiscord", "ignoreWhispers") && msg.whisper.length > 0)) {
     return;
   }
@@ -158,7 +192,7 @@ Hooks.on('createChatMessage', (msg, options, userId) => {
   }
 
   sendMessage(msg, constructedMessage, hookEmbed, options);
-});
+}
 
 function createRollEmbed(message) {
   var desc = 'Rolled ' + message.rolls[0].formula + ', and got a ' + message.rolls[0].result + ' = ' + message.rolls[0].total;
@@ -280,7 +314,6 @@ function parseDamageTypes(baserolls) {
         }
         else {
           var persFormula = roll.formula;
-          console.log(persFormula);
           var regex = /[^\d+d\d+\s*+-]/g;
           persFormula = persFormula.replace(regex, '');
           damages = damages + persFormula.trim();
@@ -292,41 +325,6 @@ function parseDamageTypes(baserolls) {
         else {
           damages = damages + damageEmoji[roll.type];
         }
-        /*
-        if (baserolls.options.damage.modifiers[j]) {
-          if (baserolls.options.damage.modifiers[j].category === null) {
-            damages = damages + roll.total;
-            if (!damageEmoji[roll.options.flavor]) {
-              damages = damages + "[" + roll.options.flavor + "]";
-            }
-            else {
-              damages = damages + damageEmoji[roll.options.flavor];
-            }
-          }
-          else {
-            switch (baserolls.options.damage.modifiers[j].category) {
-              case "persistent":
-                damages = damages + baserolls.options.damage.modifiers[i].diceNumber.toString();
-                damages = damages + baserolls.options.damage.modifiers[i].dieSize.toString();
-                damages = damages + ":hourglass:" + damageEmoji[baserolls.options.damage.modifiers[i].damageType];
-                break;
-              case "precision":
-                damages = damages + roll.total;
-                damages = damages + ":dart:";
-                damages = damages + damageEmoji[baserolls.options.damage.modifiers[j].damageType];
-                break;
-              case "splash":
-                damages = damages + roll.total;
-                damages = damages + ":sweat_drops:";
-                damages = damages + damageEmoji[baserolls.options.damage.modifiers[j].damageType];
-                break;
-              default:
-                damages = damages + roll.total;
-                damages = damages + damageEmoji[baserolls.options.damage.modifiers[j].damageType];
-                break;
-            }
-          }
-        }*/
         if (j != term.rolls.length - 1) {
           damages = damages + " + ";
         }
@@ -392,7 +390,6 @@ function createSpellEmbed(spellcard) {
 function parseActorFromTarget(message) {
   if (message.flags.pf2e.context.target) {
     var str = message.flags.pf2e.context.target.actor;
-    console.log(str);
     var arr = str.split('.');
     var actor = game.actors.get(arr[arr.length - 1]);
     return actor;
@@ -454,7 +451,6 @@ function sendMessage(message, msgText, hookEmbed, options) {
 
 function sendToWebhook(message, msgText, hookEmbed, hook, img, actor) {
   var anon = game.modules.get('anonymous').api;
-  var request = new XMLHttpRequest();
   request.open('POST', hook);
   request.setRequestHeader('Content-type', 'application/json');
   var alias = message.alias;
@@ -473,6 +469,7 @@ function sendToWebhook(message, msgText, hookEmbed, hook, img, actor) {
   };
 
   request.send(JSON.stringify(params));
+  isProcessing = false;
 }
 
 function isSpellCard(htmlString) {
@@ -664,4 +661,8 @@ function parseHTMLText(htmlString) {
   reformattedText = reformattedText.replace(regex, " ");
 
   return reformattedText.trim();
+}
+
+async function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
