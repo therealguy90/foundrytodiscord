@@ -76,14 +76,14 @@ var damageEmoji = {
   "poison": ':biohazard:',
   "bleed": ':drop_of_blood:',
   "precision": 'dart',
-  "negative": ':skull_crossbones:',
-  "void": ':skull_crossbones:',
+  "negative": ':skull:',
+  "void": ':skull:',
   "positive": ':sparkling_heart:',
   "vitality": ':sparkling_heart:',
-  "force": ':boom:',
+  "force": ':sparkles:',
   "precision": ':dart:',
   "persistent": ':hourglass:',
-  "splash": ':bomb:'
+  "splash": ':boom:'
 }
 
 var hookQueue = [];
@@ -122,8 +122,9 @@ async function processHookQueue() {
     setTimeout(function () {
       processMessage(msg, options, userId);
       rateLimitDelay = 0;
-    }, rateLimitDelay + 200);
+    }, rateLimitDelay);
   }
+  isProcessing = false;
 }
 
 
