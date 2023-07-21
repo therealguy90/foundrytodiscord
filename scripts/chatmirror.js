@@ -106,6 +106,8 @@ Hooks.on("ready", function () {
 
 Hooks.on('createChatMessage', async (msg, options, userId) => {
   console.log(msg);
+  //console.log(msg.speaker.token);
+  //console.log(game.scenes.find(a => a.id === msg.speaker.scene).tokens.find(token => token.id === msg.speaker.token));
   hookQueue.push({ msg, options, userId });
   if (!isProcessing) {
     isProcessing = true;
@@ -181,9 +183,9 @@ function processMessage(msg, options, userId) {
     }
   }
 
-  if (isSpellCard(msg.content)) {
+  if (isCard(msg.content)) {
     constructedMessage = "";
-    hookEmbed = createSpellEmbed(msg.content);
+    hookEmbed = createCardEmbed(msg.content);
   }
 
   //Fix formatting before sending
@@ -348,31 +350,37 @@ function parseDamageTypes(baserolls) {
   return " ||**(" + damages + ")**||";
 }
 
-function createSpellEmbed(spellcard) {
+function createCardEmbed(card) {
   var parser = new DOMParser();
-  var doc = parser.parseFromString(spellcard, "text/html");
+  var doc = parser.parseFromString(card, "text/html");
 
   // Find the <h3> element and extract its text content
   var h3Element = doc.querySelector("h3");
   var title = h3Element.textContent.trim();
   var desc = "";
 
-  //parse spell traits
-
+  //parse traits
+  var tags;
   var tagsSection = doc.querySelector(".item-properties.tags");
-  var tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
+  try{
+  tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
+  }
+  catch(error){
+    tagsSection = doc.querySelector('.tags');
+    tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
+  }
   var traits = "";
   for (let i = 0; i < tags.length; i++) {
     traits = traits + "[" + tags[i] + "] ";
   }
 
-  desc = desc + "`" + traits.trim() + "`";
+  desc = desc + "`" + traits.trim() + "`\n";
   //parse spell description
   desc = desc + doc.querySelector(".card-content > p").textContent.trim() + "\n\n";
 
   desc = desc + "----------------\n\n"
 
-  var doc = parser.parseFromString(spellcard, "text/html");
+  var doc = parser.parseFromString(card, "text/html");
 
   var heightenedTags = doc.querySelectorAll("section.card-content p strong");
   var reformattedTexts = Array.from(heightenedTags).map((tag) => {
@@ -426,20 +434,7 @@ function parseDegree(degree) {
 function sendMessage(message, msgText, hookEmbed, options) {
   var speaker = ChatMessage.getSpeaker({ actor: options.actor, token: options.token });
   var actor = ChatMessage.getSpeakerActor(speaker);
-  let img = "";
-  if (actor) {
-    img = actor.prototypeToken.texture.src;
-  } else {
-    img = message.user.avatar;
-  }
-
-  var imgurl = "";
-  if (img.includes("http")) {
-    imgurl = img;
-  } else {
-    imgurl = game.settings.get("foundrytodiscord", "inviteURL") + img;
-  }
-
+  let imgurl = generateDiscordAvatar(message, actor);
   var hook = "";
   if (message.isRoll) {
     hook = game.settings.get("foundrytodiscord", "rollWebHookURL");
@@ -473,12 +468,12 @@ function sendToWebhook(message, msgText, hookEmbed, hook, img, actor) {
   isProcessing = false;
 }
 
-function isSpellCard(htmlString) {
+function isCard(htmlString) {
 
-  var htmldocoraryElement = document.createElement('div');
-  htmldocoraryElement.innerHTML = htmlString;
+  var htmldocElement = document.createElement('div');
+  htmldocElement.innerHTML = htmlString;
 
-  var divElement = htmldocoraryElement.querySelector('div.pf2e.chat-card.item-card');
+  var divElement = htmldocElement.querySelector('div.pf2e.chat-card');
 
   if (divElement !== null) {
     return true;
@@ -526,6 +521,9 @@ function reformatMessage(text) {
   else {
     //replace UUIDs to be consistent with Foundry
     var regex = /@UUID\[[^\]]+\]\{([^}]+)\}/g;
+    reformattedText = text.replace(regex, ':baggage_claim: `$1`');
+
+    var regex = /@Compendium\[[^\]]+\]\{([^}]+)\}/g;
     reformattedText = text.replace(regex, ':baggage_claim: `$1`');
 
     //replace UUID if custom name is not present (redundancy)
@@ -662,6 +660,52 @@ function parseHTMLText(htmlString) {
   reformattedText = reformattedText.replace(regex, " ");
 
   return reformattedText.trim();
+}
+
+function generateDiscordAvatar(message, actor) {
+  if (message.speaker) {
+    if (message.speaker.scene) {
+      if (message.speaker.token) {
+        var speakerToken = game.scenes.find(scene => scene.id === message.speaker.scene).tokens.find(token => token.id === message.speaker.token);
+        if (speakerToken.texture) {
+          if (speakerToken.texture.src && speakerToken.texture.src != "") {
+            return generateimglink(speakerToken.texture.src);
+          }
+        }
+      }
+    }
+  }
+
+  if (actor) {
+    if (actor.prototypeToken) {
+      if (actor.prototypeToken.texture) {
+        if (actor.prototypeToken.texture.src) {
+          return generateimglink(actor.prototypeToken.texture.src);
+        }
+      }
+    }
+  }
+
+  var aliasMatchedActor = game.actors.find(actor => actor.name === message.alias);
+  if(aliasMatchedActor){
+    if (aliasMatchedActor.prototypeToken) {
+      if (aliasMatchedActor.prototypeToken.texture) {
+        if (aliasMatchedActor.prototypeToken.texture.src) {
+          return generateimglink(aliasMatchedActor.prototypeToken.texture.src);
+        }
+      }
+    }
+  }
+
+  return generateimglink(message.user.avatar);
+}
+
+function generateimglink(img) {
+  if (img.includes("http")) {
+    return img;
+  } else {
+    return (game.settings.get("foundrytodiscord", "inviteURL") + img);
+  }
 }
 
 async function wait(ms) {
