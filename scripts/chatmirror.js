@@ -124,7 +124,7 @@ async function processHookQueue() {
     setTimeout(function () {
       processMessage(msg, options, userId);
       rateLimitDelay = 0;
-    }, rateLimitDelay);
+    }, rateLimitDelay + 1000);
   }
   isProcessing = false;
 }
@@ -362,12 +362,17 @@ function createCardEmbed(card) {
   //parse traits
   var tags;
   var tagsSection = doc.querySelector(".item-properties.tags");
-  try{
-  tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
-  }
-  catch(error){
-    tagsSection = doc.querySelector('.tags');
+  try {
     tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
+  }
+  catch (error) {
+    try {
+      tagsSection = doc.querySelector('.tags');
+      tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
+    }
+    catch (error) {
+
+    }
   }
   var traits = "";
   for (let i = 0; i < tags.length; i++) {
@@ -432,7 +437,7 @@ function parseDegree(degree) {
 }
 
 function sendMessage(message, msgText, hookEmbed, options) {
-  var speaker = ChatMessage.getSpeaker({ actor: options.actor, token: options.token });
+  var speaker = ChatMessage.getSpeaker({ actor: message.actor, token: message.token });
   var actor = ChatMessage.getSpeakerActor(speaker);
   let imgurl = generateDiscordAvatar(message, actor);
   var hook = "";
@@ -445,21 +450,28 @@ function sendMessage(message, msgText, hookEmbed, options) {
   sendToWebhook(message, msgText, hookEmbed, hook, imgurl, actor);
 }
 
-function sendToWebhook(message, msgText, hookEmbed, hook, img, actor) {
+function sendToWebhook(message, msgText, hookEmbed, hook, imgurl, actor) {
   var anon = game.modules.get('anonymous').api;
   request.open('POST', hook);
   request.setRequestHeader('Content-type', 'application/json');
   var alias = message.alias;
   if (actor) {
-    if (!anon.playersSeeName(actor)) {
+    if (!anon.playersSeeName(actor) && actor.type !== "character") {
       alias = "Unknown (" + actor.id + ")";
     }
   }
-  var avatarURL = encodeURI(img);
+  else {
+    var aliasMatchedActor = game.actors.find(actor => actor.name === message.alias);
+    if (aliasMatchedActor) {
+      if (!anon.playersSeeName(aliasMatchedActor) && actor.type !== "character") {
+        alias = "Unknown (" + aliasMatchedActor.id + ")";
+      }
+    }
+  }
 
   var params = {
     username: alias,
-    avatar_url: avatarURL,
+    avatar_url: imgurl,
     content: msgText,
     embeds: hookEmbed
   };
@@ -523,8 +535,8 @@ function reformatMessage(text) {
     var regex = /@UUID\[[^\]]+\]\{([^}]+)\}/g;
     reformattedText = text.replace(regex, ':baggage_claim: `$1`');
 
-    var regex = /@Compendium\[[^\]]+\]\{([^}]+)\}/g;
-    reformattedText = text.replace(regex, ':baggage_claim: `$1`');
+    regex = /@Compendium\[[^\]]+\]\{([^}]+)\}/g;
+    reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
 
     //replace UUID if custom name is not present (redundancy)
     regex = /@UUID\[(.*?)\]/g;
@@ -617,6 +629,16 @@ function parseHTMLText(htmlString) {
     divs[i].parentNode.removeChild(divs[i]);
   }
   reformattedText = htmldoc.innerHTML;
+  divs = htmldoc.querySelectorAll('div[data-visibility="owner"]');
+  for (var i = 0; i < divs.length; i++) {
+    divs[i].parentNode.removeChild(divs[i]);
+  }
+  reformattedText = htmldoc.innerHTML;
+  divs = htmldoc.querySelectorAll('span[data-visibility="owner"]');
+  for (var i = 0; i < divs.length; i++) {
+    divs[i].parentNode.removeChild(divs[i]);
+  }
+  reformattedText = htmldoc.innerHTML;
 
   //remove <img> tags
   htmldoc.innerHTML = reformattedText;
@@ -627,13 +649,17 @@ function parseHTMLText(htmlString) {
   regex = /<h[1-6][^>]*>(.*?)<\/h[1-6]>/g;
   reformattedText = reformattedText.replace(regex, '**$1**');
 
-  regex = /<span\s+[^>]*data-pf2-check="([^"]*)"[^>]*>(.*?)<\/span>/g;
+  regex = /<em[^>]*>(.*?)<\/em>/g;
+  reformattedText = reformattedText.replace(regex, '*$1*');
+
+  regex = /<(span|a)\s+[^>]*data-pf2-check="([^"]*)"[^>]*>(.*?)<\/(span|a)>/g;
 
   reformattedText = reformattedText.replace(regex, (match, trait, content) => {
     const formattedString = `:game_die:\`${content}\``;
 
     return formattedString;
   });
+
 
   //remove all indentation and formatting, aka just make it ugly so we can actually parse the next part of it
   reformattedText = reformattedText.replace(/>\s+</g, '><');
@@ -645,7 +671,8 @@ function parseHTMLText(htmlString) {
   //remove remaining <div> tags
   reformattedText = reformattedText.replace(/<div>/g, "");
   reformattedText = reformattedText.replace(/<\/div>/g, "\n");
-
+  //remove line breaks
+  reformattedText = reformattedText.replace(/<br\s*\/?>/gi, '\n');
   //remove <p>
   reformattedText = reformattedText.replace(/<p>/g, "");
   reformattedText = reformattedText.replace(/<\/p>/g, "\n");
@@ -687,7 +714,7 @@ function generateDiscordAvatar(message, actor) {
   }
 
   var aliasMatchedActor = game.actors.find(actor => actor.name === message.alias);
-  if(aliasMatchedActor){
+  if (aliasMatchedActor) {
     if (aliasMatchedActor.prototypeToken) {
       if (aliasMatchedActor.prototypeToken.texture) {
         if (aliasMatchedActor.prototypeToken.texture.src) {
@@ -706,8 +733,4 @@ function generateimglink(img) {
   } else {
     return (game.settings.get("foundrytodiscord", "inviteURL") + img);
   }
-}
-
-async function wait(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
