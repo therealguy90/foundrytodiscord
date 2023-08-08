@@ -233,50 +233,28 @@ function createSpecialRollEmbed(message) {
   }
 
   var desc = "";
+
   //Build Description
   //Add targets to embed:
-
-  targetActor = parseActorFromTarget(message);
-  if (targetActor) {
-    if (message.flags['pf2e-target-damage'].targets.length < 2 || targetActor) {
-      if (!parseActorFromTargetToken(message).flags.anonymous.showName) {
-        desc = desc + "**:dart:Target:** `Unknown`\n";
-      }
-      else {
-        desc = desc + "**:dart:Target:** `" + targetActor.name + "`\n";
-      }
-    }
-    else {
-      if (message.flags['pf2e-target-damage'].targets.length != 0) {
-        desc = desc + "**:dart:Targets:** ";
-        for (let i = 0; i < message.flags['pf2e-target-damage'].targets.length; i++) {
-          var curActor = canvas.tokens.get(message.flags.pf2e - target - damage.targets[i].id).actor;
-          if (!curActor.flags.anonymous.showName) {
-            desc = desc + "`Unknown` ";
-          }
-          else {
-            desc = desc + "`" + curActor.name + "` ";
-          }
-        }
-        desc = desc + "\n";
-      }
-    }
+  var anon = game.modules.get('anonymous').api;
+  if (message.flags['pf2e-target-damage'].targets.length === 1) {
+    desc = desc + "**:dart:Target: **";
   }
   else {
-    if (message.flags['pf2e-target-damage'].targets.length != 0) {
-      desc = desc + "**:dart:Targets:** ";
-      for (let i = 0; i < message.flags['pf2e-target-damage'].targets.length; i++) {
-        var curActor = canvas.tokens.get(message.flags['pf2e-target-damage'].targets[i].id).actor;
-        if (!curActor.flags.anonymous.showName) {
-          desc = desc + "`Unknown` ";
-        }
-        else {
-          desc = desc + "`" + curActor.name + "` ";
-        }
-      }
-      desc = desc + "\n";
-    }
+    desc = desc + "**:dart:Targets: **";
   }
+
+  message.flags['pf2e-target-damage'].targets.forEach(target => {
+    var curScene = game.scenes.find(scene => scene.id === message.speaker.scene);
+    var curToken = curScene.tokens.get(target.id);
+    if (!anon.playersSeeName(curToken.actor)) {
+      desc = desc + "`Unknown` ";
+    }
+    else {
+      desc = desc + "`" + curToken.name + "` ";
+    }
+  });
+  desc = desc + "\n";
 
   //Add roll information to embed:
   for (let i = 0; i < message.rolls.length; i++) {
@@ -401,26 +379,6 @@ function createCardEmbed(card) {
   return embed;
 }
 
-function parseActorFromTarget(message) {
-  if (message.flags.pf2e.context.target) {
-    var str = message.flags.pf2e.context.target.actor;
-    var arr = str.split('.');
-    var actor = game.actors.get(arr[arr.length - 1]);
-    return actor;
-  }
-  else return undefined;
-}
-
-function parseActorFromTargetToken(message) {
-  if (message.flags.pf2e.context.target) {
-    var str = message.flags.pf2e.context.target.token;
-    var arr = str.split('.');
-    var tokenID = arr[3];
-    var token = canvas.tokens.get(tokenID);
-    return token.actor;
-  }
-}
-
 function parseDegree(degree) {
   switch (degree) {
     case 0:
@@ -455,16 +413,18 @@ function sendToWebhook(message, msgText, hookEmbed, hook, imgurl, actor) {
   request.open('POST', hook);
   request.setRequestHeader('Content-type', 'application/json');
   var alias = message.alias;
-  if (actor) {
-    if (!anon.playersSeeName(actor) && actor.type !== "character") {
-      alias = "Unknown (" + actor.id + ")";
+  if (message.speaker.actor) {
+    if (actor) {
+      if (!anon.playersSeeName(actor) && actor.type !== "character") {
+        alias = "Unknown (" + actor.id + ")";
+      }
     }
-  }
-  else {
-    var aliasMatchedActor = game.actors.find(actor => actor.name === message.alias);
-    if (aliasMatchedActor) {
-      if (!anon.playersSeeName(aliasMatchedActor) && actor.type !== "character") {
-        alias = "Unknown (" + aliasMatchedActor.id + ")";
+    else {
+      var aliasMatchedActor = game.actors.find(actor => actor.name === message.alias);
+      if (aliasMatchedActor) {
+        if (!anon.playersSeeName(aliasMatchedActor) && actor.type !== "character") {
+          alias = "Unknown (" + aliasMatchedActor.id + ")";
+        }
       }
     }
   }
@@ -645,6 +605,24 @@ function parseHTMLText(htmlString) {
   htmldoc.querySelectorAll('img').forEach(img => img.remove());
   reformattedText = htmldoc.innerHTML;
 
+  //status effect cards:
+  var statuseffectlist = htmldoc.querySelectorAll('.statuseffect-rules');
+
+  //construct status effects:
+  if (statuseffectlist.length != 0) {
+    var statfx = ""
+    statuseffectlist.forEach(effect => {
+      statfx = statfx + effect.innerHTML.replace(/<p>.*?<\/p>/g, '') + "\n";
+    });
+    var tempdivs = document.createElement('div')
+    tempdivs.innerHTML = reformattedText;
+    var targetdiv = tempdivs.querySelector('.dice-total.statuseffect-message');
+    if (targetdiv) {
+      targetdiv.innerHTML = statfx;
+    }
+    reformattedText = tempdivs.innerHTML;
+  }
+
   //format header tags to bold instead
   regex = /<h[1-6][^>]*>(.*?)<\/h[1-6]>/g;
   reformattedText = reformattedText.replace(regex, '**$1**');
@@ -703,11 +681,15 @@ function generateDiscordAvatar(message, actor) {
     }
   }
 
-  if (actor) {
-    if (actor.prototypeToken) {
-      if (actor.prototypeToken.texture) {
-        if (actor.prototypeToken.texture.src) {
-          return generateimglink(actor.prototypeToken.texture.src);
+  if (message.speaker) {
+    if (message.speaker.actor) {
+      if (actor) {
+        if (actor.prototypeToken) {
+          if (actor.prototypeToken.texture) {
+            if (actor.prototypeToken.texture.src) {
+              return generateimglink(actor.prototypeToken.texture.src);
+            }
+          }
         }
       }
     }

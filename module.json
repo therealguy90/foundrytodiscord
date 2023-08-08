@@ -1,7 +1,7 @@
 {
   "title": "Foundry to Discord",
   "description": "Send Foundry chat to Discord!",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "scripts": [
     "scripts/chatmirror.js"
   ],
@@ -35,7 +35,7 @@
         "manifest": "https://github.com/foundryvtt/pf2e/releases/latest/download/system.json",
         "compatibility": {
           "minimum": "4.12.5",
-          "verified": "5.2.3"
+          "verified": "5.3.1"
         }
       }
     ],
@@ -45,7 +45,7 @@
         "type": "module",
         "manifest": "https://github.com/MrVauxs/PF2e-Target-Damage/releases/download/2.4.13/module.json",
         "compatibility": {
-          "verified": "2.4.13"
+          "verified": "2.4.14"
         }
       },
       {
@@ -53,7 +53,7 @@
         "type": "module",
         "manifest": "https://github.com/reonZ/anonymous/releases/download/1.4.0/module.json",
         "compatibility": {
-          "verified": "1.4.0"
+          "verified": "1.4.2"
         }
       }
     ],
@@ -63,7 +63,7 @@
         "type": "module",
         "manifest": "https://github.com/League-of-Foundry-Developers/fvtt-module-polyglot/releases/latest/download/module.json",
         "compatibility": {
-          "verified": "1.9"
+          "verified": "2.0.3"
         }
       }
     ]
