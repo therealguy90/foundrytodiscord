@@ -205,7 +205,6 @@ function createRollEmbed(message) {
 
 function createSpecialRollEmbed(message) {
   var embed = []
-  var anon = game.modules.get('anonymous').api;
   //Build Title
   var str = message.flavor;
   var regex = /<h4 class="action">(.*?)<\/h4>/g;
@@ -236,24 +235,28 @@ function createSpecialRollEmbed(message) {
 
   //Build Description
   //Add targets to embed:
-  var anon = game.modules.get('anonymous').api;
-  if (message.flags['pf2e-target-damage'].targets.length === 1) {
-    desc = desc + "**:dart:Target: **";
+  if (game.modules.get("anonymous")) {
+    var anon = game.modules.get('anonymous').api;
   }
-  else if(message.flags['pf2e-target-damage'].targets.length > 1){
-    desc = desc + "**:dart:Targets: **";
-  }
+  if (game.modules.get("pf2e-target-damage")) {
+    if (message.flags['pf2e-target-damage'].targets.length === 1) {
+      desc = desc + "**:dart:Target: **";
+    }
+    else if (message.flags['pf2e-target-damage'].targets.length > 1) {
+      desc = desc + "**:dart:Targets: **";
+    }
 
-  message.flags['pf2e-target-damage'].targets.forEach(target => {
-    var curScene = game.scenes.find(scene => scene.id === message.speaker.scene);
-    var curToken = curScene.tokens.get(target.id);
-    if (!anon.playersSeeName(curToken.actor)) {
-      desc = desc + "`Unknown` ";
-    }
-    else {
-      desc = desc + "`" + curToken.name + "` ";
-    }
-  });
+    message.flags['pf2e-target-damage'].targets.forEach(target => {
+      var curScene = game.scenes.find(scene => scene.id === message.speaker.scene);
+      var curToken = curScene.tokens.get(target.id);
+      if (!anon.playersSeeName(curToken.actor) && game.modules.get("anonymous")) {
+        desc = desc + "`Unknown` ";
+      }
+      else {
+        desc = desc + "`" + curToken.name + "` ";
+      }
+    });
+  }
   desc = desc + "\n";
 
   //Add roll information to embed:
@@ -409,25 +412,27 @@ function sendMessage(message, msgText, hookEmbed, options) {
 }
 
 function sendToWebhook(message, msgText, hookEmbed, hook, imgurl, actor) {
-  var anon = game.modules.get('anonymous').api;
   request.open('POST', hook);
   request.setRequestHeader('Content-type', 'application/json');
   var alias = message.alias;
-  if (message.speaker.actor) {
-    if (actor) {
-      if (!anon.playersSeeName(actor) && actor.type !== "character") {
-        alias = "Unknown (" + actor.id + ")";
-      }
-    }
-    else {
-      var aliasMatchedActor = game.actors.find(actor => actor.name === message.alias);
-      if (aliasMatchedActor) {
-        if (!anon.playersSeeName(aliasMatchedActor) && actor.type !== "character") {
-          alias = "Unknown (" + aliasMatchedActor.id + ")";
+  if (game.modules.get("anonymous")) {
+    var anon = game.modules.get('anonymous').api;
+    if (message.speaker.actor) {
+      if (actor) {
+        if (!anon.playersSeeName(actor) && actor.type !== "character") {
+          alias = "Unknown (" + actor.id + ")";
         }
       }
-      else{
-        alias = "Unknown";
+      else {
+        var aliasMatchedActor = game.actors.find(actor => actor.name === message.alias);
+        if (aliasMatchedActor) {
+          if (!anon.playersSeeName(aliasMatchedActor) && actor.type !== "character") {
+            alias = "Unknown (" + aliasMatchedActor.id + ")";
+          }
+        }
+        else {
+          alias = "Unknown";
+        }
       }
     }
   }
