@@ -47,7 +47,7 @@ Hooks.on("init", function () {
     default: "",
     type: String
   });
-  if (game.modules.get("polyglot")) {
+  if (game.modules.get("polyglot").active) {
     game.settings.register('foundrytodiscord', 'includeOnly', {
       name: "Include only these languages:",
       hint: "A list of languages that you wish to only be understood to be sent in Discord, separated by commas. Leave blank for normal Polyglot behavior.",
@@ -152,7 +152,7 @@ function processMessage(msg, options, userId) {
   }
 
   if (!msg.isRoll) {
-    if (game.modules.get("polyglot") && msg.flags.polyglot) {
+    if (game.modules.get("polyglot").active && msg.flags.polyglot) {
       if (msg.flags.polyglot.language != "common") {
         if (game.settings.get("foundrytodiscord", "includeOnly") == "") {
           constructedMessage = polyglotize(msg);
@@ -235,10 +235,10 @@ function createSpecialRollEmbed(message) {
 
   //Build Description
   //Add targets to embed:
-  if (game.modules.get("anonymous")) {
-    var anon = game.modules.get('anonymous').api;
+  if (game.modules.get("anonymous").active) {
+    var anon = game.modules.get('anonymous').api; //optional implementation for "anonymous" module
   }
-  if (game.modules.get("pf2e-target-damage")) {
+  if (game.modules.get("pf2e-target-damage").active) { //optional implementation for "pf2e-target-damage" module
     if (message.flags['pf2e-target-damage'].targets.length === 1) {
       desc = desc + "**:dart:Target: **";
     }
@@ -249,13 +249,32 @@ function createSpecialRollEmbed(message) {
     message.flags['pf2e-target-damage'].targets.forEach(target => {
       var curScene = game.scenes.find(scene => scene.id === message.speaker.scene);
       var curToken = curScene.tokens.get(target.id);
-      if (!anon.playersSeeName(curToken.actor) && game.modules.get("anonymous")) {
+      if (!anon.playersSeeName(curToken.actor) && game.modules.get("anonymous").active) {
         desc = desc + "`Unknown` ";
       }
       else {
         desc = desc + "`" + curToken.name + "` ";
       }
     });
+  }
+  else {
+    if (message.flags.pf2e.context.target) {
+      desc = desc + "**:dart:Target: **";
+      targetToken = game.scenes.find(scene => scene.id === message.speaker.scene).tokens.find(token => token.id === message.speaker.token);
+      if (targetToken) {
+        if (game.modules.get("anonymous").active) {
+          if(!anon.playersSeeName(curToken.actor)){
+            desc = desc + "`Unknown` ";
+          }
+          else{
+            desc = desc + "`" + targetToken.name + "` ";
+          }
+        }
+        else{
+          desc = desc + "`" + targetToken.name + "` ";
+        }
+      }
+    }
   }
   desc = desc + "\n";
 
@@ -415,7 +434,7 @@ function sendToWebhook(message, msgText, hookEmbed, hook, imgurl, actor) {
   request.open('POST', hook);
   request.setRequestHeader('Content-type', 'application/json');
   var alias = message.alias;
-  if (game.modules.get("anonymous")) {
+  if (game.modules.get("anonymous").active) {
     var anon = game.modules.get('anonymous').api;
     if (message.speaker.actor) {
       if (actor) {
