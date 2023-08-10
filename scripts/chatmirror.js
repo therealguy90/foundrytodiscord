@@ -240,7 +240,7 @@ function createSpecialRollEmbed(message) {
   if (message.flags['pf2e-target-damage'].targets.length === 1) {
     desc = desc + "**:dart:Target: **";
   }
-  else {
+  else if(message.flags['pf2e-target-damage'].targets.length > 1){
     desc = desc + "**:dart:Targets: **";
   }
 
@@ -425,6 +425,9 @@ function sendToWebhook(message, msgText, hookEmbed, hook, imgurl, actor) {
         if (!anon.playersSeeName(aliasMatchedActor) && actor.type !== "character") {
           alias = "Unknown (" + aliasMatchedActor.id + ")";
         }
+      }
+      else{
+        alias = "Unknown";
       }
     }
   }
