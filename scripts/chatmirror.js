@@ -205,7 +205,7 @@ function createSpecialRollEmbed(message) {
   let embed = []
   //Build Title
   const str = message.flavor;
-  const regex = /<h4 class="action">(.*?)<\/h4>/g;
+  let regex = /<h4 class="action">(.*?)<\/h4>/g;
   let m;
   let title = "";
   while ((m = regex.exec(str)) !== null) {
@@ -692,7 +692,7 @@ function parseHTMLText(htmlString) {
   let reformattedText = htmlString;
 
   //cleanup newlines in raw text before parsing
-  const regex = /<[^>]*>[^<]*\n[^<]*<\/[^>]*>/g;
+  let regex = /<[^>]*>[^<]*\n[^<]*<\/[^>]*>/g;
   reformattedText = reformattedText.replace(regex, (match) => match.replace(/\n/g, ''));
 
   //remove text that is not visible to players
