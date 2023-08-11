@@ -141,8 +141,8 @@ function processMessage(msg, options, userId) {
   if (!msg.isRoll && game.settings.get("foundrytodiscord", "webHookURL") == "") {
     return;
   }
-  var constructedMessage = '';
-  var hookEmbed = [];
+  let constructedMessage = '';
+  let hookEmbed = [];
 
   if (msg.content == "dc getID") {
     sendMessage(msg, "UserId: " + game.userId, hookEmbed, options);
@@ -196,18 +196,18 @@ function processMessage(msg, options, userId) {
 }
 
 function createRollEmbed(message) {
-  var desc = 'Rolled ' + message.rolls[0].formula + ', and got a ' + message.rolls[0].result + ' = ' + message.rolls[0].total;
+  const desc = 'Rolled ' + message.rolls[0].formula + ', and got a ' + message.rolls[0].result + ' = ' + message.rolls[0].total;
   embed = [{ title: '', description: desc }];
   return embed;
 }
 
 function createSpecialRollEmbed(message) {
-  var embed = []
+  let embed = []
   //Build Title
-  var str = message.flavor;
-  var regex = /<h4 class="action">(.*?)<\/h4>/g;
+  const str = message.flavor;
+  const regex = /<h4 class="action">(.*?)<\/h4>/g;
   let m;
-  var title = "";
+  let title = "";
   while ((m = regex.exec(str)) !== null) {
     if (m.index === regex.lastIndex) {
       regex.lastIndex++;
@@ -230,10 +230,10 @@ function createSpecialRollEmbed(message) {
   }
 
   if (game.modules.get("anonymous").active) {
-    var anon = game.modules.get('anonymous').api; //optional implementation for "anonymous" module
+    const anon = game.modules.get('anonymous').api; //optional implementation for "anonymous" module
   }
 
-  var desc = "";
+  let desc = "";
 
   //Build Description
   //Add targets to embed:
@@ -246,8 +246,8 @@ function createSpecialRollEmbed(message) {
     }
 
     message.flags['pf2e-target-damage'].targets.forEach(target => {
-      var curScene = game.scenes.find(scene => scene.id === message.speaker.scene);
-      var curToken = curScene.tokens.get(target.id);
+      const curScene = game.scenes.find(scene => scene.id === message.speaker.scene);
+      const curToken = curScene.tokens.get(target.id);
       if (game.modules.get("anonymous").active) {
         if (!anon.playersSeeName(curToken.actor)) {
           desc = desc + "`" + anon.getName(curToken.actor) + "` ";
@@ -296,8 +296,8 @@ function createSpecialRollEmbed(message) {
   }
 
   if (game.modules.get("anonymous").active) {
-    var anon = game.modules.get("anonymous").api;
-    var speakerToken = game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token)
+    let anon = game.modules.get("anonymous").api;
+    let speakerToken = game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token)
     if (!anon.playersSeeName(speakerToken.actor)) {
       title = title.replaceAll(speakerToken.name, anon.getName(speakerToken.actor));
       title = title.replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase());
@@ -314,12 +314,12 @@ function createSpecialRollEmbed(message) {
 }
 
 function parseDamageTypes(baserolls) {
-  var damages = ""
+  let damages = ""
   if (!baserolls.options.splashOnly) {
     baserolls.terms.forEach((term, i) => {
       term.rolls.forEach((roll, j) => {
-        var precision = false;
-        var splash = false;
+        let precision = false;
+        let splash = false;
         roll.terms.forEach((typeterm, k) => {
           if (propertyExists(typeterm, "term.options.flavor")) {
             precision = typeterm.term.options.flavor == "precision";
@@ -332,8 +332,8 @@ function parseDamageTypes(baserolls) {
 
         }
         else {
-          var persFormula = roll.formula;
-          var regex = /[^\d+d\d+\s*+-]/g;
+          const persFormula = roll.formula;
+          const regex = /[^\d+d\d+\s*+-]/g;
           persFormula = persFormula.replace(regex, '');
           damages = damages + persFormula.trim();
         }
@@ -367,17 +367,17 @@ function parseDamageTypes(baserolls) {
 }
 
 function createCardEmbed(message) {
-  var card = message.content;
-  var parser = new DOMParser();
-  var doc = parser.parseFromString(card, "text/html");
+  const card = message.content;
+  const parser = new DOMParser();
+  let doc = parser.parseFromString(card, "text/html");
   // Find the <h3> element and extract its text content
-  var h3Element = doc.querySelector("h3");
-  var title = h3Element.textContent.trim();
-  var desc = "";
+  const h3Element = doc.querySelector("h3");
+  const title = h3Element.textContent.trim();
+  let desc = "";
 
   //parse traits
-  var tags;
-  var tagsSection = doc.querySelector(".item-properties.tags");
+  let tags;
+  const tagsSection = doc.querySelector(".item-properties.tags");
   try {
     tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
   }
@@ -390,7 +390,7 @@ function createCardEmbed(message) {
 
     }
   }
-  var traits = "";
+  let traits = "";
   for (let i = 0; i < tags.length; i++) {
     traits = traits + "[" + tags[i] + "] ";
   }
@@ -399,24 +399,22 @@ function createCardEmbed(message) {
     desc = desc + "`" + traits.trim() + "`\n";
   }
   //parse spell description
-  var descList = doc.querySelectorAll(".card-content > p");
+  let descList = doc.querySelectorAll(".card-content > p");
   descList.forEach(function (paragraph) {
-    var text = paragraph.innerHTML
+    let text = paragraph.innerHTML
       .replace(/<strong>(.*?)<\/strong>/g, '**$1**')  // Replace <strong> tags with markdown bold
       .trim();  // Trim any leading/trailing whitespace
 
     desc += text + "\n\n";
   });
 
-  var doc = parser.parseFromString(card, "text/html");
-
-  var heightenedTags = doc.querySelectorAll("section.card-content p strong");
-  var reformattedTexts = Array.from(heightenedTags).map((tag) => {
-    var nextSibling = tag.nextSibling;
+  const heightenedTags = doc.querySelectorAll("section.card-content p strong");
+  const reformattedTexts = Array.from(heightenedTags).map((tag) => {
+    const nextSibling = tag.nextSibling;
     return `**${tag.textContent.trim()}** ${nextSibling.textContent.trim()}`;
   });
 
-  var reformattedText = reformattedTexts.join("\n");
+  const reformattedText = reformattedTexts.join("\n");
   if (reformattedText !== "") {
     desc = desc + "----------------\n\n"
     desc = desc + reformattedText;
@@ -425,8 +423,8 @@ function createCardEmbed(message) {
   //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
   //sadly, the anonymous module does this before the message is displayed in foundry, so we have to parse it here.
   if (game.modules.get("anonymous").active) {
-    var anon = game.modules.get("anonymous").api;
-    var speakerToken = game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token)
+    const anon = game.modules.get("anonymous").api;
+    const speakerToken = game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token)
     if (!anon.playersSeeName(speakerToken.actor)) {
       title = title.replaceAll(speakerToken.name, anon.getName(speakerToken.actor));
       title = title.replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase());
@@ -487,7 +485,7 @@ function parseDegree(degree) {
 
 function sendMessage(message, msgText, hookEmbed, options) {
   let imgurl = generateDiscordAvatar(message);
-  var hook = "";
+  let hook = "";
   if (message.isRoll) {
     hook = game.settings.get("foundrytodiscord", "rollWebHookURL");
   } else {
@@ -500,16 +498,16 @@ function sendMessage(message, msgText, hookEmbed, options) {
 function sendToWebhook(message, msgText, hookEmbed, hook, imgurl) {
   request.open('POST', hook);
   request.setRequestHeader('Content-type', 'application/json');
-  var alias = message.alias;
+  const alias = message.alias;
+  let speakerActor;
   if (game.modules.get("anonymous").active) {
-    var speakerActor;
-    var anon = game.modules.get('anonymous').api;
+    let anon = game.modules.get('anonymous').api;
     //First priority: Use speaker token name and check if actor's name is visible through anonymous
     if (propertyExists(message, "speaker.token")) {
       if (message.speaker.token !== "") {
-        var scene = game.scenes.find(scene => scene.id === message.speaker.scene);
+        const scene = game.scenes.find(scene => scene.id === message.speaker.scene);
         if (scene) {
-          var speakerToken = scene.tokens.get(message.speaker.token);
+          const speakerToken = scene.tokens.get(message.speaker.token);
           if (speakerToken.actor) {
             speakerActor = speakerToken.actor
           }
@@ -520,7 +518,7 @@ function sendToWebhook(message, msgText, hookEmbed, hook, imgurl) {
       }
     }
     else {
-      var speakerActor = game.actors.get(actor => actor.name === message.alias);
+      speakerActor = game.actors.get(actor => actor.name === message.alias);
     }
     if (speakerActor) {
       if (!anon.playersSeeName(speakerActor) && speakerActor.type !== "character") {
@@ -529,7 +527,7 @@ function sendToWebhook(message, msgText, hookEmbed, hook, imgurl) {
     }
   }
 
-  var params = {
+  const params = {
     username: alias,
     avatar_url: imgurl,
     content: msgText,
@@ -542,10 +540,10 @@ function sendToWebhook(message, msgText, hookEmbed, hook, imgurl) {
 
 function isCard(htmlString) {
 
-  var htmldocElement = document.createElement('div');
+  const htmldocElement = document.createElement('div');
   htmldocElement.innerHTML = htmlString;
 
-  var divElement = htmldocElement.querySelector('div.pf2e.chat-card');
+  const divElement = htmldocElement.querySelector('div.pf2e.chat-card');
 
   if (divElement !== null) {
     return true;
@@ -584,7 +582,7 @@ function polyglotize(message, playerlanguages = []) {
 }
 
 function reformatMessage(text) {
-  var reformattedText = ""
+  let reformattedText = ""
   //First check if the text is formatted in HTML to use a different function
   isHtmlFormatted = /<[a-z][\s\S]*>/i.test(text);
   if (isHtmlFormatted) {
@@ -592,7 +590,7 @@ function reformatMessage(text) {
   }
   else {
     //replace UUIDs to be consistent with Foundry
-    var regex = /@UUID\[[^\]]+\]\{([^}]+)\}/g;
+    let regex = /@UUID\[[^\]]+\]\{([^}]+)\}/g;
     reformattedText = text.replace(regex, ':baggage_claim: `$1`');
 
     //replace compendium links
@@ -631,9 +629,9 @@ function replaceDamageFormat(damagestring) {
 }
 
 function getNameFromItem(itempath) {
-  var itemID = ""
-  var itemName = ""
-  var parts = (itempath).split('.');
+  let itemID = ""
+  let itemName = ""
+  const parts = (itempath).split('.');
   if (parts.length > 1) {
     itemID = parts[parts.length - 1];
   }
@@ -648,7 +646,7 @@ function getNameFromItem(itempath) {
     if (parts[0] == "Actor") {
       let actorID = parts[1];
       let actor = game.actors.get(actorID);
-      var item = actor.items.find(item => item._id === itemID);
+      let item = actor.items.find(item => item._id === itemID);
       itemName = item ? item.name : undefined;
     }
 
@@ -663,7 +661,7 @@ function getNameFromItem(itempath) {
 
 function getNameFromCheck(checkString) {
 
-  var check = parseCheckString(checkString);
+  const check = parseCheckString(checkString);
   if (check.type) {
     skillcheck = check.type.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
     if (check.basic) {
@@ -691,27 +689,27 @@ function parseCheckString(checkString) {
 }
 
 function parseHTMLText(htmlString) {
-  var reformattedText = htmlString;
+  let reformattedText = htmlString;
 
   //cleanup newlines in raw text before parsing
-  var regex = /<[^>]*>[^<]*\n[^<]*<\/[^>]*>/g;
+  const regex = /<[^>]*>[^<]*\n[^<]*<\/[^>]*>/g;
   reformattedText = reformattedText.replace(regex, (match) => match.replace(/\n/g, ''));
 
   //remove text that is not visible to players
-  var htmldoc = document.createElement('div');
+  const htmldoc = document.createElement('div');
   htmldoc.innerHTML = reformattedText;
-  var divs = htmldoc.querySelectorAll('div[data-visibility="gm"]');
-  for (var i = 0; i < divs.length; i++) {
+  let divs = htmldoc.querySelectorAll('div[data-visibility="gm"]');
+  for (let i = 0; i < divs.length; i++) {
     divs[i].parentNode.removeChild(divs[i]);
   }
   reformattedText = htmldoc.innerHTML;
   divs = htmldoc.querySelectorAll('div[data-visibility="owner"]');
-  for (var i = 0; i < divs.length; i++) {
+  for (let i = 0; i < divs.length; i++) {
     divs[i].parentNode.removeChild(divs[i]);
   }
   reformattedText = htmldoc.innerHTML;
   divs = htmldoc.querySelectorAll('span[data-visibility="owner"]');
-  for (var i = 0; i < divs.length; i++) {
+  for (let i = 0; i < divs.length; i++) {
     divs[i].parentNode.removeChild(divs[i]);
   }
   reformattedText = htmldoc.innerHTML;
@@ -722,17 +720,17 @@ function parseHTMLText(htmlString) {
   reformattedText = htmldoc.innerHTML;
 
   //status effect cards:
-  var statuseffectlist = htmldoc.querySelectorAll('.statuseffect-rules');
+  let statuseffectlist = htmldoc.querySelectorAll('.statuseffect-rules');
 
   //construct status effects:
   if (statuseffectlist.length != 0) {
-    var statfx = ""
+    let statfx = ""
     statuseffectlist.forEach(effect => {
       statfx = statfx + effect.innerHTML.replace(/<p>.*?<\/p>/g, '') + "\n";
     });
-    var tempdivs = document.createElement('div')
+    const tempdivs = document.createElement('div')
     tempdivs.innerHTML = reformattedText;
-    var targetdiv = tempdivs.querySelector('.dice-total.statuseffect-message');
+    let targetdiv = tempdivs.querySelector('.dice-total.statuseffect-message');
     if (targetdiv) {
       targetdiv.innerHTML = statfx;
     }
@@ -786,7 +784,7 @@ function parseHTMLText(htmlString) {
 function generateDiscordAvatar(message) {
   if (propertyExists(message, "speaker.scene")) {
     if (message.speaker.token) {
-      var speakerToken = game.scenes.find(scene => scene.id === message.speaker.scene).tokens.get(token => token.id === message.speaker.token);
+      const speakerToken = game.scenes.find(scene => scene.id === message.speaker.scene).tokens.get(token => token.id === message.speaker.token);
       if (propertyExists(speakerToken, "texture.src")) {
         if (speakerToken.texture.src != "") {
           return generateimglink(speakerToken.texture.src);
@@ -796,7 +794,7 @@ function generateDiscordAvatar(message) {
   }
 
   if (propertyExists(message, "speaker.actor")) {
-    var speakerActor = game.actors.find(actor => actor.id === message.speaker.actor);
+    const speakerActor = game.actors.find(actor => actor.id === message.speaker.actor);
     if (speakerActor) {
       if (propertyExists(speakerActor, "prototypeToken.texture.src")) {
         return generateimglink(speakerActor.prototypeToken.texture.src);
@@ -804,7 +802,7 @@ function generateDiscordAvatar(message) {
     }
   }
 
-  var aliasMatchedActor = game.actors.find(actor => actor.name === message.alias);
+  const aliasMatchedActor = game.actors.find(actor => actor.name === message.alias);
   if (propertyExists(aliasMatchedActor, "prototypeToken.texture.src")) {
     return generateimglink(aliasMatchedActor.prototypeToken.texture.src);
   }
