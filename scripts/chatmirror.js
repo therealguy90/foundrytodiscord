@@ -105,6 +105,7 @@ Hooks.on("ready", function () {
 });
 
 Hooks.on('createChatMessage', async (msg, options, userId) => {
+  console.log(msg);
   hookQueue.push({ msg, options, userId });
   if (!isProcessing) {
     isProcessing = true;
@@ -182,7 +183,7 @@ function processMessage(msg, options, userId) {
 
   if (isCard(msg.content)) {
     constructedMessage = "";
-    hookEmbed = createCardEmbed(msg.content);
+    hookEmbed = createCardEmbed(msg);
   }
 
   //Fix formatting before sending
@@ -228,13 +229,14 @@ function createSpecialRollEmbed(message) {
     }
   }
 
+  if (game.modules.get("anonymous").active) {
+    var anon = game.modules.get('anonymous').api; //optional implementation for "anonymous" module
+  }
+
   var desc = "";
 
   //Build Description
   //Add targets to embed:
-  if (game.modules.get("anonymous").active) {
-    var anon = game.modules.get('anonymous').api; //optional implementation for "anonymous" module
-  }
   if (game.modules.get("pf2e-target-damage").active) { //optional implementation for "pf2e-target-damage" module
     if (message.flags['pf2e-target-damage'].targets.length === 1) {
       desc = desc + "**:dart:Target: **";
@@ -260,23 +262,21 @@ function createSpecialRollEmbed(message) {
     });
   }
   else {
-    if (message.flags.pf2e.context.target) {
-      if (message.flags.pf2e.context.target.token) {
-        desc = desc + "**:dart:Target: **";
-        targetTokenId = message.flags.pf2e.context.target.token.split(".")[3];
-        targetToken = game.scenes.find(scene => scene.id === message.speaker.scene).tokens.get(token => token.id === (targetTokenId));
-        if (targetToken) {
-          if (game.modules.get("anonymous").active) {
-            if (!anon.playersSeeName(targetToken.targetToken.actor)) {
-              desc = desc + "`" + anon.getName(targetToken.actor) + "` ";
-            }
-            else {
-              desc = desc + "`" + targetToken.name + "` ";
-            }
+    if (propertyExists(message, "flags.pf2e.context.target.token")) {
+      desc = desc + "**:dart:Target: **";
+      targetTokenId = message.flags.pf2e.context.target.token.split(".")[3];
+      targetToken = game.scenes.find(scene => scene.id === message.speaker.scene).tokens.get(targetTokenId);
+      if (targetToken) {
+        if (game.modules.get("anonymous").active) {
+          if (!anon.playersSeeName(targetToken.targetToken.actor)) {
+            desc = desc + "`" + anon.getName(targetToken.actor) + "` ";
           }
           else {
             desc = desc + "`" + targetToken.name + "` ";
           }
+        }
+        else {
+          desc = desc + "`" + targetToken.name + "` ";
         }
       }
     }
@@ -295,6 +295,20 @@ function createSpecialRollEmbed(message) {
     desc = desc + "\n";
   }
 
+  if (game.modules.get("anonymous").active) {
+    var anon = game.modules.get("anonymous").api;
+    var speakerToken = game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token)
+    if (!anon.playersSeeName(speakerToken.actor)) {
+      title = title.replaceAll(speakerToken.name, anon.getName(speakerToken.actor));
+      title = title.replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase());
+      title = title.replaceAll(speakerToken.actor.name, anon.getName(speakerToken.actor));
+      title = title.replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase());
+      desc = desc.replaceAll(speakerToken.name, anon.getName(speakerToken.actor));
+      desc = desc.replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase());
+      desc = desc.replaceAll(speakerToken.actor.name, anon.getName(speakerToken.actor));
+      desc = desc.replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase());
+    }
+  }
   embed = [{ title: title, description: desc }];
   return embed;
 }
@@ -307,14 +321,11 @@ function parseDamageTypes(baserolls) {
         var precision = false;
         var splash = false;
         roll.terms.forEach((typeterm, k) => {
-          if (typeterm.term) {
-            if (typeterm.term.options) {
-              if (typeterm.term.options.flavor) {
-                precision = typeterm.term.options.flavor == "precision";
-                splash = typeterm.term.options.flavor == "splash";
-              }
-            }
+          if (propertyExists(typeterm, "term.options.flavor")) {
+            precision = typeterm.term.options.flavor == "precision";
+            splash = typeterm.term.options.flavor == "splash";
           }
+
         });
         if (!roll.persistent) {
           damages = damages + roll._total.toString();
@@ -355,10 +366,10 @@ function parseDamageTypes(baserolls) {
   return " ||**(" + damages + ")**||";
 }
 
-function createCardEmbed(card) {
+function createCardEmbed(message) {
+  var card = message.content;
   var parser = new DOMParser();
   var doc = parser.parseFromString(card, "text/html");
-
   // Find the <h3> element and extract its text content
   var h3Element = doc.querySelector("h3");
   var title = h3Element.textContent.trim();
@@ -384,11 +395,18 @@ function createCardEmbed(card) {
     traits = traits + "[" + tags[i] + "] ";
   }
 
-  desc = desc + "`" + traits.trim() + "`\n";
+  if (traits.trim() !== "") {
+    desc = desc + "`" + traits.trim() + "`\n";
+  }
   //parse spell description
-  desc = desc + doc.querySelector(".card-content > p").textContent.trim() + "\n\n";
+  var descList = doc.querySelectorAll(".card-content > p");
+  descList.forEach(function (paragraph) {
+    var text = paragraph.innerHTML
+      .replace(/<strong>(.*?)<\/strong>/g, '**$1**')  // Replace <strong> tags with markdown bold
+      .trim();  // Trim any leading/trailing whitespace
 
-  desc = desc + "----------------\n\n"
+    desc += text + "\n\n";
+  });
 
   var doc = parser.parseFromString(card, "text/html");
 
@@ -399,11 +417,57 @@ function createCardEmbed(card) {
   });
 
   var reformattedText = reformattedTexts.join("\n");
+  if (reformattedText !== "") {
+    desc = desc + "----------------\n\n"
+    desc = desc + reformattedText;
+  }
 
-  desc = desc + reformattedText;
+  //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
+  //sadly, the anonymous module does this before the message is displayed in foundry, so we have to parse it here.
+  if (game.modules.get("anonymous").active) {
+    var anon = game.modules.get("anonymous").api;
+    var speakerToken = game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token)
+    if (!anon.playersSeeName(speakerToken.actor)) {
+      title = title.replaceAll(speakerToken.name, anon.getName(speakerToken.actor));
+      title = title.replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase());
+      title = title.replaceAll(speakerToken.actor.name, anon.getName(speakerToken.actor));
+      title = title.replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase());
+      desc = desc.replaceAll(speakerToken.name, anon.getName(speakerToken.actor));
+      desc = desc.replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase());
+      desc = desc.replaceAll(speakerToken.actor.name, anon.getName(speakerToken.actor));
+      desc = desc.replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase());
+    }
+  }
 
-  embed = [{ title: title, description: desc }];
+  embed = [{ title: title, description: desc, footer: { text: getFooter(card) } }];
   return embed;
+}
+
+function getFooter(card) {
+  // Create a temporary div element to parse the HTML string
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = card;
+
+  // Select the footer element
+  const footerElement = tempDiv.querySelector('.card-footer');
+
+  if (!footerElement) {
+    return ''; // Return an empty string if no footer element is found
+  }
+
+  // Extract all <span> elements within the footer
+  const spanElements = footerElement.querySelectorAll('span');
+
+  // Create an array to store the text content of <span> elements
+  const spanTexts = [];
+  spanElements.forEach(span => {
+    spanTexts.push(span.textContent);
+  });
+
+  // Create the "footer" string by joining the span texts with spaces
+  const footer = spanTexts.join(' ');
+
+  return footer;
 }
 
 function parseDegree(degree) {
@@ -422,9 +486,7 @@ function parseDegree(degree) {
 }
 
 function sendMessage(message, msgText, hookEmbed, options) {
-  var speaker = ChatMessage.getSpeaker({ actor: message.actor, token: message.token });
-  var actor = ChatMessage.getSpeakerActor(speaker);
-  let imgurl = generateDiscordAvatar(message, actor);
+  let imgurl = generateDiscordAvatar(message);
   var hook = "";
   if (message.isRoll) {
     hook = game.settings.get("foundrytodiscord", "rollWebHookURL");
@@ -432,32 +494,37 @@ function sendMessage(message, msgText, hookEmbed, options) {
     hook = game.settings.get("foundrytodiscord", "webHookURL");
   }
 
-  sendToWebhook(message, msgText, hookEmbed, hook, imgurl, actor);
+  sendToWebhook(message, msgText, hookEmbed, hook, imgurl);
 }
 
-function sendToWebhook(message, msgText, hookEmbed, hook, imgurl, actor) {
+function sendToWebhook(message, msgText, hookEmbed, hook, imgurl) {
   request.open('POST', hook);
   request.setRequestHeader('Content-type', 'application/json');
   var alias = message.alias;
   if (game.modules.get("anonymous").active) {
+    var speakerActor;
     var anon = game.modules.get('anonymous').api;
-    if (message.speaker.actor) {
-      if (actor) {
-        if (!anon.playersSeeName(actor)) {
-          speakerToken = game.scenes.find(scene => scene.id === message.speaker.scene).tokens.find(token => token.id === message.speaker.token);
-          alias = anon.getName(actor) + " (" + speakerToken.id + ")";
-        }
-      }
-      else {
-        var aliasMatchedActor = game.actors.find(actor => actor.name === message.alias);
-        if (aliasMatchedActor) {
-          if (!anon.playersSeeName(aliasMatchedActor) && actor.type !== "character") {
-            alias = anon.getName(actor) + " (" + aliasMatchedActor.id + ")";
+    //First priority: Use speaker token name and check if actor's name is visible through anonymous
+    if (propertyExists(message, "speaker.token")) {
+      if (message.speaker.token !== "") {
+        var scene = game.scenes.find(scene => scene.id === message.speaker.scene);
+        if (scene) {
+          var speakerToken = scene.tokens.get(message.speaker.token);
+          if (speakerToken.actor) {
+            speakerActor = speakerToken.actor
+          }
+          else { //failsafe, in case the actor doesn't exist, i.e. through a broken module or a module imported from another system
+
           }
         }
-        else {
-          alias = "Unknown";
-        }
+      }
+    }
+    else {
+      var speakerActor = game.actors.get(actor => actor.name === message.alias);
+    }
+    if (speakerActor) {
+      if (!anon.playersSeeName(speakerActor) && speakerActor.type !== "character") {
+        alias = anon.getName(speakerActor) + " (" + speakerActor.id + ")";
       }
     }
   }
@@ -528,8 +595,12 @@ function reformatMessage(text) {
     var regex = /@UUID\[[^\]]+\]\{([^}]+)\}/g;
     reformattedText = text.replace(regex, ':baggage_claim: `$1`');
 
+    //replace compendium links
     regex = /@Compendium\[[^\]]+\]\{([^}]+)\}/g;
     reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
+
+    //replace @Damage appropriately
+    reformattedText = replaceDamageFormat(reformattedText);
 
     //replace UUID if custom name is not present (redundancy)
     regex = /@UUID\[(.*?)\]/g;
@@ -547,15 +618,27 @@ function reformatMessage(text) {
   return reformattedText;
 }
 
+function replaceDamageFormat(damagestring) {
+  const regex = /@Damage\[(\d+d\d+\[[^\]]+\](?:, ?)?)+\]/g;
+  return damagestring.replace(regex, (match) => {
+    const diceParts = match.match(/\d+d\d+\[[^\]]+\]/g);
+    const formattedDice = diceParts.map(part => {
+      const [dice, desc] = part.match(/(\d+d\d+)\[([^\]]+)\]/).slice(1);
+      return `${desc} ${dice}`;
+    }).join(' + ');
+    return `:game_die: ${formattedDice}`;
+  });
+}
+
 function getNameFromItem(itempath) {
   var itemID = ""
   var itemName = ""
-  var parts =(itempath).split('.');
+  var parts = (itempath).split('.');
   if (parts.length > 1) {
     itemID = parts[parts.length - 1];
   }
   if (itemID == "") {
-    itemID =(itempath);
+    itemID = (itempath);
   }
   try {
     itemName = ":baggage_claim: `" + game.items.get(itemID).name + "`";
@@ -700,43 +783,30 @@ function parseHTMLText(htmlString) {
   return reformattedText.trim();
 }
 
-function generateDiscordAvatar(message, actor) {
-  if (message.speaker) {
-    if (message.speaker.scene) {
-      if (message.speaker.token) {
-        var speakerToken = game.scenes.find(scene => scene.id === message.speaker.scene).tokens.find(token => token.id === message.speaker.token);
-        if (speakerToken.texture) {
-          if (speakerToken.texture.src && speakerToken.texture.src != "") {
-            return generateimglink(speakerToken.texture.src);
-          }
+function generateDiscordAvatar(message) {
+  if (propertyExists(message, "speaker.scene")) {
+    if (message.speaker.token) {
+      var speakerToken = game.scenes.find(scene => scene.id === message.speaker.scene).tokens.get(token => token.id === message.speaker.token);
+      if (propertyExists(speakerToken, "texture.src")) {
+        if (speakerToken.texture.src != "") {
+          return generateimglink(speakerToken.texture.src);
         }
       }
     }
   }
 
-  if (message.speaker) {
-    if (message.speaker.actor) {
-      if (actor) {
-        if (actor.prototypeToken) {
-          if (actor.prototypeToken.texture) {
-            if (actor.prototypeToken.texture.src) {
-              return generateimglink(actor.prototypeToken.texture.src);
-            }
-          }
-        }
+  if (propertyExists(message, "speaker.actor")) {
+    var speakerActor = game.actors.find(actor => actor.id === message.speaker.actor);
+    if (speakerActor) {
+      if (propertyExists(speakerActor, "prototypeToken.texture.src")) {
+        return generateimglink(speakerActor.prototypeToken.texture.src);
       }
     }
   }
 
   var aliasMatchedActor = game.actors.find(actor => actor.name === message.alias);
-  if (aliasMatchedActor) {
-    if (aliasMatchedActor.prototypeToken) {
-      if (aliasMatchedActor.prototypeToken.texture) {
-        if (aliasMatchedActor.prototypeToken.texture.src) {
-          return generateimglink(aliasMatchedActor.prototypeToken.texture.src);
-        }
-      }
-    }
+  if (propertyExists(aliasMatchedActor, "prototypeToken.texture.src")) {
+    return generateimglink(aliasMatchedActor.prototypeToken.texture.src);
   }
 
   return generateimglink(message.user.avatar);
@@ -749,3 +819,33 @@ function generateimglink(img) {
     return (game.settings.get("foundrytodiscord", "inviteURL") + img);
   }
 }
+
+function propertyExists(jsonObj, propertyPath) {
+  const properties = propertyPath.split('.');
+  let currentObj = jsonObj;
+
+  for (const property of properties) {
+    if (currentObj && typeof currentObj === 'object' && property in currentObj) {
+      currentObj = currentObj[property];
+    } else {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/*function propertyExists(jsonObj, propertyPath) {
+  //Using try-catch, checks if a property in a json exists
+  const properties = propertyPath.split('.');
+  let currentObj = jsonObj;
+  for (const property of properties) {
+    try{
+      currentObj = currentObj[property];
+    }
+    catch(error){
+      return false;
+    }
+  }
+  return true;
+}*/
