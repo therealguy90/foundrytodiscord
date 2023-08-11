@@ -230,7 +230,7 @@ function createSpecialRollEmbed(message) {
   }
 
   if (game.modules.get("anonymous").active) {
-    const anon = game.modules.get('anonymous').api; //optional implementation for "anonymous" module
+    var anon = game.modules.get('anonymous').api; //optional implementation for "anonymous" module
   }
 
   let desc = "";
@@ -253,11 +253,11 @@ function createSpecialRollEmbed(message) {
           desc = desc + "`" + anon.getName(curToken.actor) + "` ";
         }
         else {
-          desc = desc + "`" + targetToken.name + "` ";
+          desc = desc + "`" + curToken.name + "` ";
         }
       }
       else {
-        desc = desc + "`" + targetToken.name + "` ";
+        desc = desc + "`" + curToken.name + "` ";
       }
     });
   }
@@ -332,7 +332,7 @@ function parseDamageTypes(baserolls) {
 
         }
         else {
-          const persFormula = roll.formula;
+          let persFormula = roll.formula;
           const regex = /[^\d+d\d+\s*+-]/g;
           persFormula = persFormula.replace(regex, '');
           damages = damages + persFormula.trim();
@@ -372,12 +372,12 @@ function createCardEmbed(message) {
   let doc = parser.parseFromString(card, "text/html");
   // Find the <h3> element and extract its text content
   const h3Element = doc.querySelector("h3");
-  const title = h3Element.textContent.trim();
+  let title = h3Element.textContent.trim();
   let desc = "";
 
   //parse traits
   let tags;
-  const tagsSection = doc.querySelector(".item-properties.tags");
+  let tagsSection = doc.querySelector(".item-properties.tags");
   try {
     tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
   }
@@ -391,8 +391,10 @@ function createCardEmbed(message) {
     }
   }
   let traits = "";
-  for (let i = 0; i < tags.length; i++) {
-    traits = traits + "[" + tags[i] + "] ";
+  if (tags.length) {
+    for (let i = 0; i < tags.length; i++) {
+      traits = traits + "[" + tags[i] + "] ";
+    }
   }
 
   if (traits.trim() !== "") {
@@ -498,7 +500,7 @@ function sendMessage(message, msgText, hookEmbed, options) {
 function sendToWebhook(message, msgText, hookEmbed, hook, imgurl) {
   request.open('POST', hook);
   request.setRequestHeader('Content-type', 'application/json');
-  const alias = message.alias;
+  let alias = message.alias;
   let speakerActor;
   if (game.modules.get("anonymous").active) {
     let anon = game.modules.get('anonymous').api;
@@ -512,7 +514,7 @@ function sendToWebhook(message, msgText, hookEmbed, hook, imgurl) {
             speakerActor = speakerToken.actor
           }
           else { //failsafe, in case the actor doesn't exist, i.e. through a broken module or a module imported from another system
-            
+
           }
         }
       }
@@ -622,7 +624,7 @@ function replaceDamageFormat(damagestring) {
     const diceParts = match.match(/\d+d\d+\[[^\]]+\]/g);
     const formattedDice = diceParts.map(part => {
       const [dice, desc] = part.match(/(\d+d\d+)\[([^\]]+)\]/).slice(1);
-      return `${desc} ${dice}`;
+      return `${dice} ${desc}`;
     }).join(' + ');
     return `:game_die: ${formattedDice}`;
   });
@@ -696,7 +698,7 @@ function parseHTMLText(htmlString) {
   reformattedText = reformattedText.replace(regex, (match) => match.replace(/\n/g, ''));
 
   //remove text that is not visible to players
-  const htmldoc = document.createElement('div');
+  let htmldoc = document.createElement('div');
   htmldoc.innerHTML = reformattedText;
   let divs = htmldoc.querySelectorAll('div[data-visibility="gm"]');
   for (let i = 0; i < divs.length; i++) {
@@ -832,18 +834,3 @@ function propertyExists(jsonObj, propertyPath) {
 
   return true;
 }
-
-/*function propertyExists(jsonObj, propertyPath) {
-  //Using try-catch, checks if a property in a json exists
-  const properties = propertyPath.split('.');
-  let currentObj = jsonObj;
-  for (const property of properties) {
-    try{
-      currentObj = currentObj[property];
-    }
-    catch(error){
-      return false;
-    }
-  }
-  return true;
-}*/
