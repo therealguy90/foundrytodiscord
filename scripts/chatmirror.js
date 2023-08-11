@@ -97,7 +97,7 @@ Hooks.on("ready", function () {
   request.onreadystatechange = function () {
     if (this.readyState == 4) {
       if (Number(this.getResponseHeader("x-ratelimit-remaining")) == 1 || Number(this.getResponseHeader("x-ratelimit-remaining")) == 0) {
-        console.log("Rate Limit reached! Next request in " + (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) + " seconds.");
+        console.log("PF2E Foundry To Discord: Rate Limit reached! Next request in " + (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) + " seconds.");
         rateLimitDelay = (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) * 1000;
       }
     }
@@ -105,16 +105,13 @@ Hooks.on("ready", function () {
 });
 
 Hooks.on('createChatMessage', async (msg, options, userId) => {
-  console.log(msg);
-  //console.log(msg.speaker.token);
-  //console.log(game.scenes.find(a => a.id === msg.speaker.scene).tokens.find(token => token.id === msg.speaker.token));
   hookQueue.push({ msg, options, userId });
   if (!isProcessing) {
     isProcessing = true;
     processHookQueue();
   }
   else {
-    console.log("Queue is currently busy.")
+    console.log("PF2E Foundry To Discord: Queue is currently busy.")
   }
 });
 
@@ -249,29 +246,37 @@ function createSpecialRollEmbed(message) {
     message.flags['pf2e-target-damage'].targets.forEach(target => {
       var curScene = game.scenes.find(scene => scene.id === message.speaker.scene);
       var curToken = curScene.tokens.get(target.id);
-      if (!anon.playersSeeName(curToken.actor) && game.modules.get("anonymous").active) {
-        desc = desc + "`Unknown` ";
+      if (game.modules.get("anonymous").active) {
+        if (!anon.playersSeeName(curToken.actor)) {
+          desc = desc + "`" + anon.getName(curToken.actor) + "` ";
+        }
+        else {
+          desc = desc + "`" + targetToken.name + "` ";
+        }
       }
       else {
-        desc = desc + "`" + curToken.name + "` ";
+        desc = desc + "`" + targetToken.name + "` ";
       }
     });
   }
   else {
     if (message.flags.pf2e.context.target) {
-      desc = desc + "**:dart:Target: **";
-      targetToken = game.scenes.find(scene => scene.id === message.speaker.scene).tokens.find(token => token.id === message.speaker.token);
-      if (targetToken) {
-        if (game.modules.get("anonymous").active) {
-          if(!anon.playersSeeName(curToken.actor)){
-            desc = desc + "`Unknown` ";
+      if (message.flags.pf2e.context.target.token) {
+        desc = desc + "**:dart:Target: **";
+        targetTokenId = message.flags.pf2e.context.target.token.split(".")[3];
+        targetToken = game.scenes.find(scene => scene.id === message.speaker.scene).tokens.get(token => token.id === (targetTokenId));
+        if (targetToken) {
+          if (game.modules.get("anonymous").active) {
+            if (!anon.playersSeeName(targetToken.targetToken.actor)) {
+              desc = desc + "`" + anon.getName(targetToken.actor) + "` ";
+            }
+            else {
+              desc = desc + "`" + targetToken.name + "` ";
+            }
           }
-          else{
+          else {
             desc = desc + "`" + targetToken.name + "` ";
           }
-        }
-        else{
-          desc = desc + "`" + targetToken.name + "` ";
         }
       }
     }
@@ -438,15 +443,16 @@ function sendToWebhook(message, msgText, hookEmbed, hook, imgurl, actor) {
     var anon = game.modules.get('anonymous').api;
     if (message.speaker.actor) {
       if (actor) {
-        if (!anon.playersSeeName(actor) && actor.type !== "character") {
-          alias = "Unknown (" + actor.id + ")";
+        if (!anon.playersSeeName(actor)) {
+          speakerToken = game.scenes.find(scene => scene.id === message.speaker.scene).tokens.find(token => token.id === message.speaker.token);
+          alias = anon.getName(actor) + " (" + speakerToken.id + ")";
         }
       }
       else {
         var aliasMatchedActor = game.actors.find(actor => actor.name === message.alias);
         if (aliasMatchedActor) {
           if (!anon.playersSeeName(aliasMatchedActor) && actor.type !== "character") {
-            alias = "Unknown (" + aliasMatchedActor.id + ")";
+            alias = anon.getName(actor) + " (" + aliasMatchedActor.id + ")";
           }
         }
         else {
@@ -462,7 +468,7 @@ function sendToWebhook(message, msgText, hookEmbed, hook, imgurl, actor) {
     content: msgText,
     embeds: hookEmbed
   };
-
+  console.log("PF2E Foundry to Discord: Attempting to send message to webhook...");
   request.send(JSON.stringify(params));
   isProcessing = false;
 }
@@ -541,15 +547,15 @@ function reformatMessage(text) {
   return reformattedText;
 }
 
-function getNameFromItem(ihtmldocath) {
+function getNameFromItem(itempath) {
   var itemID = ""
   var itemName = ""
-  var parts = ihtmldocath.split('.');
+  var parts =(itempath).split('.');
   if (parts.length > 1) {
     itemID = parts[parts.length - 1];
   }
   if (itemID == "") {
-    itemID = ihtmldocath;
+    itemID =(itempath);
   }
   try {
     itemName = ":baggage_claim: `" + game.items.get(itemID).name + "`";
@@ -567,7 +573,7 @@ function getNameFromItem(ihtmldocath) {
       return ":baggage_claim: `" + itemName + "`";
     }
     else { //Failsafe just in case.
-      return ":baggage_claim: `Unknown Item`";
+      return ":baggage_claim: `undefined`";
     }
   }
 }
