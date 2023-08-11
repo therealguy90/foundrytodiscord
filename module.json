@@ -1,7 +1,7 @@
 {
   "title": "Foundry to Discord",
-  "description": "Send Foundry chat to Discord!",
-  "version": "1.2.1",
+  "description": "Sends Foundry chat to a Discord webhook! Supports PF2e.",
+  "version": "1.0.0",
   "scripts": [
     "scripts/chatmirror.js"
   ],
@@ -12,14 +12,6 @@
   "authors": [
     {
       "name": "loki123",
-      "flags": {}
-    },
-    {
-      "name": "nw_rave",
-      "flags": {}
-    },
-    {
-      "name": "jellycanne",
       "flags": {}
     }
   ],
@@ -35,7 +27,7 @@
         "manifest": "https://github.com/foundryvtt/pf2e/releases/latest/download/system.json",
         "compatibility": {
           "minimum": "4.12.5",
-          "verified": "5.3.1"
+          "verified": "5.3.2"
         }
       }
     ],

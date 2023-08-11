@@ -512,7 +512,7 @@ function sendToWebhook(message, msgText, hookEmbed, hook, imgurl) {
             speakerActor = speakerToken.actor
           }
           else { //failsafe, in case the actor doesn't exist, i.e. through a broken module or a module imported from another system
-
+            
           }
         }
       }
