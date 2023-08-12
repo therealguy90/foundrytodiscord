@@ -286,7 +286,7 @@ function createSpecialRollEmbed(message) {
   //Add roll information to embed:
   for (let i = 0; i < message.rolls.length; i++) {
     desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
-    if (message.flags.pf2e.context.type == "damage-roll") {
+    if (propertyExists(message, "flags.pf2e.context.type") && message.flags.pf2e.context.type == "damage-roll") {
       desc = desc + parseDamageTypes(message.rolls[i]);
     }
     else if (parseDegree(message.rolls[i].options.degreeOfSuccess) != "Invalid") {
