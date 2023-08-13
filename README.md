@@ -13,7 +13,7 @@ Anonymous:
 Pf2e Target Damage:
 - Multiple targets are also sent in to Discord!
 
-Polyglot:
+Polyglot (Available only for PF2e):
 - Checks if the players know a language, and sends languages the players don't know to discord as "Unintelligible".
 - Useful for using Polyglot primarily for RP and knowing what the players can and can't understand.
 - Adds a useful option to the config, where the GM can set the only languages this module will "understand", and sends the rest to discord as "Unintelligible". Useful for party splits.
