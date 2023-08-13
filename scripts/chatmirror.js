@@ -490,7 +490,7 @@ function propertyExists(jsonObj, propertyPath) {
 function createGenericRollEmbed(message) {
   let desc = ""
   message.rolls.forEach(roll => {
-    desc = desc + 'Rolled ' + roll.formula + ', and got a ' + roll.result + ' = ' + roll.total;
+    desc = desc + 'Rolled ' + roll.formula + ', and got a ' + roll.result + ' = ' + roll.total + "\n";
   })
   embed = [{ title: message.alias + '\'s Rolls', description: desc }];
   return embed;
