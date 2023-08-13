@@ -174,10 +174,6 @@ function processMessage(msg, userId) {
             }
           }
         }
-        if (PF2e_isCard(msg.content)) {
-          constructedMessage = "";
-          hookEmbed = PF2e_createCardEmbed(msg);
-        }
         break;
       //Add support for other systems here
       default:
@@ -186,6 +182,10 @@ function processMessage(msg, userId) {
     }
     if (constructedMessage == '') {
       constructedMessage = msg.content;
+    }
+    if (isCard(msg.content)) {
+      constructedMessage = "";
+      hookEmbed = createCardEmbed(msg);
     }
   }
   else {
@@ -264,7 +264,7 @@ function sendToWebhook(message, msgText, hookEmbed, hook, imgurl) {
         const scene = game.scenes.find(scene => scene.id === message.speaker.scene);
         if (scene) {
           const speakerToken = scene.tokens.get(message.speaker.token);
-          if (speakerToken.actor) {
+          if (propertyExists(speakerToken, "actor")) {
             speakerActor = speakerToken.actor
           }
           else { // TODO: failsafe, in case the actor doesn't exist, i.e. through a broken module or a module imported from another system
@@ -489,10 +489,21 @@ function propertyExists(jsonObj, propertyPath) {
 /*System-agnostic (hopefully) functions*/
 function createGenericRollEmbed(message) {
   let desc = ""
-  message.rolls.forEach(roll => {
-    desc = desc + 'Rolled ' + roll.formula + ', and got a ' + roll.result + ' = ' + roll.total + "\n";
-  })
-  embed = [{ title: message.alias + '\'s Rolls', description: desc }];
+  let title = ""
+  if(message.flavor && message.flavor.length > 0){
+    title = message.flavor;
+    for (let i = 0; i < message.rolls.length; i++) {
+      desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
+      desc = desc + "\n";
+    }
+  }
+  else{
+    title = message.alias + '\'s Rolls';
+    message.rolls.forEach(roll => {
+      desc = desc + 'Rolled ' + roll.formula + ', and got a ' + roll.result + "\n";
+    })
+  }
+  embed = [{ title: title, description: desc }];
   return embed;
 }
 
@@ -554,6 +565,108 @@ function parseCheckString(checkString) {
   }
 
   return check;
+}
+
+function isCard(htmlString) {
+
+  const htmldocElement = document.createElement('div');
+  htmldocElement.innerHTML = htmlString;
+
+  const divElement = htmldocElement.querySelector('.chat-card');
+
+  if (divElement !== null) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+function createCardEmbed(message) {
+  const card = message.content;
+  const parser = new DOMParser();
+  let doc = parser.parseFromString(card, "text/html");
+  // Find the <h3> element and extract its text content, since h3 works for most systems
+  const h3Element = doc.querySelector("h3");
+  let title = h3Element.textContent.trim();
+  let desc = "";
+
+  //PF2e has a trait tagging system. This is what this is for. Disregard for other systems.
+  let tags;
+  let tagsSection = doc.querySelector(".item-properties.tags");
+  try {
+    tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
+  }
+  catch (error) {
+    try {
+      tagsSection = doc.querySelector('.tags');
+      tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
+    }
+    catch (error) {
+
+    }
+  }
+
+  let traits = "";
+  if (propertyExists(tags, "length")) {
+    for (let i = 0; i < tags.length; i++) {
+      traits = traits + "[" + tags[i] + "] ";
+    }
+  }
+
+  if (traits.trim() !== "") {
+    desc = desc + "`" + traits.trim() + "`\n";
+  }
+  //parse spell description
+  let descList = doc.querySelectorAll(".card-content > p");
+  descList.forEach(function (paragraph) {
+    let text = paragraph.innerHTML
+      .replace(/<strong>(.*?)<\/strong>/g, '**$1**')  // Replace <strong> tags with markdown bold
+      .trim();  // Trim any leading/trailing whitespace
+
+    desc += text + "\n\n";
+  });
+
+  const heightenedTags = doc.querySelectorAll("section.card-content p strong");
+  const reformattedTexts = Array.from(heightenedTags).map((tag) => {
+    const nextSibling = tag.nextSibling;
+    return `**${tag.textContent.trim()}** ${nextSibling.textContent.trim()}`;
+  });
+
+  const reformattedText = reformattedTexts.join("\n");
+  if (reformattedText !== "") {
+    desc = desc + "----------------\n\n"
+    desc = desc + reformattedText;
+  }
+
+  embed = [{ title: title, description: desc, footer: { text: getCardFooter(card) } }];
+  return embed;
+}
+
+function getCardFooter(card) {
+  // Create a temporary div element to parse the HTML string
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = card;
+
+  // Select the footer element
+  const footerElement = tempDiv.querySelector('.card-footer');
+
+  if (!footerElement) {
+    return ''; // Return an empty string if no footer element is found
+  }
+
+  // Extract all <span> elements within the footer
+  const spanElements = footerElement.querySelectorAll('span');
+
+  // Create an array to store the text content of <span> elements
+  const spanTexts = [];
+  spanElements.forEach(span => {
+    spanTexts.push(span.textContent);
+  });
+
+  // Create the "footer" string by joining the span texts with spaces
+  const footer = spanTexts.join(' | ');
+
+  return footer;
 }
 
 
@@ -708,93 +821,6 @@ function PF2e_parseDamageTypes(baserolls) {
   return " ||**(" + damages + ")**||";
 }
 
-function PF2e_createCardEmbed(message) {
-  const card = message.content;
-  const parser = new DOMParser();
-  let doc = parser.parseFromString(card, "text/html");
-  // Find the <h3> element and extract its text content
-  const h3Element = doc.querySelector("h3");
-  let title = h3Element.textContent.trim();
-  let desc = "";
-
-  //parse traits
-  let tags;
-  let tagsSection = doc.querySelector(".item-properties.tags");
-  try {
-    tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
-  }
-  catch (error) {
-    try {
-      tagsSection = doc.querySelector('.tags');
-      tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
-    }
-    catch (error) {
-
-    }
-  }
-  let traits = "";
-  if (tags.length) {
-    for (let i = 0; i < tags.length; i++) {
-      traits = traits + "[" + tags[i] + "] ";
-    }
-  }
-
-  if (traits.trim() !== "") {
-    desc = desc + "`" + traits.trim() + "`\n";
-  }
-  //parse spell description
-  let descList = doc.querySelectorAll(".card-content > p");
-  descList.forEach(function (paragraph) {
-    let text = paragraph.innerHTML
-      .replace(/<strong>(.*?)<\/strong>/g, '**$1**')  // Replace <strong> tags with markdown bold
-      .trim();  // Trim any leading/trailing whitespace
-
-    desc += text + "\n\n";
-  });
-
-  const heightenedTags = doc.querySelectorAll("section.card-content p strong");
-  const reformattedTexts = Array.from(heightenedTags).map((tag) => {
-    const nextSibling = tag.nextSibling;
-    return `**${tag.textContent.trim()}** ${nextSibling.textContent.trim()}`;
-  });
-
-  const reformattedText = reformattedTexts.join("\n");
-  if (reformattedText !== "") {
-    desc = desc + "----------------\n\n"
-    desc = desc + reformattedText;
-  }
-
-  embed = [{ title: title, description: desc, footer: { text: PF2e_getCardFooter(card) } }];
-  return embed;
-}
-
-function PF2e_getCardFooter(card) {
-  // Create a temporary div element to parse the HTML string
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = card;
-
-  // Select the footer element
-  const footerElement = tempDiv.querySelector('.card-footer');
-
-  if (!footerElement) {
-    return ''; // Return an empty string if no footer element is found
-  }
-
-  // Extract all <span> elements within the footer
-  const spanElements = footerElement.querySelectorAll('span');
-
-  // Create an array to store the text content of <span> elements
-  const spanTexts = [];
-  spanElements.forEach(span => {
-    spanTexts.push(span.textContent);
-  });
-
-  // Create the "footer" string by joining the span texts with spaces
-  const footer = spanTexts.join(' ');
-
-  return footer;
-}
-
 function PF2e_parseDegree(degree) {
   switch (degree) {
     case 0:
@@ -807,20 +833,6 @@ function PF2e_parseDegree(degree) {
       return "Critical Success";
     default:
       return "Invalid";
-  }
-}
-
-function PF2e_isCard(htmlString) {
-
-  const htmldocElement = document.createElement('div');
-  htmldocElement.innerHTML = htmlString;
-
-  const divElement = htmldocElement.querySelector('div.pf2e.chat-card');
-
-  if (divElement !== null) {
-    return true;
-  } else {
-    return false;
   }
 }
 
