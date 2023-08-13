@@ -1,7 +1,8 @@
 # Foundry to Discord
 A lightweight FoundryVTT module that sends all FoundryVTT messages to a Discord webhook.
 
-Only supports Pathfinder Second Edition, but anyone is welcome to help add support for other systems. Contact me @loki123 on Discord.
+Only FULLY supports Pathfinder Second Edition, but anyone is welcome to help add support for other systems. Contact me @loki123 on Discord.
+Will work on other systems, but only minimally, such as simple rolls and regular chat.
 May support Starfinder Second Edition when it comes out officially.
 
 What it supports:
@@ -13,7 +14,7 @@ Anonymous:
 Pf2e Target Damage:
 - Multiple targets are also sent in to Discord!
 
-Polyglot:
+Polyglot (Available only for PF2e):
 - Checks if the players know a language, and sends languages the players don't know to discord as "Unintelligible".
 - Useful for using Polyglot primarily for RP and knowing what the players can and can't understand.
 - Adds a useful option to the config, where the GM can set the only languages this module will "understand", and sends the rest to discord as "Unintelligible". Useful for party splits.
@@ -47,7 +48,7 @@ That's it!
 
 **Ignore Whispers & Private Rolls:** Enable this to ensure GM and Private messages, (both rolls and chat) aren't posted to Discord for all to see.
 
-**Game Invite URL:** the external, internet URL everyone connects to the server through
+**Game Invite URL:** the external, internet URL everyone connects to the server through, this is used for discord avatars if token images are located on your server.
 Game Settings > Game Access > Invitation Links "Internet"
 
 Tip: Use a network tunnel, such as Ngrok, playit, or Tailscale Funnel if you don't have access to portforwarding.
