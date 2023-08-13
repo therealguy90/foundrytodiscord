@@ -586,15 +586,19 @@ function polyglotize(message, playerlanguages = []) {
 function reformatMessage(text) {
   let reformattedText = ""
   //First check if the text is formatted in HTML to use a different function
-  isHtmlFormatted = /<[a-z][\s\S]*>/i.test(text);
+  //parse Localize first, since it will have html elements
+  regex = /@Localize\[(.*?)\]/g;
+  reformattedText = text.replace(regex, (_, text) => getLocalizedText(text));
+  isHtmlFormatted = /<[a-z][\s\S]*>/i.test(reformattedText);
   if (isHtmlFormatted) {
-    reformattedText = parseHTMLText(text);
+    reformattedText = parseHTMLText(reformattedText);
+    reformattedText = reformatMessage(reformattedText); //call this function again as a failsafe for @ tags
   }
   else {
     //replace UUIDs to be consistent with Foundry
     let regex = /@UUID\[[^\]]+\]\{([^}]+)\}/g;
-    reformattedText = text.replace(regex, ':baggage_claim: `$1`');
-
+    reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
+    
     //replace compendium links
     regex = /@Compendium\[[^\]]+\]\{([^}]+)\}/g;
     reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
@@ -637,27 +641,37 @@ function getNameFromItem(itempath) {
   if (parts.length > 1) {
     itemID = parts[parts.length - 1];
   }
-  if (itemID == "") {
-    itemID = (itempath);
-  }
-  try {
-    itemName = ":baggage_claim: `" + game.items.get(itemID).name + "`";
-    return itemName;
-  }
-  catch (e) {
-    if (parts[0] == "Actor") {
+  switch(parts[0]){
+    case "Actor":
       let actorID = parts[1];
       let actor = game.actors.get(actorID);
       let item = actor.items.find(item => item._id === itemID);
       itemName = item ? item.name : undefined;
-    }
+      break;
+    case "Compendium":
+      let compendiumName = ""
+      for(let i = 1; i < parts.length - 2; i++){
+          compendiumName = compendiumName + parts[i];
+          if(i < parts.length - 3){
+            compendiumName = compendiumName + ".";
+          }
+      }
+      itemName = game.packs.get(compendiumName).get(itemID).name;
+      break;
+    default:
+      if (itemID == "") {
+        itemID = (itempath);
+      }
+      itemName = ":baggage_claim: `" + game.items.get(itemID).name + "`";
+      return itemName;
+      break;
+  }
 
-    if (itemName) {
-      return ":baggage_claim: `" + itemName + "`";
-    }
-    else { //Failsafe just in case.
-      return ":baggage_claim: `undefined`";
-    }
+  if (itemName) {
+    return ":baggage_claim: `" + itemName + "`";
+  }
+  else { //Failsafe just in case.
+    return ":baggage_claim: `undefined`";
   }
 }
 
@@ -673,6 +687,10 @@ function getNameFromCheck(checkString) {
       return ":game_die: `" + skillcheck + "`";
     }
   }
+}
+
+function getLocalizedText(localizationKey){
+  return game.i18n.localize(localizationKey);
 }
 
 function parseCheckString(checkString) {
