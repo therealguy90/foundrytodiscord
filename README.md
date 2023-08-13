@@ -1,7 +1,8 @@
 # Foundry to Discord
 A lightweight FoundryVTT module that sends all FoundryVTT messages to a Discord webhook.
 
-Only supports Pathfinder Second Edition, but anyone is welcome to help add support for other systems. Contact me @loki123 on Discord.
+Only FULLY supports Pathfinder Second Edition, but anyone is welcome to help add support for other systems. Contact me @loki123 on Discord.
+Will work on other systems, but only minimally, such as simple rolls and regular chat.
 May support Starfinder Second Edition when it comes out officially.
 
 What it supports:
