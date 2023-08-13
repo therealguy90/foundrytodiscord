@@ -47,7 +47,7 @@ That's it!
 
 **Ignore Whispers & Private Rolls:** Enable this to ensure GM and Private messages, (both rolls and chat) aren't posted to Discord for all to see.
 
-**Game Invite URL:** the external, internet URL everyone connects to the server through
+**Game Invite URL:** the external, internet URL everyone connects to the server through, this is used for discord avatars if token images are located on your server.
 Game Settings > Game Access > Invitation Links "Internet"
 
 Tip: Use a network tunnel, such as Ngrok, playit, or Tailscale Funnel if you don't have access to portforwarding.
