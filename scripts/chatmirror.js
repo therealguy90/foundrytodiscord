@@ -106,8 +106,6 @@ Hooks.on("ready", function () {
 });
 
 Hooks.on('createChatMessage', async (msg, userId) => {
-  console.log(msg);
-  console.log(msg.user.targets);
   hookQueue.push({ msg, userId });
   if (!isProcessing) {
     isProcessing = true;
@@ -492,7 +490,6 @@ function createGenericRollEmbed(message) {
     title = message.flavor;
     if (propertyExists(message, "user.targets") && message.user.targets.ids.length > 0) {
       let targetTokenIDs = message.user.targets.ids;
-      console.log(targetTokenIDs);
       if(targetTokenIDs.length == 1){
         desc = desc + "**:dart:Target: **";
       }
