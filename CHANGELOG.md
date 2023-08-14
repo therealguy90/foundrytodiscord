@@ -1,3 +1,7 @@
+# 1.0.2
+
+- The module will now attempt to parse targets from a user when rolling a check with message.flavor. This means that stuff like attack rolls, damage rolls, will now have targets parsed on to the embed.
+
 # 1.0.1
 
 - The module will now attempt to support Polyglot on all systems. This only works when the actor structure is similar. For example, PF2e and DnD5e both use `actor.system.traits.languages.value` to store language strings on an actor, so the module will work for both systems.

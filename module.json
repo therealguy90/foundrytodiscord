@@ -1,13 +1,13 @@
 {
   "title": "Foundry to Discord",
   "description": "Sends Foundry chat to a Discord webhook! Supports PF2e.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "scripts": [
     "scripts/chatmirror.js"
   ],
   "url": "https://github.com/therealguy90/FoundryToDiscord",
-  "manifest": "https://github.com/therealguy90/foundrytodiscord/releases/download/1.0.1/module.json",
-  "download": "https://github.com/therealguy90/foundrytodiscord/releases/download/1.0.1/foundrytodiscord.zip",
+  "manifest": "https://github.com/therealguy90/foundrytodiscord/releases/download/1.0.2/module.json",
+  "download": "https://github.com/therealguy90/foundrytodiscord/releases/download/1.0.2/foundrytodiscord.zip",
   "id": "foundrytodiscord",
   "authors": [
     {
