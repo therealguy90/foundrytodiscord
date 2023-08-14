@@ -107,6 +107,7 @@ Hooks.on("ready", function () {
 
 Hooks.on('createChatMessage', async (msg, userId) => {
   console.log(msg);
+  console.log(msg.user.targets);
   hookQueue.push({ msg, userId });
   if (!isProcessing) {
     isProcessing = true;
@@ -483,8 +484,40 @@ function propertyExists(jsonObj, propertyPath) {
 function createGenericRollEmbed(message) {
   let desc = ""
   let title = ""
+  let anon;
+  if (game.modules.get("anonymous").active) {
+    anon = game.modules.get("anonymous").api;
+  }
   if (message.flavor && message.flavor.length > 0) {
     title = message.flavor;
+    if (propertyExists(message, "user.targets") && message.user.targets.ids.length > 0) {
+      let targetTokenIDs = message.user.targets.ids;
+      console.log(targetTokenIDs);
+      if(targetTokenIDs.length == 1){
+        desc = desc + "**:dart:Target: **";
+      }
+      else{
+        desc = desc + "**:dart:Targets: **";
+      }
+      let curScene = game.scenes.get(message.speaker.scene);
+      for(let i = 0; i < targetTokenIDs.length && curScene; i++){
+        let curTarget = curScene.tokens.get(targetTokenIDs[i]);
+        if (game.modules.get("anonymous").active) {
+          if(curTarget.actor && !anon.playersSeeName(curTarget.actor)){
+            desc = desc + "`" + anon.getName(curTarget.actor) + "` ";
+          }
+          else {
+            desc = desc + "`" + curTarget.name + "` ";
+          }
+        }
+        else {
+          desc = desc + "`" + curTarget.name + "` ";
+        }
+      }
+    }
+    if(desc !== ""){
+      desc = desc + "\n";
+    }
     for (let i = 0; i < message.rolls.length; i++) {
       desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
       desc = desc + "\n";
