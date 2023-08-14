@@ -1,4 +1,7 @@
+let systemName;
+
 Hooks.on("init", function () {
+  systemName = game.system.id;
   game.settings.register('foundrytodiscord', 'mainUserId', {
     name: "Main GM ID",
     hint: "If you plan on having two GMs in one session, fill this in with the main DM's ID to avoid duplicated messages. Just type 'dc getID' in chat to have your ID sent to your discord channel.",
@@ -10,14 +13,6 @@ Hooks.on("init", function () {
   game.settings.register('foundrytodiscord', 'ignoreWhispers', {
     name: "Ignore Whispers & Private Rolls",
     hint: "If this is on, then it will ignore whispers and private rolls. If this is off, it will send them to discord just like any other message.",
-    scope: "world",
-    config: true,
-    default: true,
-    type: Boolean
-  });
-  game.settings.register('foundrytodiscord', 'addChatQuotes', {
-    name: "Add Quotes to Chat",
-    hint: "If this is on, then it will surround chat messages with quotes in discord.",
     scope: "world",
     config: true,
     default: true,
@@ -59,12 +54,11 @@ Hooks.on("init", function () {
   }
 });
 
-var damageEmoji = []
-var systemName;
-var hookQueue = [];
-var isProcessing = false;
-var rateLimitDelay;
-var request;
+let damageEmoji = []
+let hookQueue = [];
+let isProcessing = false;
+let rateLimitDelay;
+let request;
 
 Hooks.on("ready", function () {
   request = new XMLHttpRequest();
@@ -77,7 +71,6 @@ Hooks.on("ready", function () {
       }
     }
   };
-  systemName = game.system.id;
   switch (systemName) {
     case "pf2e":
       damageEmoji = {
@@ -157,28 +150,28 @@ function processMessage(msg, userId) {
   }
 
   if (!msg.isRoll) {
-    //Pf2e
-    switch (systemName) {
-      case "pf2e":
-        if (game.modules.get("polyglot").active && propertyExists(msg, "flags.polyglot.language")) {
-          if (msg.flags.polyglot.language != "common") {
-            if (game.settings.get("foundrytodiscord", "includeOnly") == "") {
-              constructedMessage = PF2e_polyglotize(msg);
-            }
-            else {
-              listLanguages = game.settings.get("foundrytodiscord", "includeOnly").split(",").map(item => item.trim().toLowerCase());
-              if (!listLanguages == null) {
-                listLanguages = [];
-              }
-              constructedMessage = PF2e_polyglotize(msg, listLanguages);
-            }
+    /*Attempt polyglot support. This will ONLY work if the structure is similar:
+    * for PF2e and DnD5e, this would be actor.system.traits.languages.value
+    */
+    if (game.modules.get("polyglot").active && propertyExists(msg, "flags.polyglot.language")) {
+      if (msg.flags.polyglot.language != "common") {
+        if (game.settings.get("foundrytodiscord", "includeOnly") == "") {
+          constructedMessage = polyglotize(msg);
+        }
+        else {
+          listLanguages = game.settings.get("foundrytodiscord", "includeOnly").split(",").map(item => item.trim().toLowerCase());
+          if (!listLanguages == null) {
+            listLanguages = [];
+          }
+          try {
+            constructedMessage = polyglotize(msg, listLanguages);
+          }
+          catch (e) {
+            console.log(e);
+            console.log("foundrytodiscord | Your system \"" + systemName + "\" does not support Polyglot integration with this module due to a different actor structure.")
           }
         }
-        break;
-      //Add support for other systems here
-      default:
-        constructedMessage = msg.content; //default message content
-        break;
+      }
     }
     if (constructedMessage == '') {
       constructedMessage = msg.content;
@@ -203,12 +196,14 @@ function processMessage(msg, userId) {
       default:
         console.log("foundrytodiscord | System \"" + systemName + "\" is not supported for special roll embeds.")
         hookEmbed = createGenericRollEmbed(msg);
+        break;
     }
   }
 
   //Fix formatting before sending
   if (hookEmbed != [] && hookEmbed.length > 0) {
     hookEmbed[0].description = reformatMessage(hookEmbed[0].description);
+    constructedMessage = (msg.flavor && msg.flavor.length > 0 && hookEmbed[0].title !== msg.flavor) ? msg.flavor : "";
     //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
     //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
     if (game.modules.get("anonymous").active) {
@@ -230,8 +225,6 @@ function processMessage(msg, userId) {
         }
       }
     }
-    sendMessage(msg, "", hookEmbed);
-    return;
   }
   constructedMessage = reformatMessage(constructedMessage);
 
@@ -490,14 +483,14 @@ function propertyExists(jsonObj, propertyPath) {
 function createGenericRollEmbed(message) {
   let desc = ""
   let title = ""
-  if(message.flavor && message.flavor.length > 0){
+  if (message.flavor && message.flavor.length > 0) {
     title = message.flavor;
     for (let i = 0; i < message.rolls.length; i++) {
       desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
       desc = desc + "\n";
     }
   }
-  else{
+  else {
     title = message.alias + '\'s Rolls';
     message.rolls.forEach(roll => {
       desc = desc + 'Rolled ' + roll.formula + ', and got a ' + roll.result + "\n";
@@ -669,6 +662,35 @@ function getCardFooter(card) {
   return footer;
 }
 
+function polyglotize(message, playerlanguages = []) {
+  //get a list of all PCs
+  if (playerlanguages == [] || playerlanguages.length == 0) {
+    let characters = game.actors.filter(a => a.type === "character");
+    let languages = new Set();
+    for (let character of characters) {
+      let characterLanguages = character.system.traits.languages.value;
+      for (let language of characterLanguages) {
+        languages.add(language);
+      }
+    }
+
+    if (languages.has(message.flags.polyglot.language)) {
+      return message.content;
+    }
+    else {
+      return "*Unintelligible*"
+    }
+  }
+  else {
+    if (playerlanguages.includes(message.flags.polyglot.language)) {
+      return message.content;
+    }
+    else {
+      return "*Unintelligible*"
+    }
+  }
+}
+
 
 /*PF2e-specific functions*/
 function PF2e_createRollEmbed(message) {
@@ -833,35 +855,6 @@ function PF2e_parseDegree(degree) {
       return "Critical Success";
     default:
       return "Invalid";
-  }
-}
-
-function PF2e_polyglotize(message, playerlanguages = []) {
-  //get a list of all PCs
-  if (playerlanguages == [] || playerlanguages.length == 0) {
-    let characters = game.actors.filter(a => a.type === "character");
-    let languages = new Set();
-    for (let character of characters) {
-      let characterLanguages = character.system.traits.languages.value;
-      for (let language of characterLanguages) {
-        languages.add(language);
-      }
-    }
-
-    if (languages.has(message.flags.polyglot.language)) {
-      return message.content;
-    }
-    else {
-      return "*Unintelligible*"
-    }
-  }
-  else {
-    if (playerlanguages.includes(message.flags.polyglot.language)) {
-      return message.content;
-    }
-    else {
-      return "*Unintelligible*"
-    }
   }
 }
 
