@@ -45,24 +45,13 @@ Add-on Modules > Install Module > Search for Foundry to Discord
    
 Game Settings > Manage Modules
 
-6. Configure the module settings in Foundry. See below for info on each setting.
+6. Configure the module settings in Foundry.
    
 Game Settings > Configure Settings > Module Settings
 
 That's it!
 
-**Ignore Whispers & Private Rolls:** Enable this to ensure GM and Private messages, (both rolls and chat) aren't posted to Discord for all to see.
-
-**Game Invite URL:** the external, internet URL everyone connects to the server through, this is used for discord avatars if token images are located on your server.
-Game Settings > Game Access > Invitation Links "Internet"
-
-Tip: Use a network tunnel, such as Ngrok, playit, or Tailscale Funnel if you don't have access to portforwarding.
-
-**Webhook URL:** Discord Webhook URL from Step 1. This is where chat will be sent, not including rolls.
-
-**Roll Webhook URL:** Discord Webhook URL for rolls - either the same webhook for rolls to appear in the same channel as chat, or a separate webhook needs to be setup for the rolls to appear in. Leave empty to ignore all rolls.
-
-#Getting Main GM ID
+# Getting Main GM ID
 **Option A:**
 1. Open browser Inspect/Developer Tools on the Foundry tab
 Chrome: (Windows, Linux, Chrome OS): [F12] or Control+Shift+C
