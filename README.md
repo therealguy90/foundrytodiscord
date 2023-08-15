@@ -44,6 +44,7 @@ Polyglot:
  Game Settings > Manage Modules
  4. Configure the module settings in Foundry.
  Game Settings > Configure Settings > Module Settings
+
  For Invite URL: Make sure your address is public! Use a tunnelling software if you can't forward ports.
 
 That's it!
