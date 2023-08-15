@@ -17,7 +17,6 @@ Polyglot:
 - Checks if the players know a language, and sends languages the players don't know to Discord as "Unintelligible". (This might change to a random text instead in the future to mimic Polyglot!)
 - Useful for using Polyglot primarily for RP and knowing what the players can and can't understand by simply looking at Discord.
 - Adds an option to the config, where the GM can set the only languages this module will "understand", and sends the rest to discord as "Unintelligible". Useful for party splits. Example, if you set this setting to only understand "dwarven, draconic", then even if players know a language different from these, it will still send to Discord as "Unintelligible" unless it's listed here!
-
 --------------------------------------------------
 ## Screenshots
 
@@ -72,6 +71,13 @@ This is the ID needed for the Main GM ID field.
 3. Check your discord chat channel as defined by your webhook.
 
 *NOTE:* The Main GM must be logged in for Foundry to Discord to work!
+
+--------------------------------------------------
+
+## Setting up the Server Status Indicator on your Discord channel
+
+As of version 1.1.0, this module now supports the detection of when your server goes online.
+Check the "Enable Server Status Message" in the config of this module and follow the instructions to quickly set it up!
 
 --------------------------------------------------
 
