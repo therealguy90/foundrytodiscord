@@ -18,6 +18,14 @@ Hooks.on("init", function () {
     default: true,
     type: Boolean
   });
+  game.settings.register('foundrytodiscord', "sendEmbeds", {
+    name: "Show chat card embeds",
+    hint: "Disabling this means chat cards are no longer sent to discord.",
+    scope: "world",
+    config: true,
+    default: true,
+    type: Boolean
+  });
   game.settings.register('foundrytodiscord', 'inviteURL', {
     name: "Game Invite URL",
     hint: "This should be the internet invite URL for your game session.",
@@ -42,10 +50,11 @@ Hooks.on("init", function () {
     default: "",
     type: String
   });
-  if (game.modules.get("polyglot").active) {
+  if (game.modules.get("polyglot")?.active) {
     game.settings.register('foundrytodiscord', "commonLanguages", {
       name: "(Polyglot) Override common languages: ",
       hint: "A list of languages that are \"common\" to your world. By default, this is \"common\", but this can be replaced by a list of language ids, separated by commas. Homebrew languages might use a different language id, such as 'hb_english'",
+      scope: "world",
       config: true,
       default: "common",
       type: String
@@ -160,7 +169,7 @@ function processMessage(msg, userId) {
     /*Attempt polyglot support. This will ONLY work if the structure is similar:
     * for PF2e and DnD5e, this would be actor.system.traits.languages.value
     */
-    if (game.modules.get("polyglot").active && propertyExists(msg, "flags.polyglot.language")) {
+    if (game.modules.get("polyglot")?.active && propertyExists(msg, "flags.polyglot.language")) {
       if (!game.settings.get("foundrytodiscord", "commonLanguages").toLowerCase().includes(msg.flags.polyglot.language)) {
         if (game.settings.get("foundrytodiscord", "includeOnly") == "") {
           constructedMessage = polyglotize(msg);
@@ -185,7 +194,9 @@ function processMessage(msg, userId) {
     }
     if (isCard(msg.content)) {
       constructedMessage = "";
-      hookEmbed = createCardEmbed(msg);
+      if (game.settings.get("foundrytodiscord", "sendEmbeds")) {
+        hookEmbed = createCardEmbed(msg);
+      }
     }
   }
   else {
@@ -213,7 +224,7 @@ function processMessage(msg, userId) {
     constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === hookEmbed.description) ? "" : msg.flavor;
     //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
     //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
-    if (game.modules.get("anonymous").active) {
+    if (game.modules.get("anonymous")?.active) {
       let anon = game.modules.get("anonymous").api;
       let curScene = game.scenes.get(msg.speaker.scene);
       if (curScene) {
@@ -234,8 +245,9 @@ function processMessage(msg, userId) {
     }
   }
   constructedMessage = reformatMessage(constructedMessage);
-
-  sendMessage(msg, constructedMessage, hookEmbed);
+  if (constructedMessage !== "" || hookEmbed.length > 0) { //avoid sending empty messages
+    sendMessage(msg, constructedMessage, hookEmbed);
+  }
 }
 
 /*Base functions*/
@@ -256,7 +268,7 @@ function sendToWebhook(message, msgText, hookEmbed, hook, imgurl) {
   request.setRequestHeader('Content-type', 'application/json');
   let alias = message.alias;
   let speakerActor;
-  if (game.modules.get("anonymous").active) {
+  if (game.modules.get("anonymous")?.active) {
     let anon = game.modules.get('anonymous').api;
     //First priority: Use speaker token name and check if actor's name is visible through anonymous
     if (propertyExists(message, "speaker.token")) {
@@ -505,7 +517,7 @@ function createGenericRollEmbed(message) {
   let desc = ""
   let title = ""
   let anon;
-  if (game.modules.get("anonymous").active) {
+  if (game.modules.get("anonymous")?.active) {
     anon = game.modules.get("anonymous").api;
   }
   if (message.flavor && message.flavor.length > 0) {
@@ -521,7 +533,7 @@ function createGenericRollEmbed(message) {
       let curScene = game.scenes.get(message.speaker.scene);
       for (let i = 0; i < targetTokenIDs.length && curScene; i++) {
         let curTarget = curScene.tokens.get(targetTokenIDs[i]);
-        if (game.modules.get("anonymous").active) {
+        if (game.modules.get("anonymous")?.active) {
           if (curTarget.actor && !anon.playersSeeName(curTarget.actor)) {
             desc = desc + "`" + anon.getName(curTarget.actor) + "` ";
           }
@@ -645,17 +657,18 @@ function createCardEmbed(message) {
   // PF2e has a trait tagging system. This is what this is for. Disregard for other systems.
   desc = PF2e_parseTraits(message);
 
-  //parse card description if source is from a character
+  //parse card description if source is from a character or actor is owned by a player
   //this is to limit metagame information and is recommended for most systems.
   //adding a setting to enable this would be an option, but is not a priority.
   let descVisible = true;
+
   if (speakerActor) {
-    if (speakerActor.type !== "character") {
+    if (game.modules.get("anonymous")?.active && !isOwnedByPlayer(speakerActor)) {
       descVisible = false;
     }
   }
   if (descVisible) {
-    let descList = doc.querySelectorAll(".card-content > p");
+    let descList = doc.querySelectorAll(".card-content");
     descList.forEach(function (paragraph) {
       let text = paragraph.innerHTML
         .replace(/<strong>(.*?)<\/strong>/g, '**$1**')  // Replace <strong> tags with markdown bold
@@ -670,7 +683,7 @@ function createCardEmbed(message) {
 
 function getCardFooter(card) {
   let displayFooter = true;
-  if (game.modules.get("anonymous").active) {
+  if (game.modules.get("anonymous")?.active) {
     //true = hide, false = show
     if (game.settings.get("anonymous", "footer")) {
       displayFooter = false;
@@ -702,7 +715,7 @@ function getCardFooter(card) {
 
     return footer;
   }
-  else{
+  else {
     return "";
   }
 }
@@ -736,6 +749,23 @@ function polyglotize(message, playerlanguages = []) {
   }
 }
 
+function isOwnedByPlayer(actor) {
+  console.log(actor);
+  let isOwned = false;
+  let playerIDs = game.users.filter((user) => user.isGM === false).map((player => player.id));
+  if (actor.ownership.default === 3) {
+    isOwned = true;
+  }
+  playerIDs.forEach(id => {
+    if (propertyExists(actor, "ownership." + id)) {
+      if (actor.ownership[id] === 3) {
+        isOwned = true;
+      }
+    }
+  });
+  return isOwned;
+}
+
 
 /*PF2e-specific functions*/
 function PF2e_createRollEmbed(message) {
@@ -766,7 +796,7 @@ function PF2e_createRollEmbed(message) {
     }
   }
 
-  if (game.modules.get("anonymous").active) {
+  if (game.modules.get("anonymous")?.active) {
     var anon = game.modules.get('anonymous').api; //optional implementation for "anonymous" module
   }
 
@@ -774,7 +804,7 @@ function PF2e_createRollEmbed(message) {
 
   //Build Description
   //Add targets to embed:
-  if (game.modules.get("pf2e-target-damage").active) { //optional implementation for "pf2e-target-damage" module
+  if (game.modules.get("pf2e-target-damage")?.active) { //optional implementation for "pf2e-target-damage" module
     if (message.flags['pf2e-target-damage'].targets.length === 1) {
       desc = desc + "**:dart:Target: **";
     }
@@ -785,7 +815,7 @@ function PF2e_createRollEmbed(message) {
     message.flags['pf2e-target-damage'].targets.forEach(target => {
       const curScene = game.scenes.find(scene => scene.id === message.speaker.scene);
       const curToken = curScene.tokens.get(target.id);
-      if (game.modules.get("anonymous").active) {
+      if (game.modules.get("anonymous")?.active) {
         if (!anon.playersSeeName(curToken.actor)) {
           desc = desc + "`" + anon.getName(curToken.actor) + "` ";
         }
@@ -804,7 +834,7 @@ function PF2e_createRollEmbed(message) {
       targetTokenId = message.flags.pf2e.context.target.token.split(".")[3];
       targetToken = game.scenes.find(scene => scene.id === message.speaker.scene).tokens.get(targetTokenId);
       if (targetToken) {
-        if (game.modules.get("anonymous").active) {
+        if (game.modules.get("anonymous")?.active) {
           if (!anon.playersSeeName(targetToken.targetToken.actor)) {
             desc = desc + "`" + anon.getName(targetToken.actor) + "` ";
           }
@@ -932,9 +962,11 @@ function PF2e_replaceDamageFormat(damagestring) {
 function PF2e_parseTraits(message) {
   let displayTraits = true;
   //check if anonymous allows traits to be displayed
-  if (game.modules.get("anonymous").active) {
-    if (game.settings.get("anonymous", "pf2e.traits") !== "never") {
-      displayTraits = false;
+  if (game.modules.get("anonymous")?.active) {
+    if (game.settings.get("anonymous", "pf2e.traits")) {
+      if (game.settings.get("anonymous", "pf2e.traits") !== "never") {
+        displayTraits = false;
+      }
     }
   }
   let traits = "";
