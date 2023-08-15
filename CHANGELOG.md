@@ -1,6 +1,8 @@
 # 1.0.3
 
-- Changes to chatcard parsing. Descriptions will only be displayed on Discord when the chat card's source is from a player character.
+- Changes to chatcard parsing. Descriptions will only be displayed on Discord when the chatcard's source is from a player character.
+- Now supports Anonymous much better and hides footers when the setting is enabled.
+- (PF2e) Supports hiding traits much better according to Anonymous settings.
 - Minor bug fixes.
 
 # 1.0.2
