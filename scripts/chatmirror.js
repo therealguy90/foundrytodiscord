@@ -122,7 +122,6 @@ Hooks.on("ready", function () {
 });
 
 Hooks.on('createChatMessage', async (msg, userId) => {
-  console.log(msg);
   hookQueue.push({ msg, userId });
   if (!isProcessing) {
     isProcessing = true;
@@ -750,7 +749,6 @@ function polyglotize(message, playerlanguages = []) {
 }
 
 function isOwnedByPlayer(actor) {
-  console.log(actor);
   let isOwned = false;
   let playerIDs = game.users.filter((user) => user.isGM === false).map((player => player.id));
   if (actor.ownership.default === 3) {
