@@ -1,3 +1,8 @@
+# 1.1.1
+
+- Fix an issue where the invite URL not having a "/" at the end not allowing the messages to be posted.
+- Minor bug fix.
+
 # 1.1.0
 
 - **NEW FEATURE:** Server status message! This feature detects when your world is ONLINE and edits a message on your Discord channel. To set it to OFFLINE, type "ftd serveroff" in Foundry as the GM. Setup instructions are included on the configuration options for Foundry to Discord. This will only work if you've set up your Webhook URL, obviously.
