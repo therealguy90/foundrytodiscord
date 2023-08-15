@@ -106,6 +106,7 @@ Hooks.on("ready", function () {
 });
 
 Hooks.on('createChatMessage', async (msg, userId) => {
+  console.log(msg);
   hookQueue.push({ msg, userId });
   if (!isProcessing) {
     isProcessing = true;
@@ -202,7 +203,7 @@ function processMessage(msg, userId) {
   //Fix formatting before sending
   if (hookEmbed != [] && hookEmbed.length > 0) {
     hookEmbed[0].description = reformatMessage(hookEmbed[0].description);
-    constructedMessage = (msg.flavor && msg.flavor.length > 0 && hookEmbed[0].title !== msg.flavor) ? msg.flavor : "";
+    constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === hookEmbed.description) ? "" : msg.flavor;
     //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
     //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
     if (game.modules.get("anonymous").active) {
@@ -317,6 +318,11 @@ function parseHTMLText(htmlString) {
   htmldoc.querySelectorAll('img').forEach(img => img.remove());
   reformattedText = htmldoc.innerHTML;
 
+  htmldoc.innerHTML = reformattedText;
+  htmldoc.querySelectorAll('.inline-roll').forEach(inlineRoll => inlineRoll.replaceWith(":game_die:`" + inlineRoll.textContent + "`"));
+  reformattedText = htmldoc.innerHTML;
+
+
   //status effect cards:
   let statuseffectlist = htmldoc.querySelectorAll('.statuseffect-rules');
 
@@ -335,10 +341,15 @@ function parseHTMLText(htmlString) {
     reformattedText = tempdivs.innerHTML;
   }
 
-  //format header tags to bold instead
+  //format header and strong tags to bold instead
   regex = /<h[1-6][^>]*>(.*?)<\/h[1-6]>/g;
   reformattedText = reformattedText.replace(regex, '**$1**');
+  regex = /<strong>(.*?)<\/strong>/g
+  reformattedText = reformattedText.replace(regex, '**$1**');
+  //format hr to horizontal lines
+  reformattedText = reformattedText.replace(/<hr[^>]*>/g, "-----------------------");
 
+  //format em tags to italic
   regex = /<em[^>]*>(.*?)<\/em>/g;
   reformattedText = reformattedText.replace(regex, '*$1*');
 
@@ -490,17 +501,17 @@ function createGenericRollEmbed(message) {
     title = message.flavor;
     if (propertyExists(message, "user.targets") && message.user.targets.ids.length > 0) {
       let targetTokenIDs = message.user.targets.ids;
-      if(targetTokenIDs.length == 1){
+      if (targetTokenIDs.length == 1) {
         desc = desc + "**:dart:Target: **";
       }
-      else{
+      else {
         desc = desc + "**:dart:Targets: **";
       }
       let curScene = game.scenes.get(message.speaker.scene);
-      for(let i = 0; i < targetTokenIDs.length && curScene; i++){
+      for (let i = 0; i < targetTokenIDs.length && curScene; i++) {
         let curTarget = curScene.tokens.get(targetTokenIDs[i]);
         if (game.modules.get("anonymous").active) {
-          if(curTarget.actor && !anon.playersSeeName(curTarget.actor)){
+          if (curTarget.actor && !anon.playersSeeName(curTarget.actor)) {
             desc = desc + "`" + anon.getName(curTarget.actor) + "` ";
           }
           else {
@@ -512,7 +523,7 @@ function createGenericRollEmbed(message) {
         }
       }
     }
-    if(desc !== ""){
+    if (desc !== "") {
       desc = desc + "\n";
     }
     for (let i = 0; i < message.rolls.length; i++) {
@@ -605,91 +616,85 @@ function isCard(htmlString) {
 }
 
 function createCardEmbed(message) {
-  const card = message.content;
+  let card = message.content;
   const parser = new DOMParser();
+  //replace horizontal line tags with paragraphs so they can be parsed later
+  card = card.replace(/<hr[^>]*>/g, "<p>-----------------------</p>");
   let doc = parser.parseFromString(card, "text/html");
   // Find the <h3> element and extract its text content, since h3 works for most systems
   const h3Element = doc.querySelector("h3");
+
   let title = h3Element.textContent.trim();
   let desc = "";
-
-  //PF2e has a trait tagging system. This is what this is for. Disregard for other systems.
-  let tags;
-  let tagsSection = doc.querySelector(".item-properties.tags");
-  try {
-    tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
-  }
-  catch (error) {
-    try {
-      tagsSection = doc.querySelector('.tags');
-      tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
-    }
-    catch (error) {
-
-    }
+  let speakerActor = undefined;
+  if (propertyExists(message, "speaker.actor")) {
+    speakerActor = game.actors.get(message.speaker.actor);
   }
 
-  let traits = "";
-  if (propertyExists(tags, "length")) {
-    for (let i = 0; i < tags.length; i++) {
-      traits = traits + "[" + tags[i] + "] ";
+  // PF2e has a trait tagging system. This is what this is for. Disregard for other systems.
+  desc = PF2e_parseTraits(message);
+
+  //parse card description if source is from a character
+  //this is to limit metagame information and is recommended for most systems.
+  //adding a setting to enable this would be an option, but is not a priority.
+  let descVisible = true;
+  if (speakerActor) {
+    if (speakerActor.type !== "character") {
+      descVisible = false;
     }
   }
-
-  if (traits.trim() !== "") {
-    desc = desc + "`" + traits.trim() + "`\n";
+  if (descVisible) {
+    let descList = doc.querySelectorAll(".card-content > p");
+    descList.forEach(function (paragraph) {
+      let text = paragraph.innerHTML
+        .replace(/<strong>(.*?)<\/strong>/g, '**$1**')  // Replace <strong> tags with markdown bold
+        .trim();  // Trim any leading/trailing whitespace
+      desc += text + "\n\n";
+    });
   }
-  //parse spell description
-  let descList = doc.querySelectorAll(".card-content > p");
-  descList.forEach(function (paragraph) {
-    let text = paragraph.innerHTML
-      .replace(/<strong>(.*?)<\/strong>/g, '**$1**')  // Replace <strong> tags with markdown bold
-      .trim();  // Trim any leading/trailing whitespace
-
-    desc += text + "\n\n";
-  });
-
-  const heightenedTags = doc.querySelectorAll("section.card-content p strong");
-  const reformattedTexts = Array.from(heightenedTags).map((tag) => {
-    const nextSibling = tag.nextSibling;
-    return `**${tag.textContent.trim()}** ${nextSibling.textContent.trim()}`;
-  });
-
-  const reformattedText = reformattedTexts.join("\n");
-  if (reformattedText !== "") {
-    desc = desc + "----------------\n\n"
-    desc = desc + reformattedText;
-  }
+  console.log(desc);
 
   embed = [{ title: title, description: desc, footer: { text: getCardFooter(card) } }];
   return embed;
 }
 
 function getCardFooter(card) {
-  // Create a temporary div element to parse the HTML string
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = card;
-
-  // Select the footer element
-  const footerElement = tempDiv.querySelector('.card-footer');
-
-  if (!footerElement) {
-    return ''; // Return an empty string if no footer element is found
+  let displayFooter = true;
+  if (game.modules.get("anonymous").active) {
+    //true = hide, false = show
+    if (game.settings.get("anonymous", "footer")) {
+      displayFooter = false;
+    }
   }
+  if (displayFooter) {
+    // Create a temporary div element to parse the HTML string
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = card;
 
-  // Extract all <span> elements within the footer
-  const spanElements = footerElement.querySelectorAll('span');
+    // Select the footer element
+    const footerElement = tempDiv.querySelector('.card-footer');
 
-  // Create an array to store the text content of <span> elements
-  const spanTexts = [];
-  spanElements.forEach(span => {
-    spanTexts.push(span.textContent);
-  });
+    if (!footerElement) {
+      return ''; // Return an empty string if no footer element is found
+    }
 
-  // Create the "footer" string by joining the span texts with spaces
-  const footer = spanTexts.join(' | ');
+    // Extract all <span> elements within the footer
+    const spanElements = footerElement.querySelectorAll('span');
 
-  return footer;
+    // Create an array to store the text content of <span> elements
+    const spanTexts = [];
+    spanElements.forEach(span => {
+      spanTexts.push(span.textContent);
+    });
+
+    // Create the "footer" string by joining the span texts with spaces
+    const footer = spanTexts.join(' | ');
+
+    return footer;
+  }
+  else{
+    return "";
+  }
 }
 
 function polyglotize(message, playerlanguages = []) {
@@ -910,6 +915,47 @@ function PF2e_replaceDamageFormat(damagestring) {
       const [dice, desc] = part.match(/(\d+d\d+)\[([^\]]+)\]/).slice(1);
       return `${dice} ${desc}`;
     }).join(' + ');
-    return `:game_die: ${formattedDice}`;
+    return `\`:game_die: ${formattedDice}\` `;
   });
+}
+
+function PF2e_parseTraits(message) {
+  let displayTraits = true;
+  //check if anonymous allows traits to be displayed
+  if (game.modules.get("anonymous").active) {
+    if (game.settings.get("anonymous", "pf2e.traits") !== "never") {
+      displayTraits = false;
+    }
+  }
+  let traits = "";
+  if (displayTraits) {
+    const card = message.content;
+    const parser = new DOMParser();
+    let doc = parser.parseFromString(card, "text/html");
+    let tags;
+    let tagsSection = doc.querySelector(".item-properties.tags");
+    try {
+      tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
+    }
+    catch (error) {
+      try {
+        tagsSection = doc.querySelector('.tags');
+        tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
+      }
+      catch (error) {
+      }
+    }
+    if (propertyExists(tags, "length")) {
+
+      for (let i = 0; i < tags.length; i++) {
+        traits = traits + "[" + tags[i] + "] ";
+      }
+    }
+  }
+  if (traits.trim() !== "") {
+    return "`" + traits.trim() + "`\n";
+  }
+  else {
+    return "";
+  }
 }
