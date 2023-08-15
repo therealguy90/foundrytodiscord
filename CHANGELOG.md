@@ -1,3 +1,8 @@
+# 1.0.3
+
+- Changes to chatcard parsing. Descriptions will only be displayed on Discord when the chat card's source is from a player character.
+- Minor bug fixes.
+
 # 1.0.2
 
 - The module will now attempt to parse targets from a user when rolling a check with message.flavor. This means that stuff like attack rolls, damage rolls, will now have targets parsed on to the embed.
