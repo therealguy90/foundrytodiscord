@@ -66,7 +66,7 @@ This is the ID needed for the Main GM ID field.
 **Option B:**
 1. Install and enable the module, and provide a webhook.
 
-2. Type **dc getID** into chat as the user you would like to get the ID of.
+2. Type **ftd getID** into chat as the user you would like to get the ID of.
 
 3. Check your discord chat channel as defined by your webhook.
 
