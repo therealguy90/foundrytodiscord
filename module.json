@@ -1,13 +1,13 @@
 {
   "title": "Foundry to Discord",
   "description": "Sends Foundry chat to a Discord webhook! Supports PF2e.",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "scripts": [
     "scripts/chatmirror.js"
   ],
   "url": "https://github.com/therealguy90/FoundryToDiscord",
-  "manifest": "https://github.com/therealguy90/foundrytodiscord/releases/download/1.0.2/module.json",
-  "download": "https://github.com/therealguy90/foundrytodiscord/releases/download/1.0.2/foundrytodiscord.zip",
+  "manifest": "https://github.com/therealguy90/foundrytodiscord/releases/download/1.0.3/module.json",
+  "download": "https://github.com/therealguy90/foundrytodiscord/releases/download/1.0.3/foundrytodiscord.zip",
   "id": "foundrytodiscord",
   "authors": [
     {
@@ -24,23 +24,23 @@
       {
         "id": "polyglot",
         "type": "module",
-        "manifest": "https://github.com/League-of-Foundry-Developers/fvtt-module-polyglot/releases/latest/download/module.json",
+        "manifest": "https://github.com/mclemente/fvtt-module-polyglot/releases/download/2.1.1/module.json",
         "compatibility": {
-          "verified": "2.0.3"
+          "verified": "2.1.1"
         }
       },
       {
         "id": "pf2e-target-damage",
         "type": "module",
-        "manifest": "https://github.com/MrVauxs/PF2e-Target-Damage/releases/download/2.4.13/module.json",
+        "manifest": "https://github.com/MrVauxs/PF2e-Target-Damage/releases/download/2.4.15/module.json",
         "compatibility": {
-          "verified": "2.4.14"
+          "verified": "2.4.15"
         }
       },
       {
         "id": "anonymous",
         "type": "module",
-        "manifest": "https://github.com/reonZ/anonymous/releases/download/1.4.0/module.json",
+        "manifest": "https://github.com/reonZ/anonymous/releases/download/1.4.2/module.json",
         "compatibility": {
           "verified": "1.4.2"
         }
