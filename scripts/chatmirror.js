@@ -10,6 +10,35 @@ Hooks.on("init", function () {
     default: "",
     type: String
   });
+  game.settings.register('foundrytodiscord', 'serverStatusMessage', {
+    name: "Enable Server Status Message",
+    hint: "Toggle this on to enable your world to detect when your world is online. When the server is restarted, given that you have set up your Webhook link and invite URL, it will send instructions on how to set this up. Come back to this setting page after this setting has been turned on.",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    requiresReload: true,
+    default: false
+  });
+  if (game.settings.get('foundrytodiscord', 'serverStatusMessage')) {
+    game.settings.register('foundrytodiscord', 'messageID', {
+      name: "Server Status Message ID",
+      hint: "The message ID of the message that will be edited when the module detects that your world is online or offline. Follow the instructions sent to the channel where you have set up your webhook. Leaving this blank will send a new instruction message to your webhook.",
+      scope: "world",
+      config: true,
+      type: String,
+      requiresReload: true,
+      default: ""
+    });
+    game.settings.register('foundrytodiscord', 'showInvite', {
+      name: "Show Invite Link",
+      hint: "The server status message will include your world's public invite link when this is turned on.",
+      scope: "world",
+      config: true,
+      type: Boolean,
+      requiresReload: true,
+      default: true
+    });
+  }
   game.settings.register('foundrytodiscord', 'ignoreWhispers', {
     name: "Ignore Whispers & Private Rolls",
     hint: "If this is on, then it will ignore whispers and private rolls. If this is off, it will send them to discord just like any other message.",
@@ -32,6 +61,7 @@ Hooks.on("init", function () {
     scope: "world",
     config: true,
     default: "http://",
+    requiresReload: true,
     type: String
   });
   game.settings.register('foundrytodiscord', 'webHookURL', {
@@ -40,6 +70,7 @@ Hooks.on("init", function () {
     scope: "world",
     config: true,
     default: "",
+    requiresReload: true,
     type: String
   });
   game.settings.register('foundrytodiscord', 'rollWebHookURL', {
@@ -48,6 +79,7 @@ Hooks.on("init", function () {
     scope: "world",
     config: true,
     default: "",
+    requiresReload: true,
     type: String
   });
   if (game.modules.get("polyglot")?.active) {
@@ -77,16 +109,68 @@ let rateLimitDelay;
 let request;
 
 Hooks.on("ready", function () {
+  console.log(game.user);
   request = new XMLHttpRequest();
   rateLimitDelay = 0;
-  request.onreadystatechange = function () {
-    if (this.readyState == 4) {
-      if (Number(this.getResponseHeader("x-ratelimit-remaining")) == 1 || Number(this.getResponseHeader("x-ratelimit-remaining")) == 0) {
-        console.log("foundrytodiscord | Rate Limit reached! Next request in " + (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) + " seconds.");
-        rateLimitDelay = (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) * 1000;
+  if (game.user.isGM && game.settings.get('foundrytodiscord', 'serverStatusMessage')) {
+    if (game.settings.get('foundrytodiscord', 'messageID') && game.settings.get('foundrytodiscord', 'messageID') !== "") {
+      const hook = game.settings.get("foundrytodiscord", "webHookURL") + "/messages/" + game.settings.get('foundrytodiscord', 'messageID');
+      request.open('PATCH', hook);
+      request.setRequestHeader('Content-Type', 'application/json');
+      request.onreadystatechange = function () {
+        if (request.readyState === 4) {
+          if (request.status === 200) {
+            console.log('foundrytodiscord | Server state set to ONLINE');
+          } else {
+            console.error('foundrytodiscord | Error editing embed:', request.status, request.responseText);
+          }
+          request.onreadystatechange = function () {
+            if (this.readyState == 4) {
+              if (Number(this.getResponseHeader("x-ratelimit-remaining")) == 1 || Number(this.getResponseHeader("x-ratelimit-remaining")) == 0) {
+                console.log("foundrytodiscord | Rate Limit reached! Next request in " + (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) + " seconds.");
+                rateLimitDelay = (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) * 1000;
+              }
+            }
+          };
+        }
+      };
+
+      const params = {
+        embeds: [{
+          title: "Server Status: " + game.world.name,
+          description: "**ONLINE**\n" + (game.settings.get('foundrytodiscord', 'showInvite') ? "**Invite Link: **" + game.settings.get("foundrytodiscord", "inviteURL") : ""),
+          footer: {
+            text: "Type \"ftd serveroff\" in Foundry to set your server status to OFFLINE. This will persist until the next server restart.\n\n" + (game.modules.get("foundrytodiscord").id + " v" + game.modules.get("foundrytodiscord").version),
+          },
+          color: 65280
+        }]
+      }
+
+      console.log("foundrytodiscord | Attempting to edit server status...");
+        request.send(JSON.stringify(params));
+    }
+    else {
+      const hook = game.settings.get("foundrytodiscord", "webHookURL");
+      if (hook && hook !== "") {
+        request.open('POST', hook);
+        request.setRequestHeader('Content-type', 'application/json');
+        let desc = "**IMPORTANT**: A limitation of this module is that it can *only* detect your world as online if a Gamemaster account is online.\n\n" +
+          "**Step 1:** Pin this message so that everyone can find it easily on your channel.\n" +
+          "**Step 2**: Right click on this message and click on **\"Copy Message ID\"**. Your Discord app must have **User Settings > Advanced > Developer Mode** turned **ON** for this to appear.\n" +
+          "**Step 3**: Go to **Configure Settings > Foundry to Discord > Server Status Message ID** and **paste** the copied ID from Step 2. Afterwards, save your settings, and it should prompt your world to restart.\n" +
+          "**Step 4**: Look at this message again after your world restarts. It should appear as the correct server status message.";
+        let hookEmbed = [{ title: "Server Status Setup Instructions", description: desc, footer: { text: (game.modules.get("foundrytodiscord").id + " v" + game.modules.get("foundrytodiscord").version) } }];
+        const params = {
+          username: game.world.id,
+          avatar_url: game.settings.get("foundrytodiscord", "inviteURL") + "modules/foundrytodiscord/src/defaultavatar.png",
+          content: "",
+          embeds: hookEmbed
+        };
+        console.log("foundrytodiscord | Attempting to send message to webhook...");
+        request.send(JSON.stringify(params));
       }
     }
-  };
+  }
   switch (systemName) {
     case "pf2e":
       damageEmoji = {
@@ -159,8 +243,49 @@ function processMessage(msg, userId) {
   let constructedMessage = '';
   let hookEmbed = [];
 
-  if (msg.content == "dc getID") {
+  if (msg.content == "ftd getID") {
     sendMessage(msg, "UserId: " + userId, hookEmbed);
+    return;
+  }
+  if(msg.content == "ftd serveroff"){
+    if (game.user.isGM && game.settings.get('foundrytodiscord', 'serverStatusMessage')) {
+      if (game.settings.get('foundrytodiscord', 'messageID') && game.settings.get('foundrytodiscord', 'messageID') !== "") {
+        const hook = game.settings.get("foundrytodiscord", "webHookURL") + "/messages/" + game.settings.get('foundrytodiscord', 'messageID');
+        request.open('PATCH', hook);
+        request.setRequestHeader('Content-Type', 'application/json');
+        request.onreadystatechange = function () {
+          if (request.readyState === 4) {
+            if (request.status === 200) {
+              console.log('foundrytodiscord | Server state set to OFFLINE');
+            } else {
+              console.error('foundrytodiscord | Error editing embed:', request.status, request.responseText);
+            }
+            request.onreadystatechange = function () {
+              if (this.readyState == 4) {
+                if (Number(this.getResponseHeader("x-ratelimit-remaining")) == 1 || Number(this.getResponseHeader("x-ratelimit-remaining")) == 0) {
+                  console.log("foundrytodiscord | Rate Limit reached! Next request in " + (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) + " seconds.");
+                  rateLimitDelay = (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) * 1000;
+                }
+              }
+            };
+          }
+        };
+  
+        const params = {
+          embeds: [{
+            title: "Server Status: " + game.world.id,
+            description: "**OFFLINE**",
+            footer: {
+              text: (game.modules.get("foundrytodiscord").id + " v" + game.modules.get("foundrytodiscord").version)
+            },
+            color: 16711680
+          }]
+        }
+  
+        console.log("foundrytodiscord | Attempting to edit server status...");
+          request.send(JSON.stringify(params));
+      }
+    }
     return;
   }
 
@@ -487,10 +612,20 @@ function generateDiscordAvatar(message) {
 }
 
 function generateimglink(img) {
+  const supportedFormats = ['jpg', 'jpeg', 'png', 'webp'];
+  let imgUrl;
   if (img.includes("http")) {
-    return img;
+    imgUrl = img;
   } else {
-    return (game.settings.get("foundrytodiscord", "inviteURL") + img);
+    imgUrl = (game.settings.get("foundrytodiscord", "inviteURL") + img);
+  }
+  const urlParts = imgUrl.split('.');
+  const fileExtension = urlParts[urlParts.length - 1].toLowerCase();
+  if (supportedFormats.includes(fileExtension)) {
+    return imgUrl;
+  }
+  else {
+    return game.settings.get("foundrytodiscord", "inviteURL") + "modules/foundrytodiscord/src/defaultavatar.png";
   }
 }
 
