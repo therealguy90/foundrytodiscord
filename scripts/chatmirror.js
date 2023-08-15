@@ -43,8 +43,15 @@ Hooks.on("init", function () {
     type: String
   });
   if (game.modules.get("polyglot").active) {
+    game.settings.register('foundrytodiscord', "commonLanguages", {
+      name: "(Polyglot) Override common languages: ",
+      hint: "A list of languages that are \"common\" to your world. By default, this is \"common\", but this can be replaced by a list of language ids, separated by commas. Homebrew languages might use a different language id, such as 'hb_english'",
+      config: true,
+      default: "common",
+      type: String
+    });
     game.settings.register('foundrytodiscord', 'includeOnly', {
-      name: "Understand only these languages:",
+      name: "(Polyglot) Understand only these languages:",
       hint: "A list of languages that you wish to ONLY be understood to be sent in Discord, separated by commas. Leave blank for normal Polyglot behavior.",
       scope: "world",
       config: true,
@@ -106,6 +113,7 @@ Hooks.on("ready", function () {
 });
 
 Hooks.on('createChatMessage', async (msg, userId) => {
+  console.log(msg);
   hookQueue.push({ msg, userId });
   if (!isProcessing) {
     isProcessing = true;
@@ -153,7 +161,7 @@ function processMessage(msg, userId) {
     * for PF2e and DnD5e, this would be actor.system.traits.languages.value
     */
     if (game.modules.get("polyglot").active && propertyExists(msg, "flags.polyglot.language")) {
-      if (msg.flags.polyglot.language != "common") {
+      if (!game.settings.get("foundrytodiscord", "commonLanguages").toLowerCase().includes(msg.flags.polyglot.language)) {
         if (game.settings.get("foundrytodiscord", "includeOnly") == "") {
           constructedMessage = polyglotize(msg);
         }
@@ -259,8 +267,8 @@ function sendToWebhook(message, msgText, hookEmbed, hook, imgurl) {
           if (propertyExists(speakerToken, "actor")) {
             speakerActor = speakerToken.actor
           }
-          else { // TODO: failsafe, in case the actor doesn't exist, i.e. through a broken module or a module imported from another system
-
+          else {
+            console.log("foundrytodiscord | Token " + speakerToken.id + " has no actor assigned to it.");
           }
         }
       }
@@ -337,6 +345,10 @@ function parseHTMLText(htmlString) {
     if (targetdiv) {
       targetdiv.innerHTML = statfx;
     }
+    const ulElements = tempdivs.querySelectorAll('.dice-total.statuseffect-message ul');
+    ulElements.forEach(ulElement => {
+      ulElement.parentNode.removeChild(ulElement);
+    });
     reformattedText = tempdivs.innerHTML;
   }
 
@@ -420,7 +432,7 @@ function reformatMessage(text) {
     regex = /@Check\[[^\]]+\]{([^}]+)}/g;
     reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
 
-    //replace checks without name labels, different arguments on every system for @Check, so pf2e gets a different one
+    //replace checks without name labels, different arguments on every system for @Check(if it exists), so pf2e gets a different one
     regex = /@Check\[(.*?)\]/g;
     switch (systemName) {
       case "pf2e":
