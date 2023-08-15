@@ -1,3 +1,8 @@
+# 1.1.0
+
+- **NEW FEATURE:** Server status message! This feature detects when your world is ONLINE and edits a message on your Discord channel. To set it to OFFLINE, type "ftd serveroff" in Foundry as the GM. Setup instructions are included on the configuration options for Foundry to Discord. This will only work if you've set up your Webhook URL, obviously.
+- This module will now use the default Foundry icon when an avatar doesn't exist or isn't supported by Discord. Supported formats for Discord avatars are as follows: jpg/jpeg, png, webp.
+
 # 1.0.4
 
 - Adds a new option to override common languages for Polyglot.
