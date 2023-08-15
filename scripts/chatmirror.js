@@ -106,7 +106,6 @@ Hooks.on("ready", function () {
 });
 
 Hooks.on('createChatMessage', async (msg, userId) => {
-  console.log(msg);
   hookQueue.push({ msg, userId });
   if (!isProcessing) {
     isProcessing = true;
@@ -652,7 +651,6 @@ function createCardEmbed(message) {
       desc += text + "\n\n";
     });
   }
-  console.log(desc);
 
   embed = [{ title: title, description: desc, footer: { text: getCardFooter(card) } }];
   return embed;
