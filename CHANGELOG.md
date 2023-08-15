@@ -3,7 +3,7 @@
 - Adds a new option to override common languages for Polyglot.
 - Module now uses actor ownership to send chat card descriptions when anonymous is active.
 - Adds new option to disable sending of chat cards.
-- Minor bug fixes.
+- Minor bug fixes and refactorings.
 
 # 1.0.3
 
