@@ -211,6 +211,9 @@ Hooks.on("ready", function () {
     default:
       break;
   }
+  if(game.settings.get('foundrytodiscord', 'inviteURL') !== "" && !game.settings.get('foundrytodiscord', 'inviteURL').endsWith("/")){
+    game.settings.set('foundrytodiscord', 'inviteURL', game.settings.get('foundrytodiscord', 'inviteURL') + "/");
+  }
 });
 
 Hooks.on('createChatMessage', async (msg, userId) => {
@@ -625,7 +628,7 @@ function generateimglink(img) {
   if (img.includes("http")) {
     imgUrl = img;
   } else {
-    imgUrl = (game.settings.get("foundrytodiscord", "inviteURL") + (game.settings.get("foundrytodiscord", "inviteURL").endsWith('/') ? "" : "/") + img);
+    imgUrl = (game.settings.get("foundrytodiscord", "inviteURL") + img);
   }
   const urlParts = imgUrl.split('.');
   const fileExtension = urlParts[urlParts.length - 1].toLowerCase();
@@ -633,7 +636,7 @@ function generateimglink(img) {
     return imgUrl;
   }
   else {
-    return game.settings.get("foundrytodiscord", "inviteURL") + (game.settings.get("foundrytodiscord", "inviteURL").endsWith('/') ? "" : "/") +"modules/foundrytodiscord/src/defaultavatar.png";
+    return game.settings.get("foundrytodiscord", "inviteURL") + "modules/foundrytodiscord/src/defaultavatar.png";
   }
 }
 
