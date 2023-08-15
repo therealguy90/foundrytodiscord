@@ -1,3 +1,10 @@
+# 1.0.4
+
+- Adds a new option to override common languages for Polyglot.
+- Module now uses actor ownership to send chat card descriptions when anonymous is active.
+- Adds new option to disable sending of chat cards.
+- Minor bug fixes.
+
 # 1.0.3
 
 - Changes to chatcard parsing. Descriptions will only be displayed on Discord when the chatcard's source is from a player character.
