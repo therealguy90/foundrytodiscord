@@ -112,6 +112,14 @@ Hooks.on("ready", function () {
   console.log(game.user);
   request = new XMLHttpRequest();
   rateLimitDelay = 0;
+  request.onreadystatechange = function () {
+    if (this.readyState == 4) {
+      if (Number(this.getResponseHeader("x-ratelimit-remaining")) == 1 || Number(this.getResponseHeader("x-ratelimit-remaining")) == 0) {
+        console.log("foundrytodiscord | Rate Limit reached! Next request in " + (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) + " seconds.");
+        rateLimitDelay = (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) * 1000;
+      }
+    }
+  };
   if (game.user.isGM && game.settings.get('foundrytodiscord', 'serverStatusMessage')) {
     if (game.settings.get('foundrytodiscord', 'messageID') && game.settings.get('foundrytodiscord', 'messageID') !== "") {
       const hook = game.settings.get("foundrytodiscord", "webHookURL") + "/messages/" + game.settings.get('foundrytodiscord', 'messageID');
@@ -617,7 +625,7 @@ function generateimglink(img) {
   if (img.includes("http")) {
     imgUrl = img;
   } else {
-    imgUrl = (game.settings.get("foundrytodiscord", "inviteURL") + img);
+    imgUrl = (game.settings.get("foundrytodiscord", "inviteURL") + (game.settings.get("foundrytodiscord", "inviteURL").endsWith('/') ? "" : "/") + img);
   }
   const urlParts = imgUrl.split('.');
   const fileExtension = urlParts[urlParts.length - 1].toLowerCase();
@@ -625,7 +633,7 @@ function generateimglink(img) {
     return imgUrl;
   }
   else {
-    return game.settings.get("foundrytodiscord", "inviteURL") + "modules/foundrytodiscord/src/defaultavatar.png";
+    return game.settings.get("foundrytodiscord", "inviteURL") + (game.settings.get("foundrytodiscord", "inviteURL").endsWith('/') ? "" : "/") +"modules/foundrytodiscord/src/defaultavatar.png";
   }
 }
 
