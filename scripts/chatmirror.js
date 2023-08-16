@@ -4,7 +4,7 @@ Hooks.on("init", function () {
   systemName = game.system.id;
   game.settings.register('foundrytodiscord', 'mainUserId', {
     name: "Main GM ID",
-    hint: "If you plan on having two GMs in one session, fill this in with the main DM's ID to avoid duplicated messages. Just type 'dc getID' in chat to have your ID sent to your discord channel.",
+    hint: "If you plan on having two GMs in one session, fill this in with the main DM's ID to avoid duplicated messages. Just type 'ftd getID' in chat to have your ID sent to your discord channel.",
     scope: "world",
     config: true,
     default: "",
@@ -216,6 +216,18 @@ Hooks.on("ready", function () {
 });
 
 Hooks.on('createChatMessage', async (msg, userId) => {
+  if (!game.user.isGM || (game.settings.get("foundrytodiscord", "ignoreWhispers") && msg.whisper.length > 0)) {
+    return;
+  }
+  if (game.userId != game.settings.get("foundrytodiscord", "mainUserId") && game.settings.get("foundrytodiscord", "mainUserId") != "") {
+    return;
+  }
+  if (msg.isRoll && game.settings.get("foundrytodiscord", "rollWebHookURL") == "") {
+    return;
+  }
+  if (!msg.isRoll && game.settings.get("foundrytodiscord", "webHookURL") == "") {
+    return;
+  }
   hookQueue.push({ msg, userId });
   if (!isProcessing) {
     isProcessing = true;
@@ -238,62 +250,52 @@ async function processHookQueue() {
 }
 
 function processMessage(msg, userId) {
-  if (!game.user.isGM || (game.settings.get("foundrytodiscord", "ignoreWhispers") && msg.whisper.length > 0)) {
-    return;
-  }
-  if (game.userId != game.settings.get("foundrytodiscord", "mainUserId") && game.settings.get("foundrytodiscord", "mainUserId") != "") {
-    return;
-  }
-  if (msg.isRoll && game.settings.get("foundrytodiscord", "rollWebHookURL") == "") {
-    return;
-  }
-  if (!msg.isRoll && game.settings.get("foundrytodiscord", "webHookURL") == "") {
-    return;
-  }
   let constructedMessage = '';
   let hookEmbed = [];
 
-  if (msg.content == "ftd getID") {
+  if (msg.content == "ftd getID" && msg.user.isGM) {
     sendMessage(msg, "UserId: " + userId, hookEmbed);
     return;
   }
   if (msg.content == "ftd serveroff") {
-    if (game.user.isGM && game.settings.get('foundrytodiscord', 'serverStatusMessage')) {
-      if (game.settings.get('foundrytodiscord', 'messageID') && game.settings.get('foundrytodiscord', 'messageID') !== "") {
-        const hook = game.settings.get("foundrytodiscord", "webHookURL") + "/messages/" + game.settings.get('foundrytodiscord', 'messageID');
-        request.open('PATCH', hook);
-        request.setRequestHeader('Content-Type', 'application/json');
-        request.onreadystatechange = function () {
-          if (request.readyState === 4) {
-            if (request.status === 200) {
-              console.log('foundrytodiscord | Server state set to OFFLINE');
-            } else {
-              console.error('foundrytodiscord | Error editing embed:', request.status, request.responseText);
-            }
-            request.onreadystatechange = function () {
-              if (this.readyState == 4) {
-                if (Number(this.getResponseHeader("x-ratelimit-remaining")) == 1 || Number(this.getResponseHeader("x-ratelimit-remaining")) == 0) {
-                  console.log("foundrytodiscord | Rate Limit reached! Next request in " + (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) + " seconds.");
-                  rateLimitDelay = (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) * 1000;
-                }
+    if (msg.user.isGM) {
+      if (game.user.isGM && game.settings.get('foundrytodiscord', 'serverStatusMessage')) {
+        if (game.settings.get('foundrytodiscord', 'messageID') && game.settings.get('foundrytodiscord', 'messageID') !== "") {
+          const hook = game.settings.get("foundrytodiscord", "webHookURL") + "/messages/" + game.settings.get('foundrytodiscord', 'messageID');
+          request.open('PATCH', hook);
+          request.setRequestHeader('Content-Type', 'application/json');
+          request.onreadystatechange = function () {
+            if (request.readyState === 4) {
+              if (request.status === 200) {
+                console.log('foundrytodiscord | Server state set to OFFLINE');
+              } else {
+                console.error('foundrytodiscord | Error editing embed:', request.status, request.responseText);
               }
-            };
+              request.onreadystatechange = function () {
+                if (this.readyState == 4) {
+                  if (Number(this.getResponseHeader("x-ratelimit-remaining")) == 1 || Number(this.getResponseHeader("x-ratelimit-remaining")) == 0) {
+                    console.log("foundrytodiscord | Rate Limit reached! Next request in " + (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) + " seconds.");
+                    rateLimitDelay = (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) * 1000;
+                  }
+                }
+              };
+            }
+          };
+
+          const params = {
+            embeds: [{
+              title: "Server Status: " + game.world.id,
+              description: "**OFFLINE**",
+              footer: {
+                text: (game.modules.get("foundrytodiscord").id + " v" + game.modules.get("foundrytodiscord").version)
+              },
+              color: 16711680
+            }]
           }
-        };
 
-        const params = {
-          embeds: [{
-            title: "Server Status: " + game.world.id,
-            description: "**OFFLINE**",
-            footer: {
-              text: (game.modules.get("foundrytodiscord").id + " v" + game.modules.get("foundrytodiscord").version)
-            },
-            color: 16711680
-          }]
+          console.log("foundrytodiscord | Attempting to edit server status...");
+          request.send(JSON.stringify(params));
         }
-
-        console.log("foundrytodiscord | Attempting to edit server status...");
-        request.send(JSON.stringify(params));
       }
     }
     return;
@@ -407,7 +409,7 @@ function sendToWebhook(message, msgText, hookEmbed, hook, imgurl) {
     //First priority: Use speaker token name and check if actor's name is visible through anonymous
     if (propertyExists(message, "speaker.token")) {
       if (message.speaker.token !== "") {
-        const scene = game.scenes.find(scene => scene.id === message.speaker.scene);
+        const scene = game.scenes.get(message.speaker.scene);
         if (scene) {
           const speakerToken = scene.tokens.get(message.speaker.token);
           if (propertyExists(speakerToken, "actor")) {
@@ -595,7 +597,7 @@ function reformatMessage(text) {
 function generateDiscordAvatar(message) {
   if (propertyExists(message, "speaker.scene")) {
     if (message.speaker.token) {
-      const speakerToken = game.scenes.find(scene => scene.id === message.speaker.scene).tokens.get(token => token.id === message.speaker.token);
+      const speakerToken = game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token);
       if (propertyExists(speakerToken, "texture.src")) {
         if (speakerToken.texture.src != "") {
           return generateimglink(speakerToken.texture.src);
@@ -605,7 +607,7 @@ function generateDiscordAvatar(message) {
   }
 
   if (propertyExists(message, "speaker.actor")) {
-    const speakerActor = game.actors.find(actor => actor.id === message.speaker.actor);
+    const speakerActor = game.actors.get(message.speaker.actor);
     if (speakerActor) {
       if (propertyExists(speakerActor, "prototypeToken.texture.src")) {
         return generateimglink(speakerActor.prototypeToken.texture.src);
@@ -723,7 +725,7 @@ function getNameFromItem(itempath) {
     case "Actor":
       let actorID = parts[1];
       let actor = game.actors.get(actorID);
-      let item = actor.items.find(item => item._id === itemID);
+      let item = actor.items.get(itemID);
       itemName = item ? item.name : undefined;
       break;
     case "Compendium":
@@ -956,7 +958,7 @@ function PF2e_createRollEmbed(message) {
     }
 
     message.flags['pf2e-target-damage'].targets.forEach(target => {
-      const curScene = game.scenes.find(scene => scene.id === message.speaker.scene);
+      const curScene = game.scenes.get(message.speaker.scene);
       const curToken = curScene.tokens.get(target.id);
       if (game.modules.get("anonymous")?.active) {
         if (!anon.playersSeeName(curToken.actor)) {
@@ -975,7 +977,7 @@ function PF2e_createRollEmbed(message) {
     if (propertyExists(message, "flags.pf2e.context.target.token")) {
       desc = desc + "**:dart:Target: **";
       targetTokenId = message.flags.pf2e.context.target.token.split(".")[3];
-      targetToken = game.scenes.find(scene => scene.id === message.speaker.scene).tokens.get(targetTokenId);
+      targetToken = game.scenes.get(message.speaker.scene).tokens.get(targetTokenId);
       if (targetToken) {
         if (game.modules.get("anonymous")?.active) {
           if (!anon.playersSeeName(targetToken.targetToken.actor)) {
