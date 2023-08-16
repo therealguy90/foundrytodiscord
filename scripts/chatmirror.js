@@ -109,7 +109,7 @@ let rateLimitDelay;
 let request;
 
 Hooks.on("ready", function () {
-  if(game.settings.get('foundrytodiscord', 'inviteURL') !== "" && !game.settings.get('foundrytodiscord', 'inviteURL').endsWith("/")){
+  if (game.settings.get('foundrytodiscord', 'inviteURL') !== "" && !game.settings.get('foundrytodiscord', 'inviteURL').endsWith("/")) {
     game.settings.set('foundrytodiscord', 'inviteURL', game.settings.get('foundrytodiscord', 'inviteURL') + "/");
   }
   request = new XMLHttpRequest();
@@ -157,7 +157,7 @@ Hooks.on("ready", function () {
       }
 
       console.log("foundrytodiscord | Attempting to edit server status...");
-        request.send(JSON.stringify(params));
+      request.send(JSON.stringify(params));
     }
     else {
       const hook = game.settings.get("foundrytodiscord", "webHookURL");
@@ -257,7 +257,7 @@ function processMessage(msg, userId) {
     sendMessage(msg, "UserId: " + userId, hookEmbed);
     return;
   }
-  if(msg.content == "ftd serveroff"){
+  if (msg.content == "ftd serveroff") {
     if (game.user.isGM && game.settings.get('foundrytodiscord', 'serverStatusMessage')) {
       if (game.settings.get('foundrytodiscord', 'messageID') && game.settings.get('foundrytodiscord', 'messageID') !== "") {
         const hook = game.settings.get("foundrytodiscord", "webHookURL") + "/messages/" + game.settings.get('foundrytodiscord', 'messageID');
@@ -280,7 +280,7 @@ function processMessage(msg, userId) {
             };
           }
         };
-  
+
         const params = {
           embeds: [{
             title: "Server Status: " + game.world.id,
@@ -291,9 +291,9 @@ function processMessage(msg, userId) {
             color: 16711680
           }]
         }
-  
+
         console.log("foundrytodiscord | Attempting to edit server status...");
-          request.send(JSON.stringify(params));
+        request.send(JSON.stringify(params));
       }
     }
     return;
@@ -355,7 +355,7 @@ function processMessage(msg, userId) {
   //Fix formatting before sending
   if (hookEmbed != [] && hookEmbed.length > 0) {
     hookEmbed[0].description = reformatMessage(hookEmbed[0].description);
-    constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === hookEmbed.description) ? "" : msg.flavor;
+    constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === hookEmbed[0].title) ? "" : msg.flavor;
     //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
     //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
     if (game.modules.get("anonymous")?.active) {
@@ -799,7 +799,9 @@ function createCardEmbed(message) {
   }
 
   // PF2e has a trait tagging system. This is what this is for. Disregard for other systems.
-  desc = PF2e_parseTraits(message);
+  if (systemName === "pf2e") {
+    desc = PF2e_parseTraits(message);
+  }
 
   //parse card description if source is from a character or actor is owned by a player
   //this is to limit metagame information and is recommended for most systems.
