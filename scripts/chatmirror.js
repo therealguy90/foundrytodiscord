@@ -299,7 +299,13 @@ function processMessage(msg, userId) {
     return;
   }
 
-  if (!msg.isRoll) {
+  if (isCard(msg.content) && msg.rolls?.length < 1) {
+    constructedMessage = "";
+    if (game.settings.get("foundrytodiscord", "sendEmbeds")) {
+      hookEmbed = createCardEmbed(msg);
+    }
+  }
+  else if (!msg.isRoll) {
     /*Attempt polyglot support. This will ONLY work if the structure is similar:
     * for PF2e and DnD5e, this would be actor.system.traits.languages.value
     */
@@ -325,12 +331,6 @@ function processMessage(msg, userId) {
     }
     if (constructedMessage == '') {
       constructedMessage = msg.content;
-    }
-    if (isCard(msg.content)) {
-      constructedMessage = "";
-      if (game.settings.get("foundrytodiscord", "sendEmbeds")) {
-        hookEmbed = createCardEmbed(msg);
-      }
     }
   }
   else {
@@ -774,7 +774,6 @@ function isCard(htmlString) {
   htmldocElement.innerHTML = htmlString;
 
   const divElement = htmldocElement.querySelector('.chat-card');
-
   if (divElement !== null) {
     return true;
   } else {
@@ -842,7 +841,6 @@ function getCardFooter(card) {
 
     // Select the footer element
     const footerElement = tempDiv.querySelector('.card-footer');
-
     if (!footerElement) {
       return ''; // Return an empty string if no footer element is found
     }
