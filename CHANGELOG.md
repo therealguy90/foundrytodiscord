@@ -1,4 +1,9 @@
-# 1.1.1
+# 1.1.2
+
+- Fixes a small bug with chat cards on other systems that makes it fail to send.
+- Minor code refactorings.
+
+## 1.1.1
 
 - Fix an issue where the invite URL not having a "/" at the end not allowing the messages to be posted.
 - Minor bug fix.
