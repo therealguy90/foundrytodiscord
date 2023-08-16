@@ -2,6 +2,7 @@
 
 - Fixes players being able to set the server status as offline using "ftd serveroff".
 - Fixes a bug that will occassionally make the module send the incorrect image to the webhook.
+- Chat cards are now treated as a separate entity, but functionality remains more or less the same.
 - More code refactorings.
 
 ## 1.1.2
