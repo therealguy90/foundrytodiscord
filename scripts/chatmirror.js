@@ -109,7 +109,9 @@ let rateLimitDelay;
 let request;
 
 Hooks.on("ready", function () {
-  console.log(game.user);
+  if(game.settings.get('foundrytodiscord', 'inviteURL') !== "" && !game.settings.get('foundrytodiscord', 'inviteURL').endsWith("/")){
+    game.settings.set('foundrytodiscord', 'inviteURL', game.settings.get('foundrytodiscord', 'inviteURL') + "/");
+  }
   request = new XMLHttpRequest();
   rateLimitDelay = 0;
   request.onreadystatechange = function () {
@@ -210,9 +212,6 @@ Hooks.on("ready", function () {
       break;
     default:
       break;
-  }
-  if(game.settings.get('foundrytodiscord', 'inviteURL') !== "" && !game.settings.get('foundrytodiscord', 'inviteURL').endsWith("/")){
-    game.settings.set('foundrytodiscord', 'inviteURL', game.settings.get('foundrytodiscord', 'inviteURL') + "/");
   }
 });
 
