@@ -222,10 +222,10 @@ Hooks.on('createChatMessage', async (msg, userId) => {
   if (game.userId != game.settings.get("foundrytodiscord", "mainUserId") && game.settings.get("foundrytodiscord", "mainUserId") != "") {
     return;
   }
-  if (msg.isRoll && game.settings.get("foundrytodiscord", "rollWebHookURL") == "") {
+  if (msg.isRoll && (!isCard(msg.content) && msg.rolls.length > 0) && game.settings.get("foundrytodiscord", "rollWebHookURL") == "") {
     return;
   }
-  if (!msg.isRoll && game.settings.get("foundrytodiscord", "webHookURL") == "") {
+  if (!msg.isRoll && (isCard(msg.content) && msg.rolls.length < 1) &&game.settings.get("foundrytodiscord", "webHookURL") == "") {
     return;
   }
   hookQueue.push({ msg, userId });
@@ -390,7 +390,7 @@ function processMessage(msg, userId) {
 function sendMessage(message, msgText, hookEmbed) {
   let imgurl = generateDiscordAvatar(message);
   let hook = "";
-  if (message.isRoll) {
+  if (message.isRoll && (!isCard(message.content) && message.rolls.length > 0)) {
     hook = game.settings.get("foundrytodiscord", "rollWebHookURL");
   } else {
     hook = game.settings.get("foundrytodiscord", "webHookURL");
