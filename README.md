@@ -44,10 +44,15 @@ Polyglot:
   *NOTE:* if you're planning on having different Foundry Worlds post to separate Discord OR a separate channel for Rolls, additional Webhooks will need to be created.
  
  2. Add the module to FoundryVTT.
+    
  Add-on Modules > Install Module > Search for Foundry to Discord
+ 
  3. Open Foundry and enable the module.
+    
  Game Settings > Manage Modules
+
  4. Configure the module settings in Foundry.
+    
  Game Settings > Configure Settings > Module Settings
 
  For Invite URL: Make sure your address is public! Use a tunnelling software if you can't forward ports.
