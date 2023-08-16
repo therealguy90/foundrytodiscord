@@ -35,13 +35,13 @@ Polyglot:
 
  1. Create a Webhook in your Discord server, and specify which channel to output chat to. Copy  the Webhook URL, you'll need it later.
     
- a. Server Settings (or channel settings) > Integrations > Webhooks > [New Webhook]
+  a. Server Settings (or channel settings) > Integrations > Webhooks > [New Webhook]
  
- b. Set webhook name and channel to post to.
+  b. Set webhook name and channel to post to.
  
- c. [Copy Webhook URL]
+  c. [Copy Webhook URL]
  
- *NOTE:* if you're planning on having different Foundry Worlds post to separate Discord OR a separate channel for Rolls, additional Webhooks will need to be created.
+  *NOTE:* if you're planning on having different Foundry Worlds post to separate Discord OR a separate channel for Rolls, additional Webhooks will need to be created.
  
  3. Add the module to FoundryVTT.
  Add-on Modules > Install Module > Search for Foundry to Discord
