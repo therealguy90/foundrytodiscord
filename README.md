@@ -21,6 +21,7 @@ Polyglot:
 - Checks if the players know a language, and sends languages the players don't know to Discord as "Unintelligible". (This might change to a random text instead in the future to mimic Polyglot!)
 - Useful for using Polyglot primarily for RP and knowing what the players can and can't understand by simply looking at Discord.
 - Adds an option to the config, where the GM can set the only languages this module will "understand", and sends the rest to discord as "Unintelligible". Useful for party splits. Example, if you set this setting to only understand "dwarven, draconic", then even if players know a language different from these, it will still send to Discord as "Unintelligible" unless it's listed here!
+- Adds an option to override what the "common" languages are in your world. This is so that messages sent in this language always pass the check for Polyglot, and are sent to Discord as plaintext.
 
 --------------------------------------------------
 
@@ -34,20 +35,30 @@ Polyglot:
 ## Setup
 
  1. Create a Webhook in your Discord server, and specify which channel to output chat to. Copy  the Webhook URL, you'll need it later.
- a. Server Settings (or channel settings) > Integrations > Webhooks > [New Webhook]
- b. Set webhook name and channel to post to.
- c. [Copy Webhook URL]
- *NOTE:* if you're planning on having different Foundry Worlds post to separate Discord OR a separate channel for Rolls, additional Webhooks will need to be created.
+    
+  a. Server Settings (or channel settings) > Integrations > Webhooks > [New Webhook]
+ 
+  b. Set webhook name and channel to post to.
+ 
+  c. [Copy Webhook URL]
+ 
+  *NOTE:* if you're planning on having different Foundry Worlds post to separate Discord OR a separate channel for Rolls, additional Webhooks will need to be created.
+ 
  2. Add the module to FoundryVTT.
+    
  Add-on Modules > Install Module > Search for Foundry to Discord
+ 
  3. Open Foundry and enable the module.
+    
  Game Settings > Manage Modules
+
  4. Configure the module settings in Foundry.
- Game Settings > Configure Settings > Module Settings
+    
+ Game Settings > Configure Settings > Foundry to Discord
 
  For Invite URL: Make sure your address is public! Use a tunnelling software if you can't forward ports.
 
-That's it!
+Simply follow the hints provided by the settings, and use the webhook link from your channel as the Webhook URL. Also, make sure your invite URL is public, which means you'll need to be port-forwarded as usual. This is needed to supply the token images from your server to Discord. If you can't forward ports due to some limitation, you can use a network tunnel to expose your port to the internet. Personally, I recommend Tailscale, since it allows other devices to connect via LAN, as well as exposing a port to the internet. It takes some setting up to use, though, unlike other tunnelling software. Maybe I can even help you with this over on Discord!
 
 ## Getting Main GM ID
 
