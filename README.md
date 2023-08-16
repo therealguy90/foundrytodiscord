@@ -21,6 +21,7 @@ Polyglot:
 - Checks if the players know a language, and sends languages the players don't know to Discord as "Unintelligible". (This might change to a random text instead in the future to mimic Polyglot!)
 - Useful for using Polyglot primarily for RP and knowing what the players can and can't understand by simply looking at Discord.
 - Adds an option to the config, where the GM can set the only languages this module will "understand", and sends the rest to discord as "Unintelligible". Useful for party splits. Example, if you set this setting to only understand "dwarven, draconic", then even if players know a language different from these, it will still send to Discord as "Unintelligible" unless it's listed here!
+- Adds an option to override what the "common" languages are in your world. This is so that messages sent in this language always pass the check for Polyglot, and are sent to Discord as plaintext.
 
 --------------------------------------------------
 
