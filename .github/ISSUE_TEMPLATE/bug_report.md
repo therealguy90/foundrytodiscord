@@ -9,6 +9,7 @@ assignees: ''
 
 **Describe the bug**
 A clear and concise description of what the bug is.
+Before answering the questions on this template, are you on the latest release of this module?
 - Is the bug caused by a conflict with this module?
 - Is this module throwing an error?
 - Is the message from the webhook not like you expected?
