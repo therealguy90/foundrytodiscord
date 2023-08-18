@@ -216,6 +216,7 @@ Hooks.on("ready", function () {
 });
 
 Hooks.on('createChatMessage', async (msg, userId) => {
+  console.log(msg);
   if (!game.user.isGM || (game.settings.get("foundrytodiscord", "ignoreWhispers") && msg.whisper.length > 0)) {
     return;
   }
@@ -452,17 +453,12 @@ function parseHTMLText(htmlString) {
   //remove text that is not visible to players
   let htmldoc = document.createElement('div');
   htmldoc.innerHTML = reformattedText;
-  let divs = htmldoc.querySelectorAll('div[data-visibility="gm"]');
+  let divs = htmldoc.querySelectorAll(`[data-visibility="gm"]`);
   for (let i = 0; i < divs.length; i++) {
     divs[i].parentNode.removeChild(divs[i]);
   }
   reformattedText = htmldoc.innerHTML;
-  divs = htmldoc.querySelectorAll('div[data-visibility="owner"]');
-  for (let i = 0; i < divs.length; i++) {
-    divs[i].parentNode.removeChild(divs[i]);
-  }
-  reformattedText = htmldoc.innerHTML;
-  divs = htmldoc.querySelectorAll('span[data-visibility="owner"]');
+  divs = htmldoc.querySelectorAll('[data-visibility="owner"]');
   for (let i = 0; i < divs.length; i++) {
     divs[i].parentNode.removeChild(divs[i]);
   }
@@ -474,7 +470,11 @@ function parseHTMLText(htmlString) {
   reformattedText = htmldoc.innerHTML;
 
   htmldoc.innerHTML = reformattedText;
-  htmldoc.querySelectorAll('.inline-roll').forEach(inlineRoll => inlineRoll.replaceWith(":game_die:`" + inlineRoll.textContent + "`"));
+  htmldoc.querySelectorAll('.inline-roll').forEach(inlineRoll => inlineRoll.replaceWith(":game_die:`" + inlineRoll.textContent.trim() + "`"));
+  reformattedText = htmldoc.innerHTML;
+
+  htmldoc.innerHTML = reformattedText;
+  htmldoc.querySelectorAll('.inline-check').forEach(inlineRoll => inlineRoll.replaceWith(":game_die:`" + inlineRoll.textContent.trim() + "`"));
   reformattedText = htmldoc.innerHTML;
 
 
@@ -511,15 +511,6 @@ function parseHTMLText(htmlString) {
   //format em tags to italic
   regex = /<em[^>]*>(.*?)<\/em>/g;
   reformattedText = reformattedText.replace(regex, '*$1*');
-
-  regex = /<(span|a)\s+[^>]*data-pf2-check="([^"]*)"[^>]*>(.*?)<\/(span|a)>/g;
-
-  reformattedText = reformattedText.replace(regex, (match, trait, content) => {
-    const formattedString = `:game_die:\`${content}\``;
-
-    return formattedString;
-  });
-
 
   //remove all indentation and formatting, aka just make it ugly so we can actually parse the next part of it
   reformattedText = reformattedText.replace(/>\s+</g, '><');
@@ -727,6 +718,11 @@ function getNameFromItem(itempath) {
       let actor = game.actors.get(actorID);
       let item = actor.items.get(itemID);
       itemName = item ? item.name : undefined;
+      break;
+    case "Macro":
+      let macroID = parts[1];
+      let macro = game.macros.get(actorID);
+      itemName = macro ? macro.name : undefined;
       break;
     case "Compendium":
       let compendiumName = ""
