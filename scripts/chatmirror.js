@@ -464,7 +464,7 @@ function parseHTMLText(htmlString) {
   }
   reformattedText = htmldoc.innerHTML;
 
-  //remove <img> tags
+  //remove <img> tags, these won't be needed.
   htmldoc.innerHTML = reformattedText;
   htmldoc.querySelectorAll('img').forEach(img => img.remove());
   reformattedText = htmldoc.innerHTML;
@@ -474,7 +474,7 @@ function parseHTMLText(htmlString) {
   reformattedText = htmldoc.innerHTML;
 
   htmldoc.innerHTML = reformattedText;
-  htmldoc.querySelectorAll('.inline-check').forEach(inlineRoll => inlineRoll.replaceWith(":game_die:`" + inlineRoll.textContent.trim() + "`"));
+  htmldoc.querySelectorAll('.inline-check').forEach(inlineCheck => inlineCheck.replaceWith(":game_die:`" + inlineCheck.textContent.trim() + "`"));
   reformattedText = htmldoc.innerHTML;
 
 
@@ -1075,17 +1075,28 @@ function PF2e_parseDegree(degree) {
 }
 
 function PF2e_getNameFromCheck(checkString) {
-
-  const check = parseCheckString(checkString);
-  if (check.type) {
-    skillcheck = check.type.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
-    if (check.basic) {
-      return ":game_die: `Basic " + skillcheck + "`";
+  return ":game_die:" + (function () {
+    const check = parseCheckString(checkString);
+    let tempcheck = "`";
+    if(check.showDC){
+      if(check.showDC === "all"){
+        tempcheck = tempcheck + "DC " + check.dc + " ";
+      }
     }
-    else {
-      return ":game_die: `" + skillcheck + "`";
+    if (check.type) {
+      if(check.type === "flat"){
+        tempcheck = tempcheck + "Flat Check`";
+      }
+      skillcheck = check.type.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+      if (check.basic) {
+        tempcheck = tempcheck + "Basic " + skillcheck + "`";
+      }
+      else {
+        tempcheck = tempcheck + skillcheck + "`";
+      }
     }
-  }
+    return tempcheck;
+  })();
 }
 
 function PF2e_replaceDamageFormat(damagestring) {
