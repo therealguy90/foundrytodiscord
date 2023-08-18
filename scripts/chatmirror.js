@@ -1085,17 +1085,16 @@ function PF2e_getNameFromCheck(checkString) {
     }
     if (check.type) {
       if(check.type === "flat"){
-        tempcheck = tempcheck + "Flat Check`";
+        return tempcheck + "Flat Check`";
       }
       skillcheck = check.type.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
       if (check.basic) {
-        tempcheck = tempcheck + "Basic " + skillcheck + "`";
+        return tempcheck + "Basic " + skillcheck + "`";
       }
       else {
-        tempcheck = tempcheck + skillcheck + "`";
+        return tempcheck + skillcheck + "`";
       }
     }
-    return tempcheck;
   })();
 }
 
