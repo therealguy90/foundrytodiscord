@@ -22,7 +22,7 @@ Hooks.on("init", function () {
   if (game.settings.get('foundrytodiscord', 'serverStatusMessage')) {
     game.settings.register('foundrytodiscord', 'messageID', {
       name: "Server Status Message ID",
-      hint: "The message ID of the message that will be edited when the module detects that your world is online or offline. Follow the instructions sent to the channel where you have set up your webhook. Leaving this blank will send a new instruction message to your webhook.",
+      hint: "The message ID of the message that will be edited when the module detects that your world is online or offline. Follow the instructions sent to the channel where you have set up your webhook. Leaving this blank will send a new instruction message to your webhook after a restart.",
       scope: "world",
       config: true,
       type: String,
@@ -41,7 +41,7 @@ Hooks.on("init", function () {
   }
   game.settings.register('foundrytodiscord', 'ignoreWhispers', {
     name: "Ignore Whispers & Private Rolls",
-    hint: "If this is on, then it will ignore whispers and private rolls. If this is off, it will send them to discord just like any other message.",
+    hint: "If this is on, then it will ignore whispers and private rolls. If this is off, it will send them to Discord just like any other message.",
     scope: "world",
     config: true,
     default: true,
@@ -57,7 +57,7 @@ Hooks.on("init", function () {
   });
   game.settings.register('foundrytodiscord', 'inviteURL', {
     name: "Game Invite URL",
-    hint: "This should be the internet invite URL for your game session.",
+    hint: "This should be the internet invite URL for your game session. Make sure the domain is public! To test if your URL works, go to\n<https://yourinviteurl.example>/modules/foundrytodiscord/src/defaultavatar.png\n(excluding <>, of course). If you visit the link where this image is hosted, it should appear as the default FoundryVTT icon!",
     scope: "world",
     config: true,
     default: "http://",
@@ -623,7 +623,10 @@ function generateimglink(img) {
     imgUrl = (game.settings.get("foundrytodiscord", "inviteURL") + img);
   }
   const urlParts = imgUrl.split('.');
-  const fileExtension = urlParts[urlParts.length - 1].toLowerCase();
+  let fileExtension = urlParts[urlParts.length - 1].toLowerCase();
+  if(fileExtension.split('?').length > 1){
+    fileExtension = fileExtension.split('?')[0];
+  }
   if (supportedFormats.includes(fileExtension)) {
     return imgUrl;
   }
