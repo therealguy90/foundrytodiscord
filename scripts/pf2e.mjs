@@ -187,6 +187,9 @@ function PF2e_createRollEmbed(message) {
     for (let i = 0; i < message.rolls.length; i++) {
         desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
         if (generic.propertyExists(message, "flags.pf2e.context.type") && message.flags.pf2e.context.type == "damage-roll") {
+            if(title === ""){
+                title = "Damage Roll";
+            }
             desc = desc + PF2e_parseDamageTypes(message.rolls[i]);
         }
         else if (PF2e_parseDegree(message.rolls[i].options.degreeOfSuccess) != "Invalid") {

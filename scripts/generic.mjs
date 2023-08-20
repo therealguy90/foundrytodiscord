@@ -3,7 +3,7 @@ export function messageParserGeneric(msg) {
     let hookEmbed = [];
     if (isCard(msg.content) && msg.rolls?.length < 1) {
         constructedMessage = "";
-        if (getThisModuleSetting('sendEmbeds')) { 
+        if (getThisModuleSetting('sendEmbeds')) {
             hookEmbed = createCardEmbed(msg);
         }
     }
@@ -72,7 +72,7 @@ export function messageParserGeneric(msg) {
     if (constructedMessage !== "" || hookEmbed.length > 0) { //avoid sending empty messages
         return getRequestParams(msg, constructedMessage, hookEmbed);
     }
-    else{
+    else {
         return false;
     }
 }
@@ -100,11 +100,13 @@ function generateRequestParams(message, msgText, hookEmbed, imgurl) {
                 const scene = game.scenes.get(message.speaker.scene);
                 if (scene) {
                     const speakerToken = scene.tokens.get(message.speaker.token);
-                    if (propertyExists(speakerToken, "actor")) {
-                        speakerActor = speakerToken.actor
-                    }
-                    else {
-                        console.log("foundrytodiscord | Token " + speakerToken.id + " has no actor assigned to it.");
+                    if (speakerToken) {
+                        if (propertyExists(speakerToken, "actor")) {
+                            speakerActor = speakerToken.actor
+                        }
+                        else {
+                            console.log("foundrytodiscord | Token " + speakerToken.id + " has no actor assigned to it.");
+                        }
                     }
                 }
             }
@@ -144,7 +146,7 @@ export function createGenericRollEmbed(message) {
             }
             else {
                 desc = desc + "**:dart:Targets: **";
-            }
+            }   
             let curScene = game.scenes.get(message.speaker.scene);
             for (let i = 0; i < targetTokenIDs.length && curScene; i++) {
                 let curTarget = curScene.tokens.get(targetTokenIDs[i]);
@@ -542,7 +544,7 @@ function generateDiscordAvatar(message) {
 function generateimglink(img) {
     const supportedFormats = ['jpg', 'jpeg', 'png', 'webp'];
     let imgUrl;
-    if(img && img !== ""){
+    if (img && img !== "") {
         return getThisModuleSetting('inviteURL') + "modules/foundrytodiscord/src/defaultavatar.png";
     }
     if (img.includes("http")) {
