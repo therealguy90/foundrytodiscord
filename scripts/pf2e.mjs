@@ -298,7 +298,7 @@ function PF2e_replaceDamageFormat(damagestring) {
             const [dice, desc] = part.match(/(\d+d\d+)\[([^\]]+)\]/).slice(1);
             return `${dice} ${desc}`;
         }).join(' + ');
-        return `\`:game_die: ${formattedDice}\` `;
+        return `\:game_die: \`${formattedDice}\` `;
     });
 }
 
