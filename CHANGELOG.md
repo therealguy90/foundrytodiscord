@@ -1,4 +1,10 @@
-# 1.1.5
+# 1.1.6
+
+- Improved support for channel threads, including Server Status Message. Fixes issue #7.
+- Improved chat command functionality.
+- Minor fixes.
+
+## 1.1.5
 
 - Major improvements to the queueing system, including rate limit protection, and handling of messages in order of being sent. There should be less of a delay when messages are sent to the webhook.
 - Refactored most of the code, but functionality remains more or less the same
