@@ -112,7 +112,7 @@ function generateRequestParams(message, msgText, hookEmbed, imgurl) {
             }
         }
         else {
-            speakerActor = game.actors.get(actor => actor.name === message.alias);
+            speakerActor = game.actors.find(actor => actor.name === message.alias);
         }
         if (speakerActor) {
             if (!anon.playersSeeName(speakerActor) && speakerActor.type !== "character") {

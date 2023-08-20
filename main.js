@@ -321,7 +321,6 @@ async function recursiveFinishQueue() {
 
 
 Hooks.on('createChatMessage', (msg, userId) => {
-    console.log(msg);
     if (!game.user.isGM || (game.settings.get("foundrytodiscord", "ignoreWhispers") && msg.whisper.length > 0)) {
         return;
     }
