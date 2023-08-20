@@ -420,6 +420,7 @@ function PF2e_reformatMessage(text) {
 
         //replace checks without name labels, different arguments on every system for @Check(if it exists), so pf2e gets a different one
         regex = /@Check\[(.*?)\]/g;
+        reformattedText = reformattedText.replace(regex, (_, text) => PF2e_getNameFromCheck(text));
     }
 
     return reformattedText;
