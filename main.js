@@ -313,7 +313,7 @@ async function recursiveFinishQueue() {
         if (this.status === 429) {
             // For 429 errors
             const retryAfter = Number(this.getResponseHeader("Retry-After")) || 1;
-            console.log("Rate Limit exceeded! Next request in " + retryAfter / 1000 + " seconds.");
+            console.log("foundrytodiscord | Rate Limit exceeded! Next request in " + retryAfter / 1000 + " seconds.");
             await wait(retryAfter);
         }
         requestQueue.shift();
