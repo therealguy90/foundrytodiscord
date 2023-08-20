@@ -1,5 +1,4 @@
-let request = new XMLHttpRequest();
-export async function messageParserGeneric(msg) {
+export function messageParserGeneric(msg) {
     let constructedMessage = '';
     let hookEmbed = [];
     if (isCard(msg.content) && msg.rolls?.length < 1) {
@@ -71,11 +70,14 @@ export async function messageParserGeneric(msg) {
     }
     constructedMessage = reformatMessage(constructedMessage);
     if (constructedMessage !== "" || hookEmbed.length > 0) { //avoid sending empty messages
-        sendMessage(msg, constructedMessage, hookEmbed);
+        return getRequestParams(msg, constructedMessage, hookEmbed);
+    }
+    else{
+        return false;
     }
 }
 
-export function sendMessage(message, msgText, hookEmbed) {
+export function getRequestParams(message, msgText, hookEmbed, request) {
     let imgurl = generateDiscordAvatar(message);
     let hook = "";
     if (message.isRoll && (!isCard(message.content) && message.rolls.length > 0)) {
@@ -84,12 +86,10 @@ export function sendMessage(message, msgText, hookEmbed) {
         hook = getThisModuleSetting("webHookURL");
     }
 
-    sendToWebhook(message, msgText, hookEmbed, hook, imgurl);
+    return { hook: hook, params: generateRequestParams(message, msgText, hookEmbed, imgurl) };
 }
 
-function sendToWebhook(message, msgText, hookEmbed, hook, imgurl) {
-    request.open('POST', hook);
-    request.setRequestHeader('Content-type', 'application/json');
+function generateRequestParams(message, msgText, hookEmbed, imgurl) {
     let alias = message.alias;
     let speakerActor;
     if (game.modules.get("anonymous")?.active) {
@@ -125,8 +125,7 @@ function sendToWebhook(message, msgText, hookEmbed, hook, imgurl) {
         content: msgText,
         embeds: hookEmbed
     };
-    console.log("foundrytodiscord | Attempting to send message to webhook...");
-    request.send(JSON.stringify(params));
+    return params;
 }
 
 export function createGenericRollEmbed(message) {
@@ -301,9 +300,9 @@ export function createCardEmbed(message) {
 
 export function getCardFooter(card) {
     let displayFooter = true;
-    if (game.modules.get("anonymous")?.active) {
+    if (game.modules.get('anonymous')?.active) {
         //true = hide, false = show
-        if (getThisModuleSetting("footer")) {
+        if (game.settings.get('anonymous', "footer")) {
             displayFooter = false;
         }
     }

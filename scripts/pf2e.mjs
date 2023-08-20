@@ -27,7 +27,7 @@ const damageEmoji = {
     "splash": ':boom:'
 }
 
-export async function messageParserPF2e(msg) {
+export function messageParserPF2e(msg) {
     let constructedMessage = '';
     let hookEmbed = [];
     if (generic.isCard(msg.content) && msg.rolls?.length < 1) {
@@ -93,7 +93,10 @@ export async function messageParserPF2e(msg) {
     }
     constructedMessage = PF2e_reformatMessage(constructedMessage);
     if (constructedMessage !== "" || hookEmbed.length > 0) { //avoid sending empty messages
-        generic.sendMessage(msg, constructedMessage, hookEmbed);
+        return generic.getRequestParams(msg, constructedMessage, hookEmbed);
+    }
+    else{
+        return false;
     }
 }
 
@@ -380,7 +383,7 @@ function PF2e_createCardEmbed(message) {
         });
     }
 
-    embed = [{ title: title, description: desc, footer: { text: generic.getCardFooter(card) } }];
+    const embed = [{ title: title, description: desc, footer: { text: generic.getCardFooter(card) } }];
     return embed;
 }
 

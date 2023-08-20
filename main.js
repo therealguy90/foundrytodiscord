@@ -4,7 +4,6 @@ import { messageParserPF2e } from './scripts/pf2e.mjs';
 let SYSTEM_ID;
 Hooks.on("init", function () {
     SYSTEM_ID = game.system.id;
-    console.log("foundrytodiscord | it's fucking loading");
     game.settings.register('foundrytodiscord', 'mainUserId', {
         name: "Main GM ID",
         hint: "If you plan on having two GMs in one session, fill this in with the main DM's ID to avoid duplicated messages. Just type 'ftd getID' in chat to have your ID sent to your discord channel.",
@@ -103,6 +102,9 @@ Hooks.on("init", function () {
             type: String
         });
     }
+    /*all message parsers MUST return a set of request params. The module queues each request param to be sent
+    *one by one to Discord to avoid rate limits.
+    */
     switch (SYSTEM_ID) {
         case "pf2e":
             console.log("foundrytodiscord | Game system detected as 'pf2e'.");
@@ -115,7 +117,7 @@ Hooks.on("init", function () {
     }
 });
 
-let hookQueue = [];
+let requestQueue = [];
 let isProcessing = false;
 let rateLimitDelay;
 let request = new XMLHttpRequest();
@@ -235,7 +237,7 @@ Hooks.on("ready", function () {
         game.settings.set('foundrytodiscord', 'inviteURL', getThisModuleSetting('inviteURL') + "/");
     }
     rateLimitDelay = 0;
-    request.onreadystatechange = rateLimitDetect;
+    request.onreadystatechange = recursiveFinishQueue;
     initSystemStatus();
     console.log("foundrytodiscord | Ready");
 });
@@ -253,7 +255,7 @@ function initSystemStatus() {
                     } else {
                         console.error('foundrytodiscord | Error editing embed:', request.status, request.responseText);
                     }
-                    request.onreadystatechange = rateLimitDetect;
+                    request.onreadystatechange = recursiveFinishQueue;
                 };
             }
         };
@@ -299,18 +301,26 @@ function getThisModuleSetting(settingName) {
     return game.settings.get('foundrytodiscord', settingName);
 }
 
-function rateLimitDetect() {
-    if (this.readyState == 4) {
-        if (Number(this.getResponseHeader("x-ratelimit-remaining")) == 1 || Number(this.getResponseHeader("x-ratelimit-remaining")) == 0) {
-            console.log("foundrytodiscord | Rate Limit reached! Next request in " + (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) + " seconds.");
-            rateLimitDelay = (Number(this.getResponseHeader("x-ratelimit-reset-after")) + 1) * 1000;
+async function recursiveFinishQueue() {
+    if (this.readyState === 4) {
+        if (this.status === 429) {
+            // For 429 errors
+            const retryAfter = Number(this.getResponseHeader("Retry-After")) || 1;
+            console.log("Rate Limit exceeded! Next request in " + retryAfter / 1000 + " seconds.");
+            await wait(retryAfter);
+        }
+        requestQueue.shift();
+        if(requestQueue.length > 0){
+            sendOnce();
+        }
+        else{
+            isProcessing = false;
         }
     }
 }
 
 
 Hooks.on('createChatMessage', (msg, userId) => {
-    console.log(msg);
     if (!game.user.isGM || (game.settings.get("foundrytodiscord", "ignoreWhispers") && msg.whisper.length > 0)) {
         return;
     }
@@ -342,7 +352,7 @@ Hooks.on('createChatMessage', (msg, userId) => {
                             } else {
                                 console.error('foundrytodiscord | Error editing embed:', request.status, request.responseText);
                             }
-                            request.onreadystatechange = rateLimitDetect;
+                            request.onreadystatechange = recursiveFinishQueue;
                         }
                     };
 
@@ -364,23 +374,27 @@ Hooks.on('createChatMessage', (msg, userId) => {
         }
         return;
     }
-    hookQueue.push({ msg });
-    if (!isProcessing) {
-        isProcessing = true;
-        processHookQueue();
-    }
-    else {
-        console.log("foundrytodiscord | Queue is currently busy.")
+    const requestParams = messageParse(msg);
+    console.log(requestParams);
+    if (requestParams) {
+        requestQueue.push(requestParams);
+        if (!isProcessing) {
+            isProcessing = true;
+            sendOnce();
+        }
     }
 });
 
-function processHookQueue() {
-    while (hookQueue.length > 0) {
-        const { msg } = hookQueue.shift();
-        setTimeout( function () {
-            messageParse(msg);
-            rateLimitDelay = 0;
-        }, rateLimitDelay + 1000);
-    }
-    isProcessing = false;
+function sendOnce(){
+    const {hook, params} = requestQueue[0];
+    request.open('POST', hook);
+    request.setRequestHeader('Content-type', 'application/json');
+    console.log("foundrytodiscord | Attempting to send message to webhook...");
+    request.send(JSON.stringify(params));
 }
+
+function wait(milliseconds) {
+    return new Promise(resolve => {
+      setTimeout(resolve, milliseconds);
+    });
+  }
