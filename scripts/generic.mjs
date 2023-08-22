@@ -518,14 +518,10 @@ export function reformatMessage(text) {
 }
 
 function generateDiscordAvatar(message) {
-    console.log("!");
     if (propertyExists(message, "speaker.scene")) {
-        console.log("!");
         if (message.speaker.token) {
-            console.log("!");
             const speakerToken = game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token);
             if (propertyExists(speakerToken, "texture.src")) {
-                console.log("!");
                 if (speakerToken.texture.src != "") {
                     return generateimglink(speakerToken.texture.src);
                 }
