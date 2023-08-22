@@ -35,11 +35,10 @@
     </div>
     <div style="display: flex; flex: unset;"> <span>
             <p>Select a scene, and associate it with a Discord Thread! All chat from a scene will be directed to the
-                associated thread and will override your default Webhook URL or Rolls Webhook URL. Make sure the thread
-                is in the same channel where you have your default chat/roll webhooks respectively! To get the ID of your thread,
+                associated thread and will override your default Webhook URL or Rolls Webhook URL. To get the ID of your thread,
                 simply right-click on your thread in Discord, and <strong>Copy Thread ID</strong>. Make sure your
                 Discord is in Developer Mode. Messages sent to Chat Thread IDs and Roll Thread IDs will be sent to
-                threads in your main webhook URL and roll webhook URL respectively.
+                threads in your main webhook URL and roll webhook URL respectively. You can leave either one blank, but if you want to update the thread IDs, you'll have to delete the entry first.
             </p>
         </span></div>
     <div class="foundrytodiscord tabs-content">
@@ -60,7 +59,7 @@
                     <label style="text-align: center;" for="rollThreadId">Roll Thread ID:</label>
                     <input type="text" name="rollThreadId" id="rollThreadId">
                 </div>
-                <button type="submit" class="btn btn-primary">Add Entry</button>
+                <button type="submit" class="btn btn-primary">Add Scene-Thread Map</button>
             </form>
             <div class="table-container">
                 <table class="table">
