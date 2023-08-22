@@ -82,14 +82,14 @@ export function getRequestParams(message, msgText, hookEmbed) {
     let hook = "";
     if (message.isRoll && (!isCard(message.content) && message.rolls.length > 0)) {
         if (getThisModuleSetting("threadedChatMap").hasOwnProperty(message.user.viewedScene)) {
-            hook = getThisModuleSetting("rollWebHookURL").split('?')[0] + "?thread_id=" + getThisModuleSetting('threadedChatMap')[game.user.viewedScene].rollThreadId;
+            hook = getThisModuleSetting("rollWebHookURL").split('?')[0] + "?thread_id=" + getThisModuleSetting('threadedChatMap')[message.user.viewedScene].rollThreadId;
         }
         else {
             hook = getThisModuleSetting("rollWebHookURL");
         }
     } else {
         if (getThisModuleSetting("threadedChatMap").hasOwnProperty(message.user.viewedScene)) {
-            hook = getThisModuleSetting("webHookURL").split('?')[0] + "?thread_id=" + getThisModuleSetting('threadedChatMap')[game.user.viewedScene].chatThreadId;
+            hook = getThisModuleSetting("webHookURL").split('?')[0] + "?thread_id=" + getThisModuleSetting('threadedChatMap')[message.user.viewedScene].chatThreadId;
         }
         else {
             hook = getThisModuleSetting("webHookURL");

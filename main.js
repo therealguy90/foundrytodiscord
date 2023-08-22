@@ -96,7 +96,7 @@ Hooks.on("init", function () {
         restricted: true
     });
     game.settings.register('foundrytodiscord', 'threadedChatMap', {
-        scope: 'world',
+        scope: "world",
         config: false,
         default: {},
         type: Object
@@ -153,12 +153,14 @@ Hooks.on("ready", function () {
         game.settings.set('foundrytodiscord', 'inviteURL', getThisModuleSetting('inviteURL') + "/");
     }
     request.onreadystatechange = recursiveFinishQueue;
-    initSystemStatus();
+    if (game.user.isGM) {
+        initSystemStatus();
+    }
     console.log("foundrytodiscord | Ready");
 });
 
 function initSystemStatus() {
-    if (game.user.isGM && getThisModuleSetting('serverStatusMessage')) {
+    if (getThisModuleSetting('serverStatusMessage')) {
         if (getThisModuleSetting('messageID') && getThisModuleSetting('messageID') !== "") {
             let hook;
             if (getThisModuleSetting('webHookURL').split('?').length > 1) {
