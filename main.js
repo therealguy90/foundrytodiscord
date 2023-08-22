@@ -1,12 +1,14 @@
 import { messageParserGeneric } from './scripts/generic.mjs';
 import { isCard } from './scripts/generic.mjs';
 import { messageParserPF2e } from './scripts/pf2e.mjs';
+import { ThreadedChatConfig } from './src/forms/threadedchatconfig.mjs';
 let SYSTEM_ID;
+
 Hooks.on("init", function () {
     SYSTEM_ID = game.system.id;
     game.settings.register('foundrytodiscord', 'mainUserId', {
         name: "Main GM ID",
-        hint: "If you plan on having two GMs in one session, fill this in with the main DM's ID to avoid duplicated messages. Just type 'ftd getID' in chat to have your ID sent to your discord channel.",
+        hint: "If you plan on having two GMs in one session, fill this in with the main GM's ID to avoid duplicated messages. Just type 'ftd getID' in chat to have your ID sent to your discord channel.",
         scope: "world",
         config: true,
         default: "",
@@ -59,7 +61,7 @@ Hooks.on("init", function () {
     });
     game.settings.register('foundrytodiscord', 'inviteURL', {
         name: "Game Invite URL",
-        hint: "This should be the internet invite URL for your game session. Make sure the domain is public! To test if your URL works, go to\n<https://yourinviteurl.example>/modules/foundrytodiscord/src/defaultavatar.png\n(excluding <>, of course). If you visit the link where this image is hosted, it should appear as the default FoundryVTT icon!",
+        hint: "This should be the internet invite URL for your game session. Make sure the domain is public! To test if your URL works, go to\n<https://yourinviteurl.example>/modules/foundrytodiscord/src/images/defaultavatar.png\n(excluding <>, of course). If you visit the link where this image is hosted, it should appear as the default FoundryVTT icon!",
         scope: "world",
         config: true,
         default: "http://",
@@ -83,6 +85,21 @@ Hooks.on("init", function () {
         default: "",
         requiresReload: true,
         type: String
+    });
+    game.settings.registerMenu('foundrytodiscord', 'threadedChatConfig', {
+        name: 'Threaded Scenes',
+        label: 'Edit Scene-Thread Map',
+        hint: 'Split your scenes into separate Discord threads in your channel! Requires either or both webhook URLs to be set up.',
+        scope: "world",
+        icon: 'fas fa-cogs',
+        type: ThreadedChatConfig,
+        restricted: true
+    });
+    game.settings.register('foundrytodiscord', 'threadedChatMap', {
+        scope: 'world',
+        config: false,
+        default: {},
+        type: Object
     });
     if (game.modules.get("polyglot")?.active) {
         game.settings.register('foundrytodiscord', "commonLanguages", {
@@ -117,126 +134,24 @@ Hooks.on("init", function () {
     }
 });
 
-let requestQueue = [];
-let isProcessing = false;
-let rateLimitDelay;
-let request = new XMLHttpRequest();
-let messageParse;
-
-Hooks.on("init", function () {
-    game.settings.register('foundrytodiscord', 'mainUserId', {
-        name: "Main GM ID",
-        hint: "If you plan on having two GMs in one session, fill this in with the main DM's ID to avoid duplicated messages. Just type 'ftd getID' in chat to have your ID sent to your discord channel.",
-        scope: "world",
-        config: true,
-        default: "",
-        type: String
-    });
-    game.settings.register('foundrytodiscord', 'serverStatusMessage', {
-        name: "Enable Server Status Message",
-        hint: "Toggle this on to enable your world to detect when your world is online. When the server is restarted, given that you have set up your Webhook link and invite URL, it will send instructions on how to set this up. Come back to this setting page after this setting has been turned on.",
-        scope: "world",
-        config: true,
-        type: Boolean,
-        requiresReload: true,
-        default: false
-    });
-    if (getThisModuleSetting('serverStatusMessage')) {
-        game.settings.register('foundrytodiscord', 'messageID', {
-            name: "Server Status Message ID",
-            hint: "The message ID of the message that will be edited when the module detects that your world is online or offline. Follow the instructions sent to the channel where you have set up your webhook. Leaving this blank will send a new instruction message to your webhook after a restart.",
-            scope: "world",
-            config: true,
-            type: String,
-            requiresReload: true,
-            default: ""
-        });
-        game.settings.register('foundrytodiscord', 'showInvite', {
-            name: "Show Invite Link",
-            hint: "The server status message will include your world's public invite link when this is turned on.",
-            scope: "world",
-            config: true,
-            type: Boolean,
-            requiresReload: true,
-            default: true
-        });
-    }
-    game.settings.register('foundrytodiscord', 'ignoreWhispers', {
-        name: "Ignore Whispers & Private Rolls",
-        hint: "If this is on, then it will ignore whispers and private rolls. If this is off, it will send them to Discord just like any other message.",
-        scope: "world",
-        config: true,
-        default: true,
-        type: Boolean
-    });
-    game.settings.register('foundrytodiscord', "sendEmbeds", {
-        name: "Show chat card embeds",
-        hint: "Disabling this means chat cards are no longer sent to discord.",
-        scope: "world",
-        config: true,
-        default: true,
-        type: Boolean
-    });
-    game.settings.register('foundrytodiscord', 'inviteURL', {
-        name: "Game Invite URL",
-        hint: "This should be the internet invite URL for your game session. Make sure the domain is public! To test if your URL works, go to\n<https://yourinviteurl.example>/modules/foundrytodiscord/src/defaultavatar.png\n(excluding <>, of course). If you visit the link where this image is hosted, it should appear as the default FoundryVTT icon!",
-        scope: "world",
-        config: true,
-        default: "http://",
-        requiresReload: true,
-        type: String
-    });
-    game.settings.register('foundrytodiscord', 'webHookURL', {
-        name: "Web Hook URL",
-        hint: "This should be the Webhook's URL from the discord server you want to send chat messages to. Leave it blank to have foundrytodiscord ignore regular chat messages. Add ?thread_id=<your thread id> to the end of your webhook to send to a thread.",
-        scope: "world",
-        config: true,
-        default: "",
-        requiresReload: true,
-        type: String
-    });
-    game.settings.register('foundrytodiscord', 'rollWebHookURL', {
-        name: "Roll Web Hook URL",
-        hint: "This is the webhook for wherever you want rolls to appear in discord. Leave it blank to have foundrytodiscord ignore rolls. Add ?thread_id=<your thread id> to the end of your webhook to send to a thread.",
-        scope: "world",
-        config: true,
-        default: "",
-        requiresReload: true,
-        type: String
-    });
-    if (game.modules.get("polyglot")?.active) {
-        game.settings.register('foundrytodiscord', "commonLanguages", {
-            name: "(Polyglot) Override common languages: ",
-            hint: "A list of languages that are \"common\" to your world. By default, this is \"common\", but this can be replaced by a list of language ids, separated by commas. Homebrew languages might use a different language id, such as 'hb_english'",
-            scope: "world",
-            config: true,
-            default: "common",
-            type: String
-        });
-        game.settings.register('foundrytodiscord', 'includeOnly', {
-            name: "(Polyglot) Understand only these languages:",
-            hint: "A list of languages that you wish to ONLY be understood to be sent in Discord, separated by commas. Leave blank for normal Polyglot behavior.",
-            scope: "world",
-            config: true,
-            default: "",
-            type: String
-        });
-    }
-    switch (SYSTEM_ID) {
-        case "pf2e":
-            //messageParse = messageParserPF2e;
-            break;
-        default:
-            //messageParse = messageParserGeneric;
-            break;
+Hooks.on('deleteScene', async scene => {
+    const setting = getThisModuleSetting('threadedChatMap');
+    if (setting.hasOwnProperty(scene.id)) {
+        delete setting[scene.id];
+        await game.settings.set('foundrytodiscord', 'threadedChatMap', setting);
     }
 });
+
+let requestQueue = [];
+let isProcessing = false;
+
+let request = new XMLHttpRequest();
+let messageParse;
 
 Hooks.on("ready", function () {
     if (getThisModuleSetting('inviteURL') !== "" && !getThisModuleSetting('inviteURL').endsWith("/")) {
         game.settings.set('foundrytodiscord', 'inviteURL', getThisModuleSetting('inviteURL') + "/");
     }
-    rateLimitDelay = 0;
     request.onreadystatechange = recursiveFinishQueue;
     initSystemStatus();
     console.log("foundrytodiscord | Ready");
@@ -272,7 +187,7 @@ function initSystemStatus() {
                 title: "Server Status: " + game.world.name,
                 description: "**ONLINE**\n" + (getThisModuleSetting('showInvite') ? "**Invite Link: **" + getThisModuleSetting("inviteURL") : ""),
                 footer: {
-                    text: "Type \"ftd serveroff\" in Foundry to set your server status to OFFLINE. This will persist until the next server restart.\n\n" + (game.modules.get("foundrytodiscord").id + " v" + game.modules.get("foundrytodiscord").version),
+                    text: "Type \"ftd serveroff\" in Foundry to set your server status to OFFLINE. This will persist until the next world restart.\n\n" + (game.modules.get('foundrytodiscord').id + " v" + game.modules.get('foundrytodiscord').version),
                 },
                 color: 65280
             }]
@@ -291,10 +206,10 @@ function initSystemStatus() {
                 "**Step 2**: Right click on this message and click on **\"Copy Message ID\"**. Your Discord app must have **User Settings > Advanced > Developer Mode** turned **ON** for this to appear.\n" +
                 "**Step 3**: Go to **Configure Settings > Foundry to Discord > Server Status Message ID** and **paste** the copied ID from Step 2. Afterwards, save your settings, and it should prompt your world to restart.\n" +
                 "**Step 4**: Look at this message again after your world restarts. It should appear as the correct server status message.";
-            let hookEmbed = [{ title: "Server Status Setup Instructions", description: desc, footer: { text: (game.modules.get("foundrytodiscord").id + " v" + game.modules.get("foundrytodiscord").version) } }];
+            let hookEmbed = [{ title: "Server Status Setup Instructions", description: desc, footer: { text: (game.modules.get('foundrytodiscord').id + " v" + game.modules.get('foundrytodiscord').version) } }];
             const params = {
                 username: game.world.id,
-                avatar_url: getThisModuleSetting("inviteURL") + "modules/foundrytodiscord/src/defaultavatar.png",
+                avatar_url: getThisModuleSetting("inviteURL") + "modules/foundrytodiscord/src/images/defaultavatar.png",
                 content: "",
                 embeds: hookEmbed
             };
@@ -359,7 +274,7 @@ Hooks.on('createChatMessage', (msg) => {
                         title: "Server Status: " + game.world.id,
                         description: "**OFFLINE**",
                         footer: {
-                            text: (game.modules.get("foundrytodiscord").id + " v" + game.modules.get("foundrytodiscord").version)
+                            text: (game.modules.get('foundrytodiscord').id + " v" + game.modules.get('foundrytodiscord').version)
                         },
                         color: 16711680
                     }]
@@ -371,16 +286,16 @@ Hooks.on('createChatMessage', (msg) => {
         }
         return;
     }
-    if (!game.user.isGM || (game.settings.get("foundrytodiscord", "ignoreWhispers") && msg.whisper.length > 0)) {
+    if (!game.user.isGM || (game.settings.get('foundrytodiscord', "ignoreWhispers") && msg.whisper.length > 0)) {
         return;
     }
-    if (game.userId != game.settings.get("foundrytodiscord", "mainUserId") && game.settings.get("foundrytodiscord", "mainUserId") != "") {
+    if (game.userId != game.settings.get('foundrytodiscord', "mainUserId") && game.settings.get('foundrytodiscord', "mainUserId") != "") {
         return;
     }
-    if (msg.isRoll && (!isCard(msg.content) && msg.rolls.length > 0) && game.settings.get("foundrytodiscord", "rollWebHookURL") == "") {
+    if (msg.isRoll && (!isCard(msg.content) && msg.rolls.length > 0) && game.settings.get('foundrytodiscord', "rollWebHookURL") == "") {
         return;
     }
-    if (!msg.isRoll && (isCard(msg.content) && msg.rolls.length < 1) && game.settings.get("foundrytodiscord", "webHookURL") == "") {
+    if (!msg.isRoll && (isCard(msg.content) && msg.rolls.length < 1) && game.settings.get('foundrytodiscord', "webHookURL") == "") {
         return;
     }
 
@@ -390,7 +305,7 @@ Hooks.on('createChatMessage', (msg) => {
         request.setRequestHeader('Content-Type', 'application/json');
         const params = {
             username: game.world.id,
-            avatar_url: getThisModuleSetting("inviteURL") + "modules/foundrytodiscord/src/defaultavatar.png",
+            avatar_url: getThisModuleSetting("inviteURL") + "modules/foundrytodiscord/src/images/defaultavatar.png",
             content: "UserId: " + game.userId,
             embeds: []
         };

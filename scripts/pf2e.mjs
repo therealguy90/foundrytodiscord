@@ -197,8 +197,8 @@ function PF2e_createRollEmbed(message) {
         }
         desc = desc + "\n";
     }
-    embed = [{ title: title, description: desc }];
-    return embed;
+
+    return [{ title: title, description: desc }];
 }
 
 function PF2e_parseDamageTypes(baserolls) {
@@ -386,8 +386,7 @@ function PF2e_createCardEmbed(message) {
         });
     }
 
-    const embed = [{ title: title, description: desc, footer: { text: generic.getCardFooter(card) } }];
-    return embed;
+    return [{ title: title, description: desc, footer: { text: generic.getCardFooter(card) } }];
 }
 
 function PF2e_reformatMessage(text) {

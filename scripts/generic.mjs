@@ -77,13 +77,23 @@ export function messageParserGeneric(msg) {
     }
 }
 
-export function getRequestParams(message, msgText, hookEmbed, request) {
+export function getRequestParams(message, msgText, hookEmbed) {
     let imgurl = generateDiscordAvatar(message);
     let hook = "";
     if (message.isRoll && (!isCard(message.content) && message.rolls.length > 0)) {
-        hook = getThisModuleSetting("rollWebHookURL");
+        if (getThisModuleSetting("threadedChatMap").hasOwnProperty(message.user.viewedScene)) {
+            hook = getThisModuleSetting("rollWebHookURL").split('?')[0] + "?thread_id=" + getThisModuleSetting('threadedChatMap')[game.user.viewedScene].rollThreadId;
+        }
+        else {
+            hook = getThisModuleSetting("rollWebHookURL");
+        }
     } else {
-        hook = getThisModuleSetting("webHookURL");
+        if (getThisModuleSetting("threadedChatMap").hasOwnProperty(message.user.viewedScene)) {
+            hook = getThisModuleSetting("webHookURL").split('?')[0] + "?thread_id=" + getThisModuleSetting('threadedChatMap')[game.user.viewedScene].chatThreadId;
+        }
+        else {
+            hook = getThisModuleSetting("webHookURL");
+        }
     }
 
     return { hook: hook, params: generateRequestParams(message, msgText, hookEmbed, imgurl) };
@@ -103,9 +113,6 @@ function generateRequestParams(message, msgText, hookEmbed, imgurl) {
                     if (speakerToken) {
                         if (propertyExists(speakerToken, "actor")) {
                             speakerActor = speakerToken.actor
-                        }
-                        else {
-                            console.log("foundrytodiscord | Token " + speakerToken.id + " has no actor assigned to it.");
                         }
                     }
                 }
@@ -146,7 +153,7 @@ export function createGenericRollEmbed(message) {
             }
             else {
                 desc = desc + "**:dart:Targets: **";
-            }   
+            }
             let curScene = game.scenes.get(message.speaker.scene);
             for (let i = 0; i < targetTokenIDs.length && curScene; i++) {
                 let curTarget = curScene.tokens.get(targetTokenIDs[i]);
@@ -174,11 +181,10 @@ export function createGenericRollEmbed(message) {
     else {
         title = message.alias + '\'s Rolls';
         message.rolls.forEach(roll => {
-            desc = desc + 'Rolled ' + roll.formula + ', and got a ' + roll.result + "\n";
+            desc = desc + 'Rolled ' + roll.formula + ', and got a ' + roll.result + " = **" + roll.total + "**\n";
         })
     }
-    embed = [{ title: title, description: desc }];
-    return embed;
+    return [{ title: title, description: desc }];
 }
 
 export function getLocalizedText(localizationKey) {
@@ -296,8 +302,7 @@ export function createCardEmbed(message) {
         });
     }
 
-    embed = [{ title: title, description: desc, footer: { text: getCardFooter(card) } }];
-    return embed;
+    return [{ title: title, description: desc, footer: { text: getCardFooter(card) } }];
 }
 
 export function getCardFooter(card) {
@@ -513,10 +518,14 @@ export function reformatMessage(text) {
 }
 
 function generateDiscordAvatar(message) {
+    console.log("!");
     if (propertyExists(message, "speaker.scene")) {
+        console.log("!");
         if (message.speaker.token) {
+            console.log("!");
             const speakerToken = game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token);
             if (propertyExists(speakerToken, "texture.src")) {
+                console.log("!");
                 if (speakerToken.texture.src != "") {
                     return generateimglink(speakerToken.texture.src);
                 }
@@ -544,8 +553,8 @@ function generateDiscordAvatar(message) {
 function generateimglink(img) {
     const supportedFormats = ['jpg', 'jpeg', 'png', 'webp'];
     let imgUrl;
-    if (img && img !== "") {
-        return getThisModuleSetting('inviteURL') + "modules/foundrytodiscord/src/defaultavatar.png";
+    if (!img || (img && img === "")) {
+        return getThisModuleSetting('inviteURL') + "modules/foundrytodiscord/src/images/defaultavatar.png";
     }
     if (img.includes("http")) {
         imgUrl = img;
@@ -561,7 +570,7 @@ function generateimglink(img) {
         return imgUrl;
     }
     else {
-        return getThisModuleSetting('inviteURL') + "modules/foundrytodiscord/src/defaultavatar.png";
+        return getThisModuleSetting('inviteURL') + "modules/foundrytodiscord/src/images/defaultavatar.png";
     }
 }
 
