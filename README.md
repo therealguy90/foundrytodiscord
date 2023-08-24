@@ -5,7 +5,7 @@ A lightweight FoundryVTT module that sends all FoundryVTT messages to a Discord 
 Only FULLY supports Pathfinder Second Edition, but anyone is welcome to help add custom support for other systems. Contact me @loki123 on Discord.
 Will work on other systems, but to what extent, I do not know. Regular chat, chat cards, and rolls seem to work just fine on most other systems.
 
-What it supports:
+### What it supports:
 
 Anonymous:
 
@@ -22,6 +22,10 @@ Polyglot:
 - Useful for using Polyglot primarily for RP and knowing what the players can and can't understand by simply looking at Discord.
 - Adds an option to the config, where the GM can set the only languages this module will "understand", and sends the rest to discord as "Unintelligible". Useful for party splits. Example, if you set this setting to only understand "dwarven, draconic", then even if players know a language different from these, it will still send to Discord as "Unintelligible" unless it's listed here!
 - Adds an option to override what the "common" languages are in your world. This is so that messages sent in this language always pass the check for Polyglot, and are sent to Discord as plaintext.
+
+### What it's confirmed *not* to support:
+
+- DnD5e midi-qol mergecards, and some of midi-qol in general
 
 --------------------------------------------------
 
