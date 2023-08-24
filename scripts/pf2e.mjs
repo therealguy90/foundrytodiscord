@@ -282,7 +282,7 @@ function PF2e_getNameFromCheck(checkString) {
             if (check.type === "flat") {
                 return tempcheck + "Flat Check`";
             }
-            skillcheck = check.type.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+            let skillcheck = check.type.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
             if (check.basic) {
                 return tempcheck + "Basic " + skillcheck + "`";
             }
