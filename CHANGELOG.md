@@ -1,4 +1,10 @@
-# 1.2.0
+# 1.2.1
+
+- Fix the server status message instructions showing up when you don't want it to.
+- Support more formats of chat-cards.
+- Several minor bug fixes.
+
+## 1.2.0
 
 - **NEW FEATURE:** Threaded Scenes! This version adds a new config setting which lets you map scenes to different Discord Channel threads. The threads must be within the channel where your webhook URL is set up, and of course, must exist first for this to work. Anything not mapped to a thread will still be sent as usual, so don't worry if you're not going to use this feature.
 - Several bug fixes, such as Avatars not being properly sent, and roll embeds not being sent.
