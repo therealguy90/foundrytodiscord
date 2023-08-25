@@ -10,7 +10,7 @@ export function messageParserGeneric(msg) {
     else if (!msg.isRoll) {
         /*Attempt polyglot support. This will ONLY work if the structure is similar:
         * for PF2e and DnD5e, this would be actor.system.traits.languages.value
-        * the polyglotize() function should be edited 
+        * the polyglotize() function should be edited for other systems
         */
         if (game.modules.get("polyglot")?.active && propertyExists(msg, "flags.polyglot.language")) {
             if (!getThisModuleSetting("commonLanguages").toLowerCase().includes(msg.flags.polyglot.language)) {
@@ -279,10 +279,10 @@ export function createCardEmbed(message) {
     // if not, use the first line it finds
     const h3Element = doc.querySelector("h3");
     let title;
-    if(h3Element?.textContent){
+    if (h3Element?.textContent) {
         title = h3Element.textContent.trim();
     }
-    else{
+    else {
         //Use first line of plaintext to title the embed instead
         const strippedContent = card.replace(/<[^>]+>/g, ' ').trim(); // Replace HTML tags with spaces
         const lines = strippedContent.split('\n'); // Split by newline characters
@@ -383,6 +383,27 @@ export function polyglotize(message, playerlanguages = []) {
             return "*Unintelligible*"
         }
     }
+}
+
+export function anonymizeEmbed(message, embed) {
+    let anon = game.modules.get("anonymous").api;
+    let curScene = game.scenes.get(message.speaker.scene);
+    if (curScene) {
+        let speakerToken = curScene.tokens.get(message.speaker.token);
+        if (speakerToken) {
+            if (!anon.playersSeeName(speakerToken.actor)) {
+                embed.title = embed.title.replaceAll(speakerToken.name, anon.getName(speakerToken.actor))
+                    .replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase())
+                    .replaceAll(speakerToken.actor.name, anon.getName(speakerToken.actor))
+                    .replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase());
+                embed.description = embed.description.replaceAll(speakerToken.name, anon.getName(speakerToken.actor))
+                    .replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase())
+                    .replaceAll(speakerToken.actor.name, anon.getName(speakerToken.actor))
+                    .replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase());
+            }
+        }
+    }
+    return embed;
 }
 
 export function isOwnedByPlayer(actor) {
@@ -507,6 +528,12 @@ export function parseHTMLText(htmlString) {
     return reformattedText.trim();
 }
 
+
+/* reformatMessage does all the HTML parsing and etc, and should only be called before
+*  the message is sent to the webhook. Copy this function to your parser to allow for
+*  more complex reformatting, such as @Check, @Damage for PF2e. This is to place all the HTML parsing in one place.
+*  parseHTMLText is generally universal.
+*/
 export function reformatMessage(text) {
     let reformattedText = ""
     //First check if the text is formatted in HTML to use a different function

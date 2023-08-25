@@ -72,22 +72,8 @@ export function messageParserPF2e(msg) {
         //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
         if (game.modules.get("anonymous")?.active) {
-            let anon = game.modules.get("anonymous").api;
-            let curScene = game.scenes.get(msg.speaker.scene);
-            if (curScene) {
-                let speakerToken = curScene.tokens.get(msg.speaker.token);
-                if (speakerToken) {
-                    if (!anon.playersSeeName(speakerToken.actor)) {
-                        hookEmbed[0].title = hookEmbed[0].title.replaceAll(speakerToken.name, anon.getName(speakerToken.actor))
-                            .replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase())
-                            .replaceAll(speakerToken.actor.name, anon.getName(speakerToken.actor))
-                            .replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase());
-                        hookEmbed[0].description = hookEmbed[0].description.replaceAll(speakerToken.name, anon.getName(speakerToken.actor))
-                            .replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase())
-                            .replaceAll(speakerToken.actor.name, anon.getName(speakerToken.actor))
-                            .replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase());
-                    }
-                }
+            for (let i = 0; i < hookEmbed.length; i++) {
+                hookEmbed[i] = generic.anonymizeEmbed(msg, hookEmbed[i]);
             }
         }
     }
@@ -95,11 +81,51 @@ export function messageParserPF2e(msg) {
     if (constructedMessage !== "" || hookEmbed.length > 0) { //avoid sending empty messages
         return generic.getRequestParams(msg, constructedMessage, hookEmbed);
     }
-    else{
+    else {
         return false;
     }
 }
 
+function PF2e_createCardEmbed(message) {
+    let card = message.content;
+    const parser = new DOMParser();
+    //replace horizontal line tags with paragraphs so they can be parsed later
+    card = card.replace(/<hr[^>]*>/g, "<p>-----------------------</p>");
+    let doc = parser.parseFromString(card, "text/html");
+    // Find the <h3> element and extract its text content, since h3 works for most systems
+    const h3Element = doc.querySelector("h3");
+
+    let title = h3Element.textContent.trim();
+    let desc = "";
+    let speakerActor = undefined;
+    if (generic.propertyExists(message, "speaker.actor")) {
+        speakerActor = game.actors.get(message.speaker.actor);
+    }
+
+    desc = PF2e_parseTraits(message);
+
+    //parse card description if source is from a character or actor is owned by a player
+    //this is to limit metagame information and is recommended for most systems.
+    //adding a setting to enable this would be an option, but is not a priority.
+    let descVisible = true;
+
+    if (speakerActor) {
+        if (game.modules.get("anonymous")?.active && !generic.isOwnedByPlayer(speakerActor)) {
+            descVisible = false;
+        }
+    }
+    if (descVisible) {
+        let descList = doc.querySelectorAll(".card-content");
+        descList.forEach(function (paragraph) {
+            let text = paragraph.innerHTML
+                .replace(/<strong>(.*?)<\/strong>/g, '**$1**')  // Replace <strong> tags with markdown bold
+                .trim();  // Trim any leading/trailing whitespace
+            desc += text + "\n\n";
+        });
+    }
+
+    return [{ title: title, description: desc, footer: { text: generic.getCardFooter(card) } }];
+}
 
 function PF2e_createRollEmbed(message) {
     let embed = []
@@ -187,7 +213,7 @@ function PF2e_createRollEmbed(message) {
     for (let i = 0; i < message.rolls.length; i++) {
         desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
         if (generic.propertyExists(message, "flags.pf2e.context.type") && message.flags.pf2e.context.type == "damage-roll") {
-            if(title === ""){
+            if (title === "") {
                 title = "Damage Roll";
             }
             desc = desc + PF2e_parseDamageTypes(message.rolls[i]);
@@ -346,47 +372,6 @@ function PF2e_parseTraits(message) {
     else {
         return "";
     }
-}
-
-function PF2e_createCardEmbed(message) {
-    let card = message.content;
-    const parser = new DOMParser();
-    //replace horizontal line tags with paragraphs so they can be parsed later
-    card = card.replace(/<hr[^>]*>/g, "<p>-----------------------</p>");
-    let doc = parser.parseFromString(card, "text/html");
-    // Find the <h3> element and extract its text content, since h3 works for most systems
-    const h3Element = doc.querySelector("h3");
-
-    let title = h3Element.textContent.trim();
-    let desc = "";
-    let speakerActor = undefined;
-    if (generic.propertyExists(message, "speaker.actor")) {
-        speakerActor = game.actors.get(message.speaker.actor);
-    }
-
-    desc = PF2e_parseTraits(message);
-
-    //parse card description if source is from a character or actor is owned by a player
-    //this is to limit metagame information and is recommended for most systems.
-    //adding a setting to enable this would be an option, but is not a priority.
-    let descVisible = true;
-
-    if (speakerActor) {
-        if (game.modules.get("anonymous")?.active && !generic.isOwnedByPlayer(speakerActor)) {
-            descVisible = false;
-        }
-    }
-    if (descVisible) {
-        let descList = doc.querySelectorAll(".card-content");
-        descList.forEach(function (paragraph) {
-            let text = paragraph.innerHTML
-                .replace(/<strong>(.*?)<\/strong>/g, '**$1**')  // Replace <strong> tags with markdown bold
-                .trim();  // Trim any leading/trailing whitespace
-            desc += text + "\n\n";
-        });
-    }
-
-    return [{ title: title, description: desc, footer: { text: generic.getCardFooter(card) } }];
 }
 
 function PF2e_reformatMessage(text) {
