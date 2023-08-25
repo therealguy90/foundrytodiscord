@@ -271,11 +271,27 @@ export function createCardEmbed(message) {
     const parser = new DOMParser();
     //replace horizontal line tags with paragraphs so they can be parsed later
     card = card.replace(/<hr[^>]*>/g, "<p>-----------------------</p>");
+    let regex = /<[^>]*>[^<]*\n[^<]*<\/[^>]*>/g;
+    card = card.replace(regex, (match) => match.replace(/\n/g, ''));
+    console.log(card);
+    card = card.replace(regex, "");
     let doc = parser.parseFromString(card, "text/html");
     // Find the <h3> element and extract its text content, since h3 works for most systems
+    // if not, use the first line it finds
     const h3Element = doc.querySelector("h3");
+    let title;
+    if(h3Element?.textContent){
+        title = h3Element.textContent.trim();
+    }
+    else{
+        //Use first line of plaintext to title the embed instead
+        const strippedContent = card.replace(/<[^>]+>/g, ' ').trim(); // Replace HTML tags with spaces
+        const lines = strippedContent.split('\n'); // Split by newline characters
+        title = lines[0].trim(); // Get the first line of plain text
+        const regex = new RegExp('\\b' + title + '\\b', 'i');
+        card = card.replace(regex, "");
 
-    let title = h3Element.textContent.trim();
+    }
     let desc = "";
     let speakerActor = undefined;
     if (propertyExists(message, "speaker.actor")) {
@@ -295,9 +311,7 @@ export function createCardEmbed(message) {
     if (descVisible) {
         let descList = doc.querySelectorAll(".card-content");
         descList.forEach(function (paragraph) {
-            let text = paragraph.innerHTML
-                .replace(/<strong>(.*?)<\/strong>/g, '**$1**')  // Replace <strong> tags with markdown bold
-                .trim();  // Trim any leading/trailing whitespace
+            let text = paragraph.outerHTML;
             desc += text + "\n\n";
         });
     }
@@ -408,6 +422,11 @@ export function parseHTMLText(htmlString) {
         divs[i].parentNode.removeChild(divs[i]);
     }
     reformattedText = htmldoc.innerHTML;
+    divs = htmldoc.querySelectorAll('[style*="display:none"]');
+    for (let i = 0; i < divs.length; i++) {
+        divs[i].parentNode.removeChild(divs[i]);
+    }
+    reformattedText = htmldoc.innerHTML;
 
     //remove <img> tags, these won't be needed.
     htmldoc.innerHTML = reformattedText;
@@ -450,6 +469,8 @@ export function parseHTMLText(htmlString) {
     reformattedText = reformattedText.replace(regex, '**$1**');
     regex = /<strong>(.*?)<\/strong>/g
     reformattedText = reformattedText.replace(regex, '**$1**');
+    regex = /<b>(.*?)<\/b>/g
+    reformattedText = reformattedText.replace(regex, '**$1**');
     //format hr to horizontal lines
     reformattedText = reformattedText.replace(/<hr[^>]*>/g, "-----------------------");
 
@@ -464,6 +485,8 @@ export function parseHTMLText(htmlString) {
     reformattedText = reformattedText.replace(/<li>/g, "");
     reformattedText = reformattedText.replace(/<\/li>/g, "\n");
 
+    //remove <input>
+    reformattedText = reformattedText.replace(/<input[^>]*>.*?<\/input>|<input[^>]*>/gi, '');
     //remove remaining <div> tags
     reformattedText = reformattedText.replace(/<div>/g, "");
     reformattedText = reformattedText.replace(/<\/div>/g, "\n");
