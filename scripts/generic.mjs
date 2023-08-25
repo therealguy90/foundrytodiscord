@@ -273,7 +273,6 @@ export function createCardEmbed(message) {
     card = card.replace(/<hr[^>]*>/g, "<p>-----------------------</p>");
     let regex = /<[^>]*>[^<]*\n[^<]*<\/[^>]*>/g;
     card = card.replace(regex, (match) => match.replace(/\n/g, ''));
-    console.log(card);
     card = card.replace(regex, "");
     let doc = parser.parseFromString(card, "text/html");
     // Find the <h3> element and extract its text content, since h3 works for most systems
