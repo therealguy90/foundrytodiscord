@@ -182,41 +182,39 @@ function initSystemStatus() {
                     request.onreadystatechange = recursiveFinishQueue;
                 };
             }
-        };
-
-        const params = {
-            embeds: [{
-                title: "Server Status: " + game.world.name,
-                description: "**ONLINE**\n" + (getThisModuleSetting('showInvite') ? "**Invite Link: **" + getThisModuleSetting("inviteURL") : ""),
-                footer: {
-                    text: "Type \"ftd serveroff\" in Foundry to set your server status to OFFLINE. This will persist until the next world restart.\n\n" + (game.modules.get('foundrytodiscord').id + " v" + game.modules.get('foundrytodiscord').version),
-                },
-                color: 65280
-            }]
-        }
-
-        console.log("foundrytodiscord | Attempting to edit server status...");
-        request.send(JSON.stringify(params));
-    }
-    else {
-        const hook = getThisModuleSetting("webHookURL");
-        if (hook && hook !== "") {
-            request.open('POST', hook);
-            request.setRequestHeader('Content-type', 'application/json');
-            const desc = "**IMPORTANT**: A limitation of this module is that it can *only* detect your world as online if a Gamemaster account is online. A command 'ftd serveroff' is also needed to set this message to OFFLINE.\n\n" +
-                "**Step 1:** Pin this message so that everyone can find it easily on your channel.\n" +
-                "**Step 2**: Right click on this message and click on **\"Copy Message ID\"**. Your Discord app must have **User Settings > Advanced > Developer Mode** turned **ON** for this to appear.\n" +
-                "**Step 3**: Go to **Configure Settings > Foundry to Discord > Server Status Message ID** and **paste** the copied ID from Step 2. Afterwards, save your settings, and it should prompt your world to restart.\n" +
-                "**Step 4**: Look at this message again after your world restarts. It should appear as the correct server status message.";
-            let hookEmbed = [{ title: "Server Status Setup Instructions", description: desc, footer: { text: (game.modules.get('foundrytodiscord').id + " v" + game.modules.get('foundrytodiscord').version) } }];
             const params = {
-                username: game.world.id,
-                avatar_url: getThisModuleSetting("inviteURL") + "modules/foundrytodiscord/src/images/defaultavatar.png",
-                content: "",
-                embeds: hookEmbed
-            };
-            console.log("foundrytodiscord | Attempting to send message to webhook...");
+                embeds: [{
+                    title: "Server Status: " + game.world.name,
+                    description: "**ONLINE**\n" + (getThisModuleSetting('showInvite') ? "**Invite Link: **" + getThisModuleSetting("inviteURL") : ""),
+                    footer: {
+                        text: "Type \"ftd serveroff\" in Foundry to set your server status to OFFLINE. This will persist until the next world restart.\n\n" + (game.modules.get('foundrytodiscord').id + " v" + game.modules.get('foundrytodiscord').version),
+                    },
+                    color: 65280
+                }]
+            }
+            console.log("foundrytodiscord | Attempting to edit server status...");
             request.send(JSON.stringify(params));
+        }
+        else {
+            const hook = getThisModuleSetting("webHookURL");
+            if (hook && hook !== "") {
+                request.open('POST', hook);
+                request.setRequestHeader('Content-type', 'application/json');
+                const desc = "**IMPORTANT**: A limitation of this module is that it can *only* detect your world as online if a Gamemaster account is online. A command 'ftd serveroff' is also needed to set this message to OFFLINE.\n\n" +
+                    "**Step 1:** Pin this message so that everyone can find it easily on your channel.\n" +
+                    "**Step 2**: Right click on this message and click on **\"Copy Message ID\"**. Your Discord app must have **User Settings > Advanced > Developer Mode** turned **ON** for this to appear.\n" +
+                    "**Step 3**: Go to **Configure Settings > Foundry to Discord > Server Status Message ID** and **paste** the copied ID from Step 2. Afterwards, save your settings, and it should prompt your world to restart.\n" +
+                    "**Step 4**: Look at this message again after your world restarts. It should appear as the correct server status message.";
+                let hookEmbed = [{ title: "Server Status Setup Instructions", description: desc, footer: { text: (game.modules.get('foundrytodiscord').id + " v" + game.modules.get('foundrytodiscord').version) } }];
+                const params = {
+                    username: game.world.id,
+                    avatar_url: getThisModuleSetting("inviteURL") + "modules/foundrytodiscord/src/images/defaultavatar.png",
+                    content: "",
+                    embeds: hookEmbed
+                };
+                console.log("foundrytodiscord | Attempting to send message to webhook...");
+                request.send(JSON.stringify(params));
+            }
         }
     }
 }
