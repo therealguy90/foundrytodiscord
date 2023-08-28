@@ -107,6 +107,5 @@ Check the "Enable Server Status Message" in the config of this module and follow
 --------------------------------------------------
 
 I have to thank caoranach for making DiscordConnect, as I did use some code from there to create Foundry to Discord, especially mimicking the options scheme of DiscordConnect, and of course, the same instructions to set it up.
-Sadly, this only really works with PF2e, and I'm pretty much a newbie when it comes to making Foundry modules, so I definitely need some tips. This has been a personal project of mine, as I really want to have a way to log chat posts to Discord, since our group's been using Discord for play-by-post since we've started playing Pathfinder 2e years ago.
 
 If anyone wants to help with this project, you can talk with me on Discord @loki123. I'm always looking for help. If you want to port this over to a system you want, go ahead and open a PR! I'll help as much as I can.
