@@ -30,6 +30,11 @@ Polyglot:
 
 - DnD5e midi-qol mergecards, and some of midi-qol in general
 
+### Future Plans:
+
+- DnD5e partial support (likely without midi-qol mergecards)
+- FVTT Chat Media support
+
 --------------------------------------------------
 
 ## Screenshots
