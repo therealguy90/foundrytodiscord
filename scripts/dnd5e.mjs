@@ -30,6 +30,7 @@ export function messageParserDnD5e(msg) {
                     if (!listLanguages == null) {
                         listLanguages = [];
                     }
+                    constructedMessage = generic.polyglotize(msg, listLanguages);
                 }
             }
         }
