@@ -47,9 +47,10 @@ export function messageParserPF2e(msg) {
                 }
                 else {
                     listLanguages = getThisModuleSetting('includeOnly').split(",").map(item => item.trim().toLowerCase());
-                    if (!listLanguages == null) {
+                    if (!listLanguages === null) {
                         listLanguages = [];
                     }
+                    constructedMessage = generic.polyglotize(msg, listLanguages);
                 }
             }
         }
