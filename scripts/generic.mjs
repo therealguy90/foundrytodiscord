@@ -498,7 +498,7 @@ export function parseHTMLText(htmlString) {
     regex = /<em[^>]*>(.*?)<\/em>/g;
     reformattedText = reformattedText.replace(regex, '*$1*');
 
-    //remove all indentation and formatting, aka just make it ugly so we can actually parse the next part of it
+    //remove all indentation and formatting for the next part
     reformattedText = reformattedText.replace(/>\s+</g, '><');
 
     //remove <li>
