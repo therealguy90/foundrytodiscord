@@ -37,7 +37,6 @@ export function messageParserPF2e(msg) {
     else if (PF2e_isActionCard(msg.flavor)) {
         cardType = 2;
     }
-    console.log("cardtype" + cardType);
     if (cardType !== 0) {
         constructedMessage = "";
         if (getThisModuleSetting('sendEmbeds')) {
