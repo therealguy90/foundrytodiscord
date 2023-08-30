@@ -1,4 +1,9 @@
-# 1.2.2
+# 1.2.3
+
+- Hotfix for 1.2.2.
+- Other minor bug fixes.
+
+## 1.2.2
 
 - (pf2e) Added support for new action cards in 5.4.0
 - Minor bug fixes.
