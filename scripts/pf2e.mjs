@@ -34,7 +34,7 @@ export function messageParserPF2e(msg) {
     if ((generic.isCard(msg.content) && msg.rolls?.length < 1)) {
         cardType = 1;
     }
-    else if (PF2e_isActionCard(msg.flavor && msg.rolls?.length < 1)) {
+    else if (PF2e_isActionCard(msg.flavor) && msg.rolls?.length < 1) {
         cardType = 2;
     }
     if (cardType !== 0) {
