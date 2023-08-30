@@ -30,10 +30,18 @@ const damageEmoji = {
 export function messageParserPF2e(msg) {
     let constructedMessage = '';
     let hookEmbed = [];
-    if (generic.isCard(msg.content) && msg.rolls?.length < 1) {
+    let cardType = 0;
+    if ((generic.isCard(msg.content) && msg.rolls?.length < 1)) {
+        cardType = 1;
+    }
+    else if (PF2e_isActionCard(msg.flavor)) {
+        cardType = 2;
+    }
+    console.log("cardtype" + cardType);
+    if (cardType !== 0) {
         constructedMessage = "";
         if (getThisModuleSetting('sendEmbeds')) {
-            hookEmbed = PF2e_createCardEmbed(msg);
+            hookEmbed = PF2e_createCardEmbed(msg, cardType);
         }
     }
     else if (!msg.isRoll) {
@@ -87,23 +95,33 @@ export function messageParserPF2e(msg) {
     }
 }
 
-function PF2e_createCardEmbed(message) {
+function PF2e_createCardEmbed(message, cardType) {
     let card = message.content;
     const parser = new DOMParser();
     //replace horizontal line tags with paragraphs so they can be parsed later
     card = card.replace(/<hr[^>]*>/g, "<p>-----------------------</p>");
     let doc = parser.parseFromString(card, "text/html");
-    // Find the <h3> element and extract its text content, since h3 works for most systems
-    const h3Element = doc.querySelector("h3");
-
-    let title = h3Element.textContent.trim();
     let desc = "";
+    let title;
+    // Find the <h3> element and extract its text content, since h3 works for most systems
+    //generic card
+    if (cardType === 1) {
+        const h3Element = doc.querySelector("h3");
+        title = h3Element.textContent.trim();
+        desc = PF2e_parseTraits(message, message.content);
+    }
+    //pf2e action card, introduced in v5.4.0
+    else if (cardType === 2) {
+        const actionCardParser = new DOMParser();
+        const actionDoc = actionCardParser.parseFromString(message.flavor, "text/html");
+        const h4Element = actionDoc.querySelector("h4.action");
+        title = h4Element.querySelector("strong").textContent;
+        desc = PF2e_parseTraits(message, message.flavor);
+    }
     let speakerActor = undefined;
     if (generic.propertyExists(message, "speaker.actor")) {
         speakerActor = game.actors.get(message.speaker.actor);
     }
-
-    desc = PF2e_parseTraits(message);
 
     //parse card description if source is from a character or actor is owned by a player
     //this is to limit metagame information and is recommended for most systems.
@@ -116,13 +134,16 @@ function PF2e_createCardEmbed(message) {
         }
     }
     if (descVisible) {
-        let descList = doc.querySelectorAll(".card-content");
-        descList.forEach(function (paragraph) {
-            let text = paragraph.innerHTML
-                .replace(/<strong>(.*?)<\/strong>/g, '**$1**')  // Replace <strong> tags with markdown bold
-                .trim();  // Trim any leading/trailing whitespace
-            desc += text + "\n\n";
-        });
+        if (cardType === 1) {
+            let descList = doc.querySelectorAll(".card-content");
+            descList.forEach(function (paragraph) {
+                let text = paragraph.innerHTML
+                desc += text + "\n\n";
+            });
+        }
+        else if(cardType === 2){
+            desc += game.actors.get(message.speaker.actor).items.get(message.flags.pf2e.context.item).system.description.value
+        }
     }
 
     return [{ title: title, description: desc, footer: { text: generic.getCardFooter(card) } }];
@@ -332,7 +353,7 @@ function PF2e_replaceDamageFormat(damagestring) {
     });
 }
 
-function PF2e_parseTraits(message) {
+function PF2e_parseTraits(message, text) {
     let displayTraits = true;
     //check if anonymous allows traits to be displayed
     if (game.modules.get("anonymous")?.active) {
@@ -344,7 +365,7 @@ function PF2e_parseTraits(message) {
     }
     let traits = "";
     if (displayTraits) {
-        const card = message.content;
+        const card = text;
         const parser = new DOMParser();
         let doc = parser.parseFromString(card, "text/html");
         let tags;
@@ -412,6 +433,18 @@ function PF2e_reformatMessage(text) {
     }
 
     return reformattedText;
+}
+
+function PF2e_isActionCard(flavor) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(flavor, "text/html");
+    const action = doc.querySelectorAll("h4.action");
+    if (action.length > 0) {
+        return true;
+    }
+    else {
+        return false;
+    }
 }
 
 function getThisModuleSetting(settingName) {
