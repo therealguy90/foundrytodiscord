@@ -75,7 +75,7 @@ export function messageParserPF2e(msg) {
     }
 
     if (hookEmbed != [] && hookEmbed.length > 0) {
-        if(/<[a-z][\s\S]*>/i.test((hookEmbed[0].title)){
+        if(/<[a-z][\s\S]*>/i.test(hookEmbed[0].title)){
             hookEmbed[0].title = PF2e_reformatMessage(hookEmbed[0].title);
         }
         hookEmbed[0].description = PF2e_reformatMessage(hookEmbed[0].description);
