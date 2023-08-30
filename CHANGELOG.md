@@ -1,4 +1,9 @@
-# 1.2.1
+# 1.2.2
+
+- (pf2e) Added support for new action cards in 5.4.0
+- Minor bug fixes.
+
+## 1.2.1
 
 - Fix the server status message instructions showing up when you don't want it to.
 - Support more formats of chat-cards.
