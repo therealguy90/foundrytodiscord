@@ -567,7 +567,7 @@ export function reformatMessage(text) {
 }
 
 function generateDiscordAvatar(message) {
-    if (propertyExists(message, "speaker.scene")) {
+    if (propertyExists(message, "speaker.scene") && message.speaker.scene !== null) {
         if (message.speaker.token) {
             const speakerToken = game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token);
             if (propertyExists(speakerToken, "texture.src")) {
@@ -578,7 +578,7 @@ function generateDiscordAvatar(message) {
         }
     }
 
-    if (propertyExists(message, "speaker.actor")) {
+    if (propertyExists(message, "speaker.actor") && message.speaker.actor !== null) {
         const speakerActor = game.actors.get(message.speaker.actor);
         if (speakerActor) {
             if (propertyExists(speakerActor, "prototypeToken.texture.src")) {
