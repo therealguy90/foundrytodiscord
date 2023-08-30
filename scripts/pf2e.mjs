@@ -75,6 +75,9 @@ export function messageParserPF2e(msg) {
     }
 
     if (hookEmbed != [] && hookEmbed.length > 0) {
+        if(/<[a-z][\s\S]*>/i.test((hookEmbed[0].title)){
+            hookEmbed[0].title = PF2e_reformatMessage(hookEmbed[0].title);
+        }
         hookEmbed[0].description = PF2e_reformatMessage(hookEmbed[0].description);
         constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === hookEmbed[0].title) ? "" : msg.flavor;
         //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
