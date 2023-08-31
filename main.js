@@ -455,53 +455,6 @@ function getAttachments(formData, msgText, content) {
     return { formDataTemp: formData, contentTemp: msgText };
 }
 
-/*function getAttachments(formData, msgText, content) {
-    const parser = new DOMParser();
-    let doc = parser.parseFromString(content, "text/html");
-    let mediaDivs = doc.querySelectorAll('.chat-media-image');
-    let filecount = 0;
-    if (mediaDivs.length > 0) {
-        mediaDivs.forEach((div) => {
-            const imgElement = div.querySelector('img');
-            const dataSrc = imgElement.getAttribute('data-src');
-            const altText = imgElement.getAttribute('alt');
-            if (dataSrc) {
-                if (dataSrc.startsWith("data")) {
-                    const byteCharacters = atob(dataSrc.split(',')[1]);
-                    const byteArrays = [];
-                    for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
-                        const slice = byteCharacters.slice(offset, offset + 1024);
-                        const byteNumbers = new Array(slice.length);
-                        for (let i = 0; i < slice.length; i++) {
-                            byteNumbers[i] = slice.charCodeAt(i);
-                        }
-                        const byteArray = new Uint8Array(byteNumbers);
-                        byteArrays.push(byteArray);
-                    }
-                    const parts = dataSrc.split(',');
-                    let mimeType;
-                    if (parts.length > 0) {
-                        // Get the part before the semicolon in the first segment
-                        const mimeTypeSegment = parts[0].split(';')[0];
-
-                        // Extract the actual MIME type
-                        mimeType = mimeTypeSegment.split(':')[1];
-                    }
-                    const blob = new Blob(byteArrays, { type: mimeType });
-                    formData.append('files[' + filecount + ']', blob, altText);
-                    filecount++;
-                }
-                else if(dataSrc.includes('http')){
-                    if(content !== ""){
-                        content += "\n"
-                    }
-                    content += dataSrc;
-                }
-            }
-        });
-    }
-    return { formDataTemp: formData, contentTemp: msgText };
-}*/
 
 function wait(milliseconds) {
     return new Promise(resolve => {
