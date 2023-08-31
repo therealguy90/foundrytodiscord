@@ -110,7 +110,7 @@ function PF2e_createCardEmbed(message, cardType) {
     if (cardType === 1) {
         const h3Element = doc.querySelector("h3");
         title = h3Element.textContent.trim();
-        desc = PF2e_parseTraits(message, message.content);
+        desc = PF2e_parseTraits(message.content);
     }
     //pf2e action card, introduced in v5.4.0
     else if (cardType === 2) {
@@ -118,7 +118,7 @@ function PF2e_createCardEmbed(message, cardType) {
         const actionDoc = actionCardParser.parseFromString(message.flavor, "text/html");
         const h4Element = actionDoc.querySelector("h4.action");
         title = h4Element.querySelector("strong").textContent;
-        desc = PF2e_parseTraits(message, message.flavor);
+        desc = PF2e_parseTraits(message.flavor);
     }
     let speakerActor = undefined;
     if (generic.propertyExists(message, "speaker.actor")) {
@@ -355,7 +355,7 @@ function PF2e_replaceDamageFormat(damagestring) {
     });
 }
 
-function PF2e_parseTraits(message, text) {
+function PF2e_parseTraits(text) {
     let displayTraits = true;
     //check if anonymous allows traits to be displayed
     if (game.modules.get("anonymous")?.active) {

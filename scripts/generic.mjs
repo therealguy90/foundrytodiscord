@@ -346,7 +346,7 @@ export function getCardFooter(card) {
             spanTexts.push(span.textContent);
         });
 
-        // Create the "footer" string by joining the span texts with spaces
+        // Create the "footer" string 
         const footer = spanTexts.join(' | ');
 
         return footer;
