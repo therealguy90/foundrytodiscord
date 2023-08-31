@@ -75,7 +75,7 @@ export function messageParserPF2e(msg) {
     }
 
     if (hookEmbed != [] && hookEmbed.length > 0) {
-        if(/<[a-z][\s\S]*>/i.test(hookEmbed[0].title)){
+        if (/<[a-z][\s\S]*>/i.test(hookEmbed[0].title)) {
             hookEmbed[0].title = PF2e_reformatMessage(hookEmbed[0].title);
         }
         hookEmbed[0].description = PF2e_reformatMessage(hookEmbed[0].description);
@@ -143,7 +143,7 @@ function PF2e_createCardEmbed(message, cardType) {
                 desc += text + "\n\n";
             });
         }
-        else if(cardType === 2){
+        else if (cardType === 2) {
             desc += game.actors.get(message.speaker.actor).items.get(message.flags.pf2e.context.item).system.description.value
         }
     }
@@ -406,7 +406,7 @@ function PF2e_reformatMessage(text) {
     reformattedText = text.replace(regex, (_, text) => generic.getLocalizedText(text));
     const isHtmlFormatted = /<[a-z][\s\S]*>/i.test(reformattedText);
     if (isHtmlFormatted) {
-        reformattedText = generic.parseHTMLText(reformattedText);
+        reformattedText = PF2e_parseHTMLText(reformattedText);
         reformattedText = PF2e_reformatMessage(reformattedText); //call this function again as a failsafe for @ tags
     }
     else {
@@ -434,7 +434,7 @@ function PF2e_reformatMessage(text) {
         reformattedText = reformattedText.replace(regex, (_, text) => PF2e_getNameFromCheck(text));
     }
 
-    return reformattedText;
+    return reformattedText.trim();
 }
 
 function PF2e_isActionCard(flavor) {
@@ -447,6 +447,48 @@ function PF2e_isActionCard(flavor) {
     else {
         return false;
     }
+}
+
+function PF2e_parseHTMLText(htmlString) {
+    let reformattedText = htmlString;
+
+    // Cleanup newlines in raw text before parsing
+    reformattedText = reformattedText.replace(/<[^>]*>[^<]*\n[^<]*<\/[^>]*>/g, match => match.replace(/\n/g, ''));
+
+    const htmldoc = document.createElement('div');
+    htmldoc.innerHTML = reformattedText;
+
+    // Remove elements with data-visibility attribute and hidden styles
+    ['[data-visibility="gm"]', '[data-visibility="owner"]', '[style*="display:none"]'].forEach(selector => {
+        const elements = htmldoc.querySelectorAll(selector);
+        elements.forEach(element => element.parentNode.removeChild(element));
+    });
+    // Remove <img> tags
+    generic.removeElementsBySelector('img', htmldoc);
+    // Format various elements
+    generic.formatTextBySelector('.inline-roll, .inline-check, span[data-pf2-check]', text => `:game_die:\`${text}\``, htmldoc);
+    reformattedText = htmldoc.innerHTML;
+    // Status effect cards
+    const statuseffectlist = htmldoc.querySelectorAll('.statuseffect-rules');
+    if (statuseffectlist.length !== 0) {
+        let statfx = '';
+        statuseffectlist.forEach(effect => {
+            statfx += effect.innerHTML.replace(/<p>.*?<\/p>/g, '') + '\n';
+        });
+        const tempdivs = document.createElement('div');
+        tempdivs.innerHTML = reformattedText;
+        const targetdiv = tempdivs.querySelector('.dice-total.statuseffect-message');
+        if (targetdiv) {
+            targetdiv.innerHTML = statfx;
+        }
+        removeElementsBySelector('.dice-total.statuseffect-message ul', tempdivs);
+        reformattedText = tempdivs.innerHTML;
+    }
+
+    // Format header, strong, and em tags
+    reformattedText = generic.htmlCodeCleanup(reformattedText);
+
+    return reformattedText;
 }
 
 function getThisModuleSetting(settingName) {

@@ -422,110 +422,61 @@ export function isOwnedByPlayer(actor) {
     return isOwned;
 }
 
+export function removeElementsBySelector(selector, root) {
+    const elements = (root || document).querySelectorAll(selector);
+    elements.forEach(element => element.remove());
+}
+
+export function formatTextBySelector(selector, formatter, root) {
+    const elements = (root || document).querySelectorAll(selector);
+    elements.forEach(element => {
+        const formattedText = formatter(element.textContent.trim());
+        element.replaceWith(formattedText);
+    });
+}
+
 export function parseHTMLText(htmlString) {
     let reformattedText = htmlString;
 
-    //cleanup newlines in raw text before parsing
-    let regex = /<[^>]*>[^<]*\n[^<]*<\/[^>]*>/g;
-    reformattedText = reformattedText.replace(regex, (match) => match.replace(/\n/g, ''));
+    // Cleanup newlines in raw text before parsing
+    reformattedText = reformattedText.replace(/<[^>]*>[^<]*\n[^<]*<\/[^>]*>/g, match => match.replace(/\n/g, ''));
 
-    //remove text that is not visible to players
-    let htmldoc = document.createElement('div');
+    const htmldoc = document.createElement('div');
     htmldoc.innerHTML = reformattedText;
-    let divs = htmldoc.querySelectorAll(`[data-visibility="gm"]`);
-    for (let i = 0; i < divs.length; i++) {
-        divs[i].parentNode.removeChild(divs[i]);
-    }
+
+    // Remove elements with data-visibility attribute and hidden styles
+    ['[data-visibility="gm"]', '[data-visibility="owner"]', '[style*="display:none"]'].forEach(selector => {
+        const elements = htmldoc.querySelectorAll(selector);
+        elements.forEach(element => element.parentNode.removeChild(element));
+    });
+
+    // Remove <img> tags
+    removeElementsBySelector('img', htmldoc);
+
+    // Format various elements
+    formatTextBySelector('.inline-roll, .inline-check', text => `:game_die:\`${text}\``, htmldoc);
     reformattedText = htmldoc.innerHTML;
-    divs = htmldoc.querySelectorAll('[data-visibility="owner"]');
-    for (let i = 0; i < divs.length; i++) {
-        divs[i].parentNode.removeChild(divs[i]);
-    }
-    reformattedText = htmldoc.innerHTML;
-    divs = htmldoc.querySelectorAll('[style*="display:none"]');
-    for (let i = 0; i < divs.length; i++) {
-        divs[i].parentNode.removeChild(divs[i]);
-    }
-    reformattedText = htmldoc.innerHTML;
+    // Format header, strong, and em tags
+    reformattedText = htmlCodeCleanup(reformattedText);
 
-    //remove <img> tags, these won't be needed.
-    htmldoc.innerHTML = reformattedText;
-    htmldoc.querySelectorAll('img').forEach(img => img.remove());
-    reformattedText = htmldoc.innerHTML;
+    return reformattedText;
+}
 
-    htmldoc.innerHTML = reformattedText;
-    htmldoc.querySelectorAll('.inline-roll').forEach(inlineRoll => inlineRoll.replaceWith(":game_die:`" + inlineRoll.textContent.trim() + "`"));
-    reformattedText = htmldoc.innerHTML;
-
-    htmldoc.innerHTML = reformattedText;
-    htmldoc.querySelectorAll('.inline-check').forEach(inlineCheck => inlineCheck.replaceWith(":game_die:`" + inlineCheck.textContent.trim() + "`"));
-    reformattedText = htmldoc.innerHTML;
-
-
-    //status effect cards:
-    let statuseffectlist = htmldoc.querySelectorAll('.statuseffect-rules');
-
-    //construct status effects:
-    if (statuseffectlist.length != 0) {
-        let statfx = ""
-        statuseffectlist.forEach(effect => {
-            statfx = statfx + effect.innerHTML.replace(/<p>.*?<\/p>/g, '') + "\n";
-        });
-        const tempdivs = document.createElement('div')
-        tempdivs.innerHTML = reformattedText;
-        let targetdiv = tempdivs.querySelector('.dice-total.statuseffect-message');
-        if (targetdiv) {
-            targetdiv.innerHTML = statfx;
-        }
-        const ulElements = tempdivs.querySelectorAll('.dice-total.statuseffect-message ul');
-        ulElements.forEach(ulElement => {
-            ulElement.parentNode.removeChild(ulElement);
-        });
-        reformattedText = tempdivs.innerHTML;
-    }
-
-    //format header and strong tags to bold instead
-    regex = /<h[1-6][^>]*>(.*?)<\/h[1-6]>/g;
-    reformattedText = reformattedText.replace(regex, '**$1**');
-    regex = /<strong>(.*?)<\/strong>/g
-    reformattedText = reformattedText.replace(regex, '**$1**');
-    regex = /<b>(.*?)<\/b>/g
-    reformattedText = reformattedText.replace(regex, '**$1**');
-    //format hr to horizontal lines
-    reformattedText = reformattedText.replace(/<hr[^>]*>/g, "-----------------------");
-
-    //format em tags to italic
-    regex = /<em[^>]*>(.*?)<\/em>/g;
-    reformattedText = reformattedText.replace(regex, '*$1*');
-
-    //remove all indentation and formatting, aka just make it ugly so we can actually parse the next part of it
-    reformattedText = reformattedText.replace(/>\s+</g, '><');
-
-    //remove <li>
-    reformattedText = reformattedText.replace(/<li>/g, "");
-    reformattedText = reformattedText.replace(/<\/li>/g, "\n");
-
-    //remove <input>
-    reformattedText = reformattedText.replace(/<input[^>]*>.*?<\/input>|<input[^>]*>/gi, '');
-    //remove remaining <div> tags
-    reformattedText = reformattedText.replace(/<div>/g, "");
-    reformattedText = reformattedText.replace(/<\/div>/g, "\n");
-    //remove line breaks
-    reformattedText = reformattedText.replace(/<br\s*\/?>/gi, '\n');
-    //remove <p>
-    reformattedText = reformattedText.replace(/<p>/g, "");
-    reformattedText = reformattedText.replace(/<\/p>/g, "\n");
-
-    //remove the rest
-    reformattedText = reformattedText.replace(/<[^>]*>?/gm, "");
-
-    //cleanup time
-    regex = /\n\s+/g;
-    reformattedText = reformattedText.replace(regex, "\n");
-    regex = / {2,}/g;
-    reformattedText = reformattedText.replace(regex, " ");
-
-    return reformattedText.trim();
+export function htmlCodeCleanup(htmltext) {
+    return htmltext.replace(/<(h[1-6])[^>]*>(.*?)<\/\1>/g, '**$2**') // Format header tags
+        .replace(/<(strong|b)>|<\/(strong|b)>/g, '**') // Format strong/bold tags
+        .replace(/<em[^>]*>(.*?)<\/em>/g, '*$1*') // Format em/italic tags
+        .replace(/<hr[^>]*>/g, '-----------------------') // Format hr tags
+        .replace(/>\s+</g, '><') // Remove indentation and formatting
+        .replace(/<li>/g, '') // Remove <li> tags
+        .replace(/<\/li>/g, '\n') // Format line breaks after </li>
+        .replace(/<input[^>]*>.*?<\/input>|<input[^>]*>/gi, '') // Remove <input> tags
+        .replace(/<div>|<\/div>/g, '\n') // Remove <div> tags and format line breaks
+        .replace(/<br\s*\/?>/gi, '\n') // Format <br> tags as line breaks
+        .replace(/<p>|<\/p>/g, '\n') // Remove <p> tags and format line breaks
+        .replace(/<[^>]*>?/gm, '') // Remove all remaining tags
+        .replace(/\n\s+/g, '\n') // Clean up line breaks and whitespace
+        .replace(/ {2,}/g, ' '); // Clean up excess whitespace
 }
 
 
