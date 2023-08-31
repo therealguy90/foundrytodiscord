@@ -1,4 +1,10 @@
-# 1.2.3
+# 1.3.0
+
+- Migrated everything from ye olde XmlHTTPRequests into Fetch() API, all features remain the same.
+- **NEW MODULE SUPPORT**: [Chat Media](https://foundryvtt.com/packages/chat-media)! Uploaded images, image links, and videos are now sent to Discord.
+- Minor bug fixes.
+
+## 1.2.3
 
 - Hotfix for 1.2.2.
 - Other minor bug fixes.
