@@ -481,7 +481,7 @@ function PF2e_parseHTMLText(htmlString) {
         if (targetdiv) {
             targetdiv.innerHTML = statfx;
         }
-        removeElementsBySelector('.dice-total.statuseffect-message ul', tempdivs);
+        generic.removeElementsBySelector('.dice-total.statuseffect-message ul', tempdivs);
         reformattedText = tempdivs.innerHTML;
     }
 
