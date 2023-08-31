@@ -462,7 +462,6 @@ export function parseHTMLText(htmlString) {
     return reformattedText;
 }
 
-
 export function htmlCodeCleanup(htmltext) {
     return htmltext.replace(/<(h[1-6])[^>]*>(.*?)<\/\1>/g, '**$2**') // Format header tags
         .replace(/<(strong|b)>|<\/(strong|b)>/g, '**') // Format strong/bold tags
