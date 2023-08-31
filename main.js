@@ -430,49 +430,23 @@ function getAttachments(formData, msgText, content) {
                         filecount++;
                     }
                     else if (dataSrc.includes('http')) {
-                        if (content !== "") {
-                            content += "\n";
+                        if (msgText !== "") {
+                            msgText += "\n";
                         }
-                        content += dataSrc;
+                        msgText += dataSrc;
                     }
                 }
             }
             
             if (videoElement) {
-                const src = videoElement.getAttribute('src');
-                const altText = videoElement.getAttribute('alt');
+                const dataSrc = videoElement.getAttribute('data-src');
                 
                 if (dataSrc) {
-                    if (dataSrc.startsWith("data")) {
-                        const byteCharacters = atob(dataSrc.split(',')[1]);
-                        const byteArrays = [];
-                        for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
-                            const slice = byteCharacters.slice(offset, offset + 1024);
-                            const byteNumbers = new Array(slice.length);
-                            for (let i = 0; i < slice.length; i++) {
-                                byteNumbers[i] = slice.charCodeAt(i);
-                            }
-                            const byteArray = new Uint8Array(byteNumbers);
-                            byteArrays.push(byteArray);
+                     if (dataSrc.includes('http')) {
+                        if (msgText !== "") {
+                            msgText += "\n";
                         }
-                        const parts = dataSrc.split(',');
-                        let mimeType;
-                        if (parts.length > 0) {
-                            // Get the part before the semicolon in the first segment
-                            const mimeTypeSegment = parts[0].split(';')[0];
-
-                            // Extract the actual MIME type
-                            mimeType = mimeTypeSegment.split(':')[1];
-                        }
-                        const blob = new Blob(byteArrays, { type: mimeType });
-                        formData.append('files[' + filecount + ']', blob, altText);
-                        filecount++;
-                    }
-                    else if (dataSrc.includes('http')) {
-                        if (content !== "") {
-                            content += "\n";
-                        }
-                        content += dataSrc;
+                        msgText += dataSrc;
                     }
                 }
             }
