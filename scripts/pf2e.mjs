@@ -89,12 +89,7 @@ export function messageParserPF2e(msg) {
         }
     }
     constructedMessage = PF2e_reformatMessage(constructedMessage);
-    if (constructedMessage !== "" || hookEmbed.length > 0) { //avoid sending empty messages
-        return generic.getRequestParams(msg, constructedMessage, hookEmbed);
-    }
-    else {
-        return false;
-    }
+    return generic.getRequestParams(msg, constructedMessage, hookEmbed);
 }
 
 function PF2e_createCardEmbed(message, cardType) {
@@ -324,7 +319,7 @@ function PF2e_getNameFromCheck(checkString) {
         const check = generic.parseCheckString(checkString);
         let tempcheck = "`";
         if (check.showDC) {
-            if (check.showDC === "all") {
+            if (check.showDC === "all" || check.showdc === "all") {
                 tempcheck = tempcheck + "DC " + check.dc + " ";
             }
         }
