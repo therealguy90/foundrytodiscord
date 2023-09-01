@@ -37,7 +37,7 @@ Chat Media
 ### Future Plans:
 
 - DnD5e partial support (likely without midi-qol mergecards)
-- FVTT Chat Media support
+- Foundry to Discord API to allow other modules to send messages to your Discord!
 
 --------------------------------------------------
 
