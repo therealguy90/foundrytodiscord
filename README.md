@@ -129,7 +129,7 @@ const ftd = game.modules.get('foundrytodiscord').api
 
 Available methods:
 #### IMPORTANT NOTE! These methods do not abide with Discord's rate limiting system, so don't spam the requests too much or the owner of the webhook will be banned from using the API for about an hour!
-#### When using these methods in another module, make sure to use the response headers that the methods return, so that 
+#### When using these methods in another module, make sure to use the response headers that the methods return to know when you've hit the rate limit! 
 ```javascript
 /* generateSendFormData allows anyone to formulate a simple message that can be sent to the webhook without much knowledge of javascript or the Discord API.
 *  Parameters:
@@ -148,20 +148,20 @@ let myMessageContents = ftd.generateSendFormData("Hello, World!");
 *  (FormData) formData (required): A FormData object containing the specifics of the message being sent.
 *  (boolean) isRoll (optional, default=false): Determines whether the message being sent is ending up in the Webhook URL, or the Roll Webhook URL.
 *  (string) sceneID (optional, default=""): If your world is using the Threaded Scenes feature, inputting a scene ID here will let the module know where to send it.
-*  Output: Returns an Object with the webhook URL and the Discord Message object in the format of { url, message }. The URL and message can later be used to edit or delete the message that was sent using editMessage() and deleteMessage().
+*  Output: Returns an Object with the API response and the Discord Message object in the format of { response, message }. These can later be used to edit or delete the message that was sent using editMessage() and deleteMessage() respectively.
 */
-const responseUrlAndMessage = await ftd.sendMessage(myMessageContents);
+const responseAndMessage = await ftd.sendMessage(myMessageContents);
 ```
 
 ```javascript
 /* (async) editMessage edits a message in the channel or thread.
 *  Parameters:
 *  (FormData) formData (required): A FormData object containing the specifics of the message that will replace the contents of the specified message in discord.
-*  (string) webhook (required): The URL that was used to send the message. If you used sendMessage(), you can use the url that it returns.
+*  (string) webhook (required): The URL that was used to send the message. If you used sendMessage(), you can use the url in the response that it returns.
 *  (string) messageID (required): The Discord message ID of the message that will be edited.
-*  Output: This sort of request usually ends in a 204 code, which means no response body will be in the response, but editMessage() will return a response anyways.
+*  Output: This sort of request usually ends in a 204 code, which means no response body will be in the response, but editMessage() will return a response anyways for headers.
 */
-await ftd.editMessage(newMessage, urlAndMessage.url, urlAndMessage.message.id);
+await ftd.editMessage(newMessage, responseAndMessage.response.url, responseAndMessage.message.id);
 ```
 
 ```javascript
@@ -169,9 +169,9 @@ await ftd.editMessage(newMessage, urlAndMessage.url, urlAndMessage.message.id);
 *  Parameters:
 *  (string) webhook (required): The URL that was used to send the message. If you used sendMessage(), you can use the url that it returns.
 *  (string) messageID (required): The Discord message ID of the message that will be edited.
-*  Output: This sort of request usually ends in a 204 code, which means no response body will be in the response, but deleteMessage() will return a response anyways.
+*  Output: This sort of request usually ends in a 204 code, which means no response body will be in the response, but deleteMessage() will return a response anyways for headers.
 */
-await ftd.deleteMessage(urlAndMessage.url, urlAndMessage.message.id);
+await ftd.deleteMessage(responseAndMessage.response.url, responseAndMessage.message.id);
 ```
 
 --------------------------------------------------
