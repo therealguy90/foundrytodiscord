@@ -228,17 +228,30 @@ function PF2e_createRollEmbed(message) {
     }
     desc = desc + "\n";
 
-    //Add roll information to embed:
-    for (let i = 0; i < message.rolls.length; i++) {
-        desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
-        if (generic.propertyExists(message, "flags.pf2e.context.type") && message.flags.pf2e.context.type == "damage-roll") {
-            if (title === "") {
-                title = "Damage Roll";
+    if (!message.flags.pf2e.context.isReroll) {
+        //Add roll information to embed:
+        for (let i = 0; i < message.rolls.length; i++) {
+            desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
+            if (generic.propertyExists(message, "flags.pf2e.context.type") && message.flags.pf2e.context.type == "damage-roll") {
+                if (title === "") {
+                    title = "Damage Roll";
+                }
+                desc = desc + PF2e_parseDamageTypes(message.rolls[i]);
             }
-            desc = desc + PF2e_parseDamageTypes(message.rolls[i]);
+            else if (PF2e_parseDegree(message.rolls[i].options.degreeOfSuccess) != "Invalid") {
+                desc = desc + " `(" + PF2e_parseDegree(message.rolls[i].options.degreeOfSuccess) + ")`";
+            }
+            else if(PF2e_parseDegree(message.flags.pf2e.context.outcome) != "Invalid"){
+                desc = desc + " `(" + PF2e_parseDegree(message.flags.pf2e.context.outcome) + ")`";
+            }
+            desc = desc + "\n";
         }
-        else if (PF2e_parseDegree(message.rolls[i].options.degreeOfSuccess) != "Invalid") {
-            desc = desc + " `(" + PF2e_parseDegree(message.rolls[i].options.degreeOfSuccess) + ")`";
+    }
+    else {
+        desc = desc + "~~:game_die:Result: " + "__" + PF2e_getDiscardedRoll(message) + "__~~\n";
+        desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[0].total + "**__";
+        if (PF2e_parseDegree(message.flags.pf2e.context.outcome) != "Invalid") {
+            desc = desc + " `(" + PF2e_parseDegree(message.flags.pf2e.context.outcome) + ")`";
         }
         desc = desc + "\n";
     }
@@ -300,7 +313,24 @@ function PF2e_parseDamageTypes(baserolls) {
 }
 
 function PF2e_parseDegree(degree) {
+    let convertedDegree
     switch (degree) {
+        case "criticalFailure":
+            convertedDegree = 0;
+            break;
+        case "failure":
+            convertedDegree = 1;
+            break;
+        case "success":
+            convertedDegree = 2;
+            break;
+        case "criticalSuccess":
+            convertedDegree = 3;
+            break;
+        default:
+            break;
+    }
+    switch (convertedDegree) {
         case 0:
             return "Critical Failure";
         case 1:
@@ -484,6 +514,13 @@ function PF2e_parseHTMLText(htmlString) {
     reformattedText = generic.htmlCodeCleanup(reformattedText);
 
     return reformattedText;
+}
+
+function PF2e_getDiscardedRoll(message) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(message.content, "text/html");
+    const rerollDiscardDiv = doc.querySelector(".pf2e-reroll-discard .dice-total");
+    return rerollDiscardDiv.textContent;
 }
 
 function getThisModuleSetting(settingName) {
