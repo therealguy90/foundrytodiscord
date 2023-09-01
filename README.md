@@ -104,6 +104,7 @@ Publicly-seen messages are sent to Discord while attempting to block as much met
 Screenshots are from a Pathfinder Second Edition game. I do not guarantee other systems will have support for some ChatMessages, but regular rolls, regular chat-cards, and chat will work fine on ANY system.
 
 Do note that this follows message deletions as well. If a message is deleted in Foundry, it will also be deleted in the channel. Although this can be disabled in the config, I suggest you keep it on for any "oopsie" moments.
+
 ![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/b7eb9ebd-e64d-4f1e-9ffc-5fd85f025a99)
 ![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/caaa5350-fdf2-4aeb-a697-41f59551b506)
 
