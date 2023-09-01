@@ -37,16 +37,8 @@ Chat Media
 ### Future Plans:
 
 - DnD5e partial support (likely without midi-qol mergecards)
-- Foundry to Discord API to allow other modules to send messages to your Discord!
 
---------------------------------------------------
-
-## Screenshots
-
-![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/02a174a5-ae1b-4e23-9d6b-eb2ab333c747)
-![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/a56012ee-ab0b-46b7-94cb-7ff42ab2cb11)
-
---------------------------------------------------
+------------------------------------
 
 ## Setup
 
