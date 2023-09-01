@@ -1,4 +1,12 @@
-# 1.3.0
+# 1.4.0
+
+- **NEW**: The Foundry to Discord API! You can now use this module to make it easier to send custom messages to your Discord channel, among other features. Refer to README.md on how to use the API.
+- (pf2e) Added support for rerolls! Hero point, fortune, and misfortune rerolls are now sent to the chat as normal.
+- Better chat mirroring: Ever needed to delete a message but hate alt-tabbing to Discord to do it? Now, you can delete a message in Foundry, and it will also delete the message linked to it in your channel! This can be disabled in the config for those who like the old style.
+- Major code refactorings.
+- Minor bug fixes.
+
+## 1.3.0
 
 - **NEW MODULE SUPPORT**: [Chat Media](https://foundryvtt.com/packages/chat-media)! Uploaded images, image links, and videos are now sent to Discord.
 - Migrated everything from ye olde XmlHTTPRequests into Fetch() API, all features remain the same.
