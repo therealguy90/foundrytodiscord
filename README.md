@@ -100,7 +100,11 @@ This is the ID needed for the Main GM ID field.
 #### Chat Mirroring
 
 Publicly-seen messages are sent to Discord while attempting to block as much metagame data as possible depending on your other modules that may change how ChatMessages display information. This works well with the "anonymous" module.
+
 Screenshots are from a Pathfinder Second Edition game. I do not guarantee other systems will have support for some ChatMessages, but regular rolls, regular chat-cards, and chat will work fine on ANY system.
+
+Do note that this follows message deletions as well. If a message is deleted in Foundry, it will also be deleted in the channel. Although this can be disabled in the config, I suggest you keep it on for any "oopsie" moments.
+
 ![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/b7eb9ebd-e64d-4f1e-9ffc-5fd85f025a99)
 ![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/caaa5350-fdf2-4aeb-a697-41f59551b506)
 
@@ -128,7 +132,7 @@ const ftd = game.modules.get('foundrytodiscord').api
 ```
 
 Available methods:
-#### IMPORTANT NOTE! These methods do not abide with Discord's rate limiting system, so don't spam the requests too much or the owner of the webhook will be banned from using the API for about an hour!
+#### IMPORTANT NOTE! These methods do not abide with Discord's rate limiting system, so don't spam the requests too much or YOU will be banned from using the API for about an hour!
 #### When using these methods in another module, make sure to use the response headers that the methods return to know when you've hit the rate limit! 
 ```javascript
 /* generateSendFormData allows anyone to formulate a simple message that can be sent to the webhook without much knowledge of javascript or the Discord API.
