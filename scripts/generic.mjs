@@ -550,7 +550,7 @@ function generateimglink(img) {
     const supportedFormats = ['jpg', 'jpeg', 'png', 'webp'];
     let imgUrl;
     if (!img || (img && img === "")) {
-        return getThisModuleSetting('inviteURL') + "modules/foundrytodiscord/src/images/defaultavatar.png";
+        return getDefaultAvatarLink()
     }
     if (img.includes("http")) {
         imgUrl = img;
@@ -566,7 +566,7 @@ function generateimglink(img) {
         return imgUrl;
     }
     else {
-        return getThisModuleSetting('inviteURL') + "modules/foundrytodiscord/src/images/defaultavatar.png";
+        return getDefaultAvatarLink()
     }
 }
 
@@ -589,4 +589,8 @@ export function propertyExists(jsonObj, propertyPath) {
 
 function getThisModuleSetting(settingName) {
     return game.settings.get('foundrytodiscord', settingName);
+}
+
+export function getDefaultAvatarLink(){
+    return getThisModuleSetting('inviteURL') + "modules/foundrytodiscord/src/images/defaultavatar.png";
 }
