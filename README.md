@@ -161,7 +161,7 @@ const responseAndMessage = await ftd.sendMessage(myMessageContents);
 *  (string) messageID (required): The Discord message ID of the message that will be edited.
 *  Output: This sort of request usually ends in a 204 code, which means no response body will be in the response, but editMessage() will return a response anyways for headers.
 */
-await ftd.editMessage(newMessage, responseAndMessage.response.url, responseAndMessage.message.id);
+await ftd.editMessage(newMessageFormData, responseAndMessage.response.url, responseAndMessage.message.id);
 ```
 
 ```javascript
