@@ -390,7 +390,7 @@ async function sendOnce() {
     const { hook, formData, msgID } = requestQueue[0];
     const requestOptions = {
         method: 'POST',
-        body: formData // Assuming params is a FormData object
+        body: formData 
     };
 
     console.log("foundrytodiscord | Attempting to send message to webhook...");
@@ -571,7 +571,7 @@ async function editMessage(formData, webhook, messageID) {
     }
     const requestOptions = {
         method: 'PATCH',
-        body: formData // Assuming params is a FormData object
+        body: formData
     };
     return await fetch(webhook, requestOptions).catch(error => {
         console.error('foundrytodiscord | Error editing message:', error);
