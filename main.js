@@ -2,10 +2,16 @@ import { messageParserGeneric } from './scripts/generic.mjs';
 import { isCard } from './scripts/generic.mjs';
 import { messageParserPF2e } from './scripts/pf2e.mjs';
 import { ThreadedChatConfig } from './src/forms/threadedchatconfig.mjs';
+import { getDefaultAvatarLink } from './scripts/generic.mjs';
 let SYSTEM_ID;
 
 Hooks.on("init", function () {
     SYSTEM_ID = game.system.id;
+    game.modules.get('foundrytodiscord').api = {
+        sendMessage,
+        editMessage,
+        deleteMessage
+    };
     game.settings.register('foundrytodiscord', 'mainUserId', {
         name: "Main GM ID",
         hint: "If you plan on having two GMs in one session, fill this in with the main GM's ID to avoid duplicated messages. Just type 'ftd getID' in chat to have your ID sent to your discord channel.",
@@ -13,6 +19,54 @@ Hooks.on("init", function () {
         config: true,
         default: "",
         type: String
+    });
+    game.settings.register('foundrytodiscord', 'inviteURL', {
+        name: "Game Invite URL",
+        hint: "This should be the internet invite URL for your game session. Make sure the domain is public! To test if your URL works, go to\n<https://yourinviteurl.example>/modules/foundrytodiscord/src/images/defaultavatar.png\n(excluding <>, of course). If you visit the link where this image is hosted, it should appear as the default FoundryVTT icon!",
+        scope: "world",
+        config: true,
+        default: "http://",
+        requiresReload: true,
+        type: String
+    });
+    game.settings.register('foundrytodiscord', 'webHookURL', {
+        name: "Web Hook URL",
+        hint: "This should be the Webhook's URL from the discord server you want to send chat messages to. Leave it blank to have foundrytodiscord ignore regular chat messages.",
+        scope: "world",
+        config: true,
+        default: "",
+        requiresReload: true,
+        type: String
+    });
+    game.settings.register('foundrytodiscord', 'rollWebHookURL', {
+        name: "Roll Web Hook URL",
+        hint: "This is the webhook for wherever you want rolls to appear in discord. Leave it blank to have foundrytodiscord ignore rolls.",
+        scope: "world",
+        config: true,
+        default: "",
+        requiresReload: true,
+        type: String
+    });
+    game.settings.register('foundrytodiscord', 'threadedChatMap', {
+        scope: "world",
+        config: false,
+        default: {},
+        type: Object
+    });
+    game.settings.register('foundrytodiscord', 'messageList', {
+        config: false,
+        scope: "world",
+        default: {},
+        type: Object,
+    });
+    game.settings.registerMenu('foundrytodiscord', 'threadedChatConfig', {
+        name: 'Threaded Scenes',
+        label: 'Edit Scene-Thread Map',
+        hint: 'Split your scenes into separate Discord threads in your channel! Requires either or both webhook URLs to be set up.',
+        scope: "world",
+        icon: 'fas fa-cogs',
+        type: ThreadedChatConfig,
+        restricted: true
     });
     game.settings.register('foundrytodiscord', 'serverStatusMessage', {
         name: "Enable Server Status Message",
@@ -59,47 +113,13 @@ Hooks.on("init", function () {
         default: true,
         type: Boolean
     });
-    game.settings.register('foundrytodiscord', 'inviteURL', {
-        name: "Game Invite URL",
-        hint: "This should be the internet invite URL for your game session. Make sure the domain is public! To test if your URL works, go to\n<https://yourinviteurl.example>/modules/foundrytodiscord/src/images/defaultavatar.png\n(excluding <>, of course). If you visit the link where this image is hosted, it should appear as the default FoundryVTT icon!",
+    game.settings.register('foundrytodiscord', 'disableDeletions', {
+        name: "Disable message deletions",
+        hint: "If this is turned ON, deleted messages in Foundry won't be synced with your Discord webhook.",
         scope: "world",
         config: true,
-        default: "http://",
-        requiresReload: true,
-        type: String
-    });
-    game.settings.register('foundrytodiscord', 'webHookURL', {
-        name: "Web Hook URL",
-        hint: "This should be the Webhook's URL from the discord server you want to send chat messages to. Leave it blank to have foundrytodiscord ignore regular chat messages.",
-        scope: "world",
-        config: true,
-        default: "",
-        requiresReload: true,
-        type: String
-    });
-    game.settings.register('foundrytodiscord', 'rollWebHookURL', {
-        name: "Roll Web Hook URL",
-        hint: "This is the webhook for wherever you want rolls to appear in discord. Leave it blank to have foundrytodiscord ignore rolls.",
-        scope: "world",
-        config: true,
-        default: "",
-        requiresReload: true,
-        type: String
-    });
-    game.settings.registerMenu('foundrytodiscord', 'threadedChatConfig', {
-        name: 'Threaded Scenes',
-        label: 'Edit Scene-Thread Map',
-        hint: 'Split your scenes into separate Discord threads in your channel! Requires either or both webhook URLs to be set up.',
-        scope: "world",
-        icon: 'fas fa-cogs',
-        type: ThreadedChatConfig,
-        restricted: true
-    });
-    game.settings.register('foundrytodiscord', 'threadedChatMap', {
-        scope: "world",
-        config: false,
-        default: {},
-        type: Object
+        default: false,
+        type: Boolean
     });
     if (game.modules.get("polyglot")?.active) {
         game.settings.register('foundrytodiscord', "commonLanguages", {
@@ -119,6 +139,14 @@ Hooks.on("init", function () {
             type: String
         });
     }
+    game.settings.register('foundrytodiscord', 'disableMessages', {
+        name: "Disable ALL messages",
+        hint: "If you want to use Foundry to Discord purely as an API or use the Server Status Message ONLY, you can toggle this on. This disables the detection of new chat messages.",
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean
+    });
     /*all message parsers MUST return a set of request params. The module queues each request param to be sent
     *one by one to Discord to avoid rate limits.
     */
@@ -134,6 +162,7 @@ Hooks.on("init", function () {
     }
 });
 
+
 Hooks.on('deleteScene', async scene => {
     const setting = getThisModuleSetting('threadedChatMap');
     if (setting.hasOwnProperty(scene.id)) {
@@ -142,10 +171,37 @@ Hooks.on('deleteScene', async scene => {
     }
 });
 
+Hooks.on('closeApplication', (app) => {
+    // Avoid removing discord messages when chat log is flushed
+    try {
+        if (app.data.title === "Flush Chat Log" && game.user.isGM) {
+            flushLog = true;
+        }
+    } catch (error) {
+
+    }
+});
+
+Hooks.on('deleteChatMessage', async (msg) => {
+    if ((!flushLog && !getThisModuleSetting('disableDeletions')) && (game.userId != getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") != "")) {
+        if (getThisModuleSetting('messageList').hasOwnProperty(msg.id)) {
+            let { url, message } = getThisModuleSetting('messageList')[msg.id];
+            const response = await deleteMessage(url, message);
+            if(response.ok){
+                console.log("foundrytodiscord | Deleted message with id \"" + message.id + "\"");
+            }
+            else{
+                console.error('foundrytodiscord | Error deleting message:', response.status, response.statusText);
+            }
+        }
+    }
+});
+
 let requestQueue = [];
 let isProcessing = false;
-
 let messageParse;
+let flushLog = false;
+
 
 Hooks.on("ready", function () {
     if (getThisModuleSetting('inviteURL') !== "" && !getThisModuleSetting('inviteURL').endsWith("/")) {
@@ -157,98 +213,74 @@ Hooks.on("ready", function () {
     console.log("foundrytodiscord | Ready");
 });
 
-function initSystemStatus() {
+async function initSystemStatus() {
     if (getThisModuleSetting('serverStatusMessage')) {
         if (getThisModuleSetting('messageID') && getThisModuleSetting('messageID') !== "") {
-            let hook;
-            if (getThisModuleSetting('webHookURL').split('?').length > 1) {
-                const querysplit = getThisModuleSetting('webHookURL').split('?');
-                hook = querysplit[0] + '/messages/' + getThisModuleSetting('messageID') + '?' + querysplit[1];
-            } else {
-                hook = getThisModuleSetting('webHookURL') + '/messages/' + getThisModuleSetting('messageID');
-            }
-
-            const params = {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    embeds: [{
-                        title: 'Server Status: ' + game.world.name,
-                        description: '**ONLINE**\n' + (getThisModuleSetting('showInvite') ? '**Invite Link: **' + getThisModuleSetting('inviteURL') : ''),
-                        footer: {
-                            text: 'Type "ftd serveroff" in Foundry to set your server status to OFFLINE. This will persist until the next world restart.\n\n' + (game.modules.get('foundrytodiscord').id + ' v' + game.modules.get('foundrytodiscord').version)
-                        },
-                        color: 65280
-                    }]
-                })
-            };
+            const editedMessage = new FormData()
+            const body = JSON.stringify({
+                embeds: [{
+                    title: 'Server Status: ' + game.world.name,
+                    description: '**ONLINE**\n' + (getThisModuleSetting('showInvite') ? '**Invite Link: **' + getThisModuleSetting('inviteURL') : ''),
+                    footer: {
+                        text: 'Type "ftd serveroff" in Foundry to set your server status to OFFLINE. This will persist until the next world restart.\n\n' + (game.modules.get('foundrytodiscord').id + ' v' + game.modules.get('foundrytodiscord').version)
+                    },
+                    color: 65280
+                }]
+            });
+            editedMessage.append('payload_json', body)
 
             console.log('foundrytodiscord | Attempting to edit server status...');
-            fetch(hook, params)
-                .then(response => {
-                    if (response.status === 200 || response.status === 204) {
-                        console.log('foundrytodiscord | Server state set to ONLINE');
-                    } else {
-                        console.error('foundrytodiscord | Error editing embed:', response.status, response.statusText);
-                    }
-                })
-                .catch(error => {
-                    console.error('foundrytodiscord | Fetch error:', error);
-                });
+            const response = await editMessage(editedMessage, getThisModuleSetting('webHookURL'), getThisModuleSetting('messageID'));
+            if (response.ok) {
+                console.log('foundrytodiscord | Server state set to ONLINE');
+            }
+            else {
+                console.error('foundrytodiscord | Error editing embed:', response.status, response.statusText);
+            }
         } else {
             const hook = getThisModuleSetting('webHookURL');
             if (hook && hook !== '') {
-                const params = {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        username: game.world.id,
-                        avatar_url: getThisModuleSetting('inviteURL') + 'modules/foundrytodiscord/src/images/defaultavatar.png',
-                        content: '',
-                        embeds: [{
-                            title: 'Server Status Setup Instructions',
-                            description: `**IMPORTANT**: A limitation of this module is that it can *only* detect your world as online if a Gamemaster account is online. A command 'ftd serveroff' is also needed to set this message to OFFLINE.\n\n` +
-                                `**Step 1:** Pin this message so that everyone can find it easily on your channel.\n` +
-                                `**Step 2**: Right click on this message and click on **"Copy Message ID"**. Your Discord app must have **User Settings > Advanced > Developer Mode** turned **ON** for this to appear.\n` +
-                                `**Step 3**: Go to **Configure Settings > Foundry to Discord > Server Status Message ID** and **paste** the copied ID from Step 2. Afterwards, save your settings, and it should prompt your world to restart.\n` +
-                                `**Step 4**: Look at this message again after your world restarts. It should appear as the correct server status message.`,
-                            footer: {
-                                text: game.modules.get('foundrytodiscord').id + ' v' + game.modules.get('foundrytodiscord').version
-                            }
-                        }]
-                    })
-                };
-
-                console.log('foundrytodiscord | Attempting to send message to webhook...');
-                fetch(hook, params)
-                    .catch(error => {
-                        console.error('foundrytodiscord | Fetch error:', error);
-                    });
+                const formData = new FormData();
+                formData.append("payload_json", JSON.stringify({
+                    username: game.world.id,
+                    avatar_url: getDefaultAvatarLink(),
+                    content: '',
+                    embeds: [{
+                        title: 'Server Status Setup Instructions',
+                        description: `**IMPORTANT**: A limitation of this module is that it can *only* detect your world as online if a Gamemaster account is online. A command 'ftd serveroff' is also needed to set this message to OFFLINE.\n\n` +
+                            `**Step 1:** Pin this message so that everyone can find it easily on your channel.\n` +
+                            `**Step 2**: Right click on this message and click on **"Copy Message ID"**. Your Discord app must have **User Settings > Advanced > Developer Mode** turned **ON** for this to appear.\n` +
+                            `**Step 3**: Go to **Configure Settings > Foundry to Discord > Server Status Message ID** and **paste** the copied ID from Step 2. Afterwards, save your settings, and it should prompt your world to restart.\n` +
+                            `**Step 4**: Look at this message again after your world restarts. It should appear as the correct server status message.`,
+                        footer: {
+                            text: game.modules.get('foundrytodiscord').id + ' v' + game.modules.get('foundrytodiscord').version
+                        }
+                    }]
+                }));
+                await sendMessage(formData);
             }
         }
     }
 }
 
-function getThisModuleSetting(settingName) {
-    return game.settings.get('foundrytodiscord', settingName);
-}
-
-
-Hooks.on('createChatMessage', (msg) => {
+Hooks.on('createChatMessage', async (msg) => {
+    flushLog = false;
     if (msg.content == "ftd serveroff" && msg.user.isGM) {
         if (game.user.isGM && getThisModuleSetting('serverStatusMessage')) {
             if (getThisModuleSetting('messageID') && getThisModuleSetting('messageID') !== "") {
-                let hook;
-                if (getThisModuleSetting('webHookURL').split('?').length > 1) {
-                    const querysplit = getThisModuleSetting('webHookURL').split('?');
-                    hook = querysplit[0] + '/messages/' + getThisModuleSetting('messageID') + '?' + querysplit[1];
-                } else {
-                    hook = getThisModuleSetting('webHookURL') + '/messages/' + getThisModuleSetting('messageID');
-                }
+                const editedMessage = new FormData()
+                const body = JSON.stringify({
+                    embeds: [{
+                        title: 'Server Status: ' + game.world.id,
+                        description: '**OFFLINE**',
+                        footer: {
+                            text: game.modules.get('foundrytodiscord').id + ' v' + game.modules.get('foundrytodiscord').version
+                        },
+                        color: 16711680
+                    }]
+                });
+
+                editedMessage.append('payload_json', body);
 
                 const params = {
                     method: 'PATCH',
@@ -268,37 +300,20 @@ Hooks.on('createChatMessage', (msg) => {
                 };
 
                 console.log('foundrytodiscord | Attempting to edit server status...');
-                fetch(hook, params)
-                    .then(response => {
-                        if (response.status === 200 || response.status === 204) {
-                            console.log('foundrytodiscord | Server state set to OFFLINE');
-                            ChatMessage.create({ content: 'Foundry to Discord | Server state set to OFFLINE.', whisper: [game.user.id] });
-                            msg.delete();
-                        } else {
-                            console.error('foundrytodiscord | Error editing embed:', response.status, response.statusText);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('foundrytodiscord | Fetch error:', error);
-                    });
+                const response = await editMessage(editedMessage, getThisModuleSetting('webHookURL'), getThisModuleSetting('messageID'));
+                if (response.ok) {
+                    console.log('foundrytodiscord | Server state set to OFFLINE');
+                    ChatMessage.create({ content: 'Foundry to Discord | Server state set to OFFLINE.', whisper: [game.user.id] });
+                    msg.delete();
+                }
+                else {
+                    console.error('foundrytodiscord | Error editing embed:', response.status, response.statusText);
+                }
             }
         }
         return;
     }
-    if (!game.user.isGM || (game.settings.get('foundrytodiscord', "ignoreWhispers") && msg.whisper.length > 0)) {
-        return;
-    }
-    if (game.userId != game.settings.get('foundrytodiscord', "mainUserId") && game.settings.get('foundrytodiscord', "mainUserId") != "") {
-        return;
-    }
-    if (msg.isRoll && (!isCard(msg.content) && msg.rolls.length > 0) && game.settings.get('foundrytodiscord', "rollWebHookURL") == "") {
-        return;
-    }
-    if (!msg.isRoll && (isCard(msg.content) && msg.rolls.length < 1) && game.settings.get('foundrytodiscord', "webHookURL") == "") {
-        return;
-    }
-
-    if (msg.content == "ftd getID" && msg.user.isGM) {
+    else if (msg.content == "ftd getID" && msg.user.isGM) {
         const hook = getThisModuleSetting('webHookURL');
 
         const params = {
@@ -308,7 +323,7 @@ Hooks.on('createChatMessage', (msg) => {
             },
             body: JSON.stringify({
                 username: game.world.id,
-                avatar_url: getThisModuleSetting('inviteURL') + 'modules/foundrytodiscord/src/images/defaultavatar.png',
+                avatar_url: getDefaultAvatarLink(),
                 content: 'UserId: ' + game.userId,
                 embeds: []
             })
@@ -328,32 +343,51 @@ Hooks.on('createChatMessage', (msg) => {
                 console.error('foundrytodiscord | Fetch error:', error);
             });
     }
-
-    
-    let requestParams = messageParse(msg);
-
-    if (requestParams) {
-        let formData = new FormData()
-        if (game.modules.get("chat-media")?.active) {
-            const { formDataTemp, contentTemp } = getAttachments(formData, requestParams.params.content, msg.content);
-            formData = formDataTemp;
-            requestParams.params.content = contentTemp;
-        }
-        else if(requestParams.params.content === "" && requestParams.params.embeds === []){
+    else if (!getThisModuleSetting('disableMessages')) {
+        if (!game.user.isGM || (getThisModuleSetting("ignoreWhispers") && msg.whisper.length > 0)) {
             return;
         }
-        formData.append('payload_json', JSON.stringify(requestParams.params));
-        requestQueue.push({ hook: requestParams.hook, formData: formData });
-        if (!isProcessing) {
-            isProcessing = true;
-            sendOnce();
+        if (game.userId != getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") != "") {
+            return;
+        }
+        if (msg.isRoll && (!isCard(msg.content) && msg.rolls.length > 0) && getThisModuleSetting("rollWebHookURL") == "") {
+            return;
+        }
+        if (!msg.isRoll && (isCard(msg.content) && msg.rolls.length < 1) && getThisModuleSetting("webHookURL") == "") {
+            return;
+        }
+
+        let requestParams = messageParse(msg);
+
+        if (requestParams) {
+            let formData = new FormData()
+            if (game.modules.get("chat-media")?.active) {
+                const { formDataTemp, contentTemp } = getAttachments(formData, requestParams.params.content, msg.content);
+                formData = formDataTemp;
+                requestParams.params.content = contentTemp;
+            }
+            else if (requestParams.params.content === "" && requestParams.params.embeds === []) {
+                return;
+            }
+            let waitHook;
+            if (requestParams.hook.includes("?")) {
+                waitHook = requestParams.hook + "&wait=true";
+            }
+            else {
+                waitHook = requestParams.hook + "?wait=true";
+            }
+            formData.append('payload_json', JSON.stringify(requestParams.params));
+            requestQueue.push({ hook: waitHook, formData: formData, msgID: msg.id });
+            if (!isProcessing) {
+                isProcessing = true;
+                sendOnce();
+            }
         }
     }
 });
 
 async function sendOnce() {
-    const { hook, formData } = requestQueue[0];
-
+    const { hook, formData, msgID } = requestQueue[0];
     const requestOptions = {
         method: 'POST',
         body: formData // Assuming params is a FormData object
@@ -363,6 +397,7 @@ async function sendOnce() {
     try {
         const response = await fetch(hook, requestOptions);
         if (response.ok) {
+            addSentMessage(msgID, { url: response.url, message: await response.json() });
             requestQueue.shift();
             if (requestQueue.length > 0) {
                 sendOnce();
@@ -379,8 +414,12 @@ async function sendOnce() {
                 isProcessing = false;
             }
         }
+        else {
+            throw new Error('foundrytodiscord | HTTP error status = ' + response.status);
+        }
     } catch (error) {
-        console.error('foundrytodiscord | Fetch error:', error);
+        console.error('foundrytodiscord | Fetch error:', error, ", message not sent.");
+        requestQueue.shift();
         if (requestQueue.length > 0) {
             sendOnce();
         } else {
@@ -388,6 +427,7 @@ async function sendOnce() {
         }
     }
 }
+
 
 function getAttachments(formData, msgText, content) {
     const parser = new DOMParser();
@@ -398,11 +438,11 @@ function getAttachments(formData, msgText, content) {
         mediaDivs.forEach((div) => {
             const imgElement = div.querySelector('img');
             const videoElement = div.querySelector('video');
-            
+
             if (imgElement) {
                 const dataSrc = imgElement.getAttribute('data-src');
                 const altText = imgElement.getAttribute('alt');
-                
+
                 if (dataSrc) {
                     if (dataSrc.startsWith("data")) {
                         const byteCharacters = atob(dataSrc.split(',')[1]);
@@ -437,12 +477,12 @@ function getAttachments(formData, msgText, content) {
                     }
                 }
             }
-            
+
             if (videoElement) {
                 const dataSrc = videoElement.getAttribute('data-src');
-                
+
                 if (dataSrc) {
-                     if (dataSrc.includes('http')) {
+                    if (dataSrc.includes('http')) {
                         if (msgText !== "") {
                             msgText += "\n";
                         }
@@ -455,9 +495,98 @@ function getAttachments(formData, msgText, content) {
     return { formDataTemp: formData, contentTemp: msgText };
 }
 
+function getThisModuleSetting(settingName) {
+    return game.settings.get('foundrytodiscord', settingName);
+}
+
+function addSentMessage(msgID, params) {
+    const messageList = game.settings.get('foundrytodiscord', 'messageList');
+    messageList[msgID] = params;
+
+    const keys = Object.keys(messageList);
+    if (keys.length > 100) {
+        delete messageList[keys[0]]; // Remove the oldest property from the object
+    }
+
+    game.settings.set('foundrytodiscord', 'messageList', messageList);
+}
 
 function wait(milliseconds) {
     return new Promise(resolve => {
         setTimeout(resolve, milliseconds);
     });
+}
+
+//API functions
+
+async function sendMessage(formData, isRoll = false, sceneID = "") {
+    let hook = "";
+    if (isRoll) {
+        if (sceneID !== "" && getThisModuleSetting("threadedChatMap").hasOwnProperty(sceneID)) {
+            hook = getThisModuleSetting("rollWebHookURL").split('?')[0] + "?thread_id=" + getThisModuleSetting('threadedChatMap')[sceneID].rollThreadId;
+        }
+        else {
+            hook = getThisModuleSetting("rollWebHookURL");
+        }
+    } else {
+        if (sceneID !== "" && getThisModuleSetting("threadedChatMap").hasOwnProperty(sceneID)) {
+            hook = getThisModuleSetting("webHookURL").split('?')[0] + "?thread_id=" + getThisModuleSetting('threadedChatMap')[sceneID].chatThreadId;
+        }
+        else {
+            hook = getThisModuleSetting("webHookURL");
+        }
+    }
+
+    if (hook.includes("?")) {
+        hook += "&wait=true";
+    }
+    else if (hook !== "") {
+        hook += "?wait=true";
+    }
+
+    const requestOptions = {
+        method: 'POST',
+        body: formData
+    };
+
+    console.log("foundrytodiscord | Attempting to send message to webhook...");
+    try {
+        const response = await fetch(hook, requestOptions)
+        if (response.ok) {
+            const message = (await response.json());
+            return { url: response.url, message: message }
+        }
+    } catch (error) {
+        console.log("foundrytodiscord | Error sending message: ", error);
+        return error;
+    }
+}
+
+async function editMessage(formData, webhook, messageID) {
+    if (webhook.split('?').length > 1) {
+        const querysplit = webhook.split('?');
+        webhook = querysplit[0] + '/messages/' + messageID + '?' + querysplit[1];
+    } else {
+        webhook = webhook + '/messages/' + messageID;
+    }
+    const requestOptions = {
+        method: 'PATCH',
+        body: formData // Assuming params is a FormData object
+    };
+    return await fetch(webhook, requestOptions).catch(error => {
+        console.error('foundrytodiscord | Error editing message:', error);
+    });
+}
+
+async function deleteMessage(webhook, messageID) {
+    if (webhook.split('?').length > 1) {
+        const querysplit = webhook.split('?');
+        webhook = querysplit[0] + '/messages/' + messageID + '?' + querysplit[1];
+    } else {
+        webhook = webhook + '/messages/' + messageID;
+    }
+    return await fetch(webhook, { method: 'DELETE' })
+        .catch(error => {
+            console.log("foundrytodiscord | Error deleting message:", error);
+        });
 }
