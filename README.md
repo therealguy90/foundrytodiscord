@@ -95,10 +95,84 @@ This is the ID needed for the Main GM ID field.
 
 --------------------------------------------------
 
-## Setting up the Server Status Indicator on your Discord channel
+### Full Features:
 
-As of version 1.1.0, this module now supports the detection of when your server goes online.
-Check the "Enable Server Status Message" in the config of this module and follow the instructions to quickly set it up!
+#### Chat Mirroring
+
+Publicly-seen messages are sent to Discord while attempting to block as much metagame data as possible depending on your other modules that may change how ChatMessages display information. This works well with the "anonymous" module.
+Screenshots are from a Pathfinder Second Edition game. I do not guarantee other systems will have support for some ChatMessages, but regular rolls, regular chat-cards, and chat will work fine on ANY system.
+![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/b7eb9ebd-e64d-4f1e-9ffc-5fd85f025a99)
+![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/caaa5350-fdf2-4aeb-a697-41f59551b506)
+
+#### Threaded Scenes
+
+Discord threads are also supported by Foundry to Discord simply by adding a `?thread_id` query parameter to your webhook URL, but one application of the threads is the **Threaded Scenes** feature. The configuration is quite simple, select a Scene in your world, and paste your Thread ID into the boxes. Do note that a Chat Thread must be a thread in the channel where you have your regular Webhook URL, and a Roll Thread must be a thread in the channel where you have your Roll Webhook URL. When this feature is used, all message traffic that is found in one scene is automatically sent to the corresponding thread.
+
+![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/c11578ba-5e52-4baf-b4ce-e6476cebcc20)
+
+#### Server Status Message
+
+Ever wanted your players to check for themselves if your world is online? Now you can! When a GM logs in to a world, it will set your server status as ONLINE in your Server Status Message. To let your players know it's offline, just have a GM type "ftd serveroff" in your world chat. Enable this feature in the config to set it up with a comprehensive step-by-step tutorial. Note that this feature is only available for your main Webhook URL.
+
+![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/8a7c5d08-870f-4155-9153-a822f82d0d6c)
+
+#### The Foundry to Discord API
+
+Foundry to Discord also lets you use its features externally! With the API, you can use a macro to send to, edit, and delete messages from your Discord channel-- the whole package! You just need a bit of javascripting knowledge to learn how to use it. Also works for advanced users of the API. 
+
+**Usage**
+
+Declaration:
+```javascript
+const ftd = game.modules.get('foundrytodiscord').api
+```
+
+Available methods:
+#### IMPORTANT NOTE! These methods do not abide with Discord's rate limiting system, so don't spam the requests too much or the owner of the webhook will be banned from using the API for about an hour!
+#### When using these methods in another module, make sure to use the response headers that the methods return to know when you've hit the rate limit! 
+```javascript
+/* generateSendFormData allows anyone to formulate a simple message that can be sent to the webhook without much knowledge of javascript or the Discord API.
+*  Parameters:
+*  (string) content (required): A string of characters to be sent as a message. If you only want to send an embed, leave this as "".
+*  (Array) embeds (optional, default=[]): Up to 10 embeds can be included here. Refer to https://discord.com/developers/docs/resources/webhook for instructions on how to construct an embed.
+*  (string) username (optional, default=game.user.name): A custom username for your message. The default is your client username.
+*  (string) avatar_url (optional, default is the FoundryVTT icon): A link to a JPG, PNG, or WEBP that can be accessed publicly. This will be used as the avatar of the webhook for that message.
+*  Output: a FormData object containing parameters that are compatible with the Discord webhook, and can be used in junction with Foundry to Discord's API sendMessage() method.
+*/
+let myMessageContents = ftd.generateSendFormData("Hello, World!");
+```
+
+```javascript
+/* (async) sendMessage sends a message to the webhook.
+*  Parameters:
+*  (FormData) formData (required): A FormData object containing the specifics of the message being sent.
+*  (boolean) isRoll (optional, default=false): Determines whether the message being sent is ending up in the Webhook URL, or the Roll Webhook URL.
+*  (string) sceneID (optional, default=""): If your world is using the Threaded Scenes feature, inputting a scene ID here will let the module know where to send it.
+*  Output: Returns an Object with the API response and the Discord Message object in the format of { response, message }. These can later be used to edit or delete the message that was sent using editMessage() and deleteMessage() respectively.
+*/
+const responseAndMessage = await ftd.sendMessage(myMessageContents);
+```
+
+```javascript
+/* (async) editMessage edits a message in the channel or thread.
+*  Parameters:
+*  (FormData) formData (required): A FormData object containing the specifics of the message that will replace the contents of the specified message in discord.
+*  (string) webhook (required): The URL that was used to send the message. If you used sendMessage(), you can use the url in the response that it returns.
+*  (string) messageID (required): The Discord message ID of the message that will be edited.
+*  Output: This sort of request usually ends in a 204 code, which means no response body will be in the response, but editMessage() will return a response anyways for headers.
+*/
+await ftd.editMessage(newMessageFormData, responseAndMessage.response.url, responseAndMessage.message.id);
+```
+
+```javascript
+/* (async) deleteMessage deletes a message in the channel or thread.
+*  Parameters:
+*  (string) webhook (required): The URL that was used to send the message. If you used sendMessage(), you can use the url that it returns.
+*  (string) messageID (required): The Discord message ID of the message that will be edited.
+*  Output: This sort of request usually ends in a 204 code, which means no response body will be in the response, but deleteMessage() will return a response anyways for headers.
+*/
+await ftd.deleteMessage(responseAndMessage.response.url, responseAndMessage.message.id);
+```
 
 --------------------------------------------------
 
