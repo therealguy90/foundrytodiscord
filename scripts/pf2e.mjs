@@ -209,8 +209,8 @@ function PF2e_createRollEmbed(message) {
     else {
         if (generic.propertyExists(message, "flags.pf2e.context.target.token")) {
             desc = desc + "**:dart:Target: **";
-            targetTokenId = message.flags.pf2e.context.target.token.split(".")[3];
-            targetToken = game.scenes.get(message.speaker.scene).tokens.get(targetTokenId);
+            const targetTokenId = message.flags.pf2e.context.target.token.split(".")[3];
+            const targetToken = game.scenes.get(message.speaker.scene).tokens.get(targetTokenId);
             if (targetToken) {
                 if (game.modules.get("anonymous")?.active) {
                     if (!anon.playersSeeName(targetToken.targetToken.actor)) {
