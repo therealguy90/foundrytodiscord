@@ -213,7 +213,7 @@ function PF2e_createRollEmbed(message) {
             const targetToken = game.scenes.get(message.speaker.scene).tokens.get(targetTokenId);
             if (targetToken) {
                 if (game.modules.get("anonymous")?.active) {
-                    if (!anon.playersSeeName(targetToken.targetToken.actor)) {
+                    if (!anon.playersSeeName(targetToken.actor)) {
                         desc = desc + "`" + anon.getName(targetToken.actor) + "` ";
                     }
                     else {
