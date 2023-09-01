@@ -128,6 +128,8 @@ const ftd = game.modules.get('foundrytodiscord').api
 ```
 
 Available methods:
+#### IMPORTANT NOTE! These methods do not abide with Discord's rate limiting system, so don't spam the requests too much or the owner of the webhook will be banned from using the API for about an hour!
+#### When using these methods in another module, make sure to use the response headers that the methods return, so that 
 ```javascript
 /* generateSendFormData allows anyone to formulate a simple message that can be sent to the webhook without much knowledge of javascript or the Discord API.
 *  Parameters:
@@ -148,7 +150,7 @@ let myMessageContents = ftd.generateSendFormData("Hello, World!");
 *  (string) sceneID (optional, default=""): If your world is using the Threaded Scenes feature, inputting a scene ID here will let the module know where to send it.
 *  Output: Returns an Object with the webhook URL and the Discord Message object in the format of { url, message }. The URL and message can later be used to edit or delete the message that was sent using editMessage() and deleteMessage().
 */
-const urlAndMessage = await ftd.sendMessage(myMessageContents);
+const responseUrlAndMessage = await ftd.sendMessage(myMessageContents);
 ```
 
 ```javascript
