@@ -10,7 +10,8 @@ Hooks.on("init", function () {
     game.modules.get('foundrytodiscord').api = {
         sendMessage,
         editMessage,
-        deleteMessage
+        deleteMessage,
+        generateSendFormData
     };
     game.settings.register('foundrytodiscord', 'mainUserId', {
         name: "Main GM ID",
@@ -187,10 +188,10 @@ Hooks.on('deleteChatMessage', async (msg) => {
         if (getThisModuleSetting('messageList').hasOwnProperty(msg.id)) {
             const { url, message } = getThisModuleSetting('messageList')[msg.id];
             const response = await deleteMessage(url, message.id);
-            if(response.ok){
+            if (response.ok) {
                 console.log("foundrytodiscord | Deleted message with id \"" + message.id + "\"");
             }
-            else{
+            else {
                 console.error('foundrytodiscord | Error deleting message:', response.status, response.statusText);
             }
         }
@@ -198,7 +199,7 @@ Hooks.on('deleteChatMessage', async (msg) => {
 });
 
 Hooks.on('updateChatMessage', async (msg) => {
-    
+
 });
 
 let requestQueue = [];
@@ -394,7 +395,7 @@ async function sendOnce() {
     const { hook, formData, msgID } = requestQueue[0];
     const requestOptions = {
         method: 'POST',
-        body: formData // Assuming params is a FormData object
+        body: formData 
     };
 
     console.log("foundrytodiscord | Attempting to send message to webhook...");
@@ -523,6 +524,17 @@ function wait(milliseconds) {
 
 //API functions
 
+function generateSendFormData(content, embeds = [], username = game.user.name, avatar_url = getDefaultAvatarLink()) {
+    const formData = new FormData();
+    formData.append("payload_json", JSON.stringify({
+        username: username,
+        avatar_url: avatar_url,
+        content: content,
+        embeds: embeds
+    }));
+    return formData;
+}
+
 async function sendMessage(formData, isRoll = false, sceneID = "") {
     let hook = "";
     if (isRoll) {
@@ -558,7 +570,7 @@ async function sendMessage(formData, isRoll = false, sceneID = "") {
         const response = await fetch(hook, requestOptions)
         if (response.ok) {
             const message = (await response.json());
-            return { url: response.url, message: message }
+            return { response: response, message: message }
         }
     } catch (error) {
         console.log("foundrytodiscord | Error sending message: ", error);
@@ -575,7 +587,7 @@ async function editMessage(formData, webhook, messageID) {
     }
     const requestOptions = {
         method: 'PATCH',
-        body: formData // Assuming params is a FormData object
+        body: formData 
     };
     return await fetch(webhook, requestOptions).catch(error => {
         console.error('foundrytodiscord | Error editing message:', error);
