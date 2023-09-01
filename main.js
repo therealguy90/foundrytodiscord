@@ -183,10 +183,10 @@ Hooks.on('closeApplication', (app) => {
 });
 
 Hooks.on('deleteChatMessage', async (msg) => {
-    if ((!flushLog && !getThisModuleSetting('disableDeletions')) && (game.userId != getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") != "")) {
+    if ((!flushLog && !getThisModuleSetting('disableDeletions')) && (game.userId === getThisModuleSetting("mainUserId") || getThisModuleSetting("mainUserId") === "")) {
         if (getThisModuleSetting('messageList').hasOwnProperty(msg.id)) {
-            let { url, message } = getThisModuleSetting('messageList')[msg.id];
-            const response = await deleteMessage(url, message);
+            const { url, message } = getThisModuleSetting('messageList')[msg.id];
+            const response = await deleteMessage(url, message.id);
             if(response.ok){
                 console.log("foundrytodiscord | Deleted message with id \"" + message.id + "\"");
             }
@@ -195,6 +195,10 @@ Hooks.on('deleteChatMessage', async (msg) => {
             }
         }
     }
+});
+
+Hooks.on('updateChatMessage', async (msg) => {
+    
 });
 
 let requestQueue = [];
@@ -390,7 +394,7 @@ async function sendOnce() {
     const { hook, formData, msgID } = requestQueue[0];
     const requestOptions = {
         method: 'POST',
-        body: formData 
+        body: formData // Assuming params is a FormData object
     };
 
     console.log("foundrytodiscord | Attempting to send message to webhook...");
@@ -571,7 +575,7 @@ async function editMessage(formData, webhook, messageID) {
     }
     const requestOptions = {
         method: 'PATCH',
-        body: formData
+        body: formData // Assuming params is a FormData object
     };
     return await fetch(webhook, requestOptions).catch(error => {
         console.error('foundrytodiscord | Error editing message:', error);
