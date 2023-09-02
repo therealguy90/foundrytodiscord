@@ -134,6 +134,9 @@ const ftd = game.modules.get('foundrytodiscord').api
 Available methods:
 #### IMPORTANT NOTE! These methods do not abide with Discord's rate limiting system, so don't spam the requests too much or YOU will be banned from using the API for about an hour!
 #### When using these methods in another module, make sure to use the response headers that the methods return to know when you've hit the rate limit! 
+
+### Refer to the [Discord Webhook documentation](https://discord.com/developers/docs/resources/webhook).
+
 ```javascript
 /* generateSendFormData allows anyone to formulate a simple message that can be sent to the webhook without much knowledge of javascript or the Discord API.
 *  Parameters:
