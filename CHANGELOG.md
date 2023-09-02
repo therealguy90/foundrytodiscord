@@ -1,4 +1,10 @@
-# 1.4.0
+# 1.4.1
+
+- Removed the `Main GM ID` setting from the config.
+- New GM detection is now in place. Worlds with multiple GMs won't trigger the webhook anymore.
+- How this works: The module will now search for a main GM when you enter a world, or if the previous main GM leaves the world. The module will perform all automated actions from the GM it is bound to at the current time.
+
+## 1.4.0
 
 - **NEW**: The Foundry to Discord API! You can now use this module to make it easier to send custom messages to your Discord channel, among other features. Refer to README.md on how to use the API.
 - (pf2e) Added support for rerolls! Hero point, fortune, and misfortune rerolls are now sent to the chat as normal.
