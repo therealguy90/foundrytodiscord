@@ -166,20 +166,27 @@ Hooks.on('userConnected', async (user, connected) => {
         //Search for main GM
         const mainGM = game.users.get(getThisModuleSetting('mainUserId'));
         if (mainGM && mainGM.active) {
+            // If there is already an online main GM
             return;
         }
         else {
+            // If the main GM doesn't exist, the connecting GM becomes the main GM
             if (user.isGM) {
                 game.settings.set('foundrytodiscord', 'mainUserId', user.id);
             }
         }
     }
     else {
+        // If the main GM disconnects, reassign a new GM from the list
         if (user.isGM && user.id === getThisModuleSetting('mainUserId')) {
             // Get a list of all GMs currently active
             const gmList = game.users.filter(user => user.isGM && user.active)
             if (gmList.length > 0) {
                 game.settings.set('foundrytodiscord', 'mainUserId', gmList[0].id);
+            }
+            else{
+                // If no GMs exist, force search of a new GM when one does reconnect.
+                game.settings.set('foundrytodiscord', 'mainUserId', "");
             }
         }
     }
