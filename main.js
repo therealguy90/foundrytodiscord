@@ -184,7 +184,7 @@ Hooks.on('userConnected', async (user, connected) => {
             if (gmList.length > 0) {
                 game.settings.set('foundrytodiscord', 'mainUserId', gmList[0].id);
             }
-            else{
+            else {
                 // If no GMs exist, force search of a new GM when one does reconnect.
                 game.settings.set('foundrytodiscord', 'mainUserId', "");
             }
@@ -238,13 +238,7 @@ let flushLog = false;
 
 Hooks.once("ready", function () {
     // Search for main GM
-    const mainGM = game.users.get(getThisModuleSetting('mainUserId'));
-    if (!mainGM || !mainGM.active) {
-        if (game.user.isGM) {
-            game.settings.set('foundrytodiscord', 'mainUserId', game.user.id);
-            console.log("foundrytodiscord | Main GM set to this client's user.");
-        }
-    }
+    initMainGM();
     if (getThisModuleSetting('inviteURL') !== "" && !getThisModuleSetting('inviteURL').endsWith("/")) {
         game.settings.set('foundrytodiscord', 'inviteURL', getThisModuleSetting('inviteURL') + "/");
     }
@@ -358,10 +352,12 @@ Hooks.on('createChatMessage', async (msg) => {
         if (!game.user.isGM || (getThisModuleSetting("ignoreWhispers") && msg.whisper.length > 0)) {
             return;
         }
-        if (game.userId != getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") != "") {
+        if (game.userId !== getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") {
             console.log("foundrytodiscord | The current client's user does not match the main GM.");
-            console.log("foundrytodiscord | If you are seeing this message and no messages are being sent to your webhook, reload your browser.");
-            return;
+            initMainGM();
+            if(game.user.id !== getThisModuleSetting("mainUserId")){
+                return;
+            }
         }
         if (msg.isRoll && (!isCard(msg.content) && msg.rolls.length > 0) && getThisModuleSetting("rollWebHookURL") == "") {
             return;
@@ -524,11 +520,25 @@ function addSentMessage(msgID, params) {
     game.settings.set('foundrytodiscord', 'messageList', messageList);
 }
 
+function initMainGM(){
+    const mainGM = game.users.get(getThisModuleSetting('mainUserId'));
+    if (!mainGM || !mainGM.active) {
+        if (!mainGM || !mainGM.active) {
+            if (game.user.isGM) {
+                game.settings.set('foundrytodiscord', 'mainUserId', game.user.id);
+                console.log("foundrytodiscord | Main GM set to this client's user.");
+            }
+        }
+    }
+    return getThisModuleSetting('mainUserId');
+}
+
 function wait(milliseconds) {
     return new Promise(resolve => {
         setTimeout(resolve, milliseconds);
     });
 }
+
 
 //API functions
 
