@@ -66,32 +66,9 @@ Chat Media
 
  For Invite URL: Make sure your address is public! Use a tunnelling software if you can't forward ports.
 
+### NOTE: This module will ONLY work if a GM account is logged into the world!
+
 Simply follow the hints provided by the settings, and use the webhook link from your channel as the Webhook URL. Also, make sure your invite URL is public, which means you'll need to be port-forwarded as usual. This is needed to supply the token images from your server to Discord. If you can't forward ports due to some limitation, you can use a network tunnel to expose your port to the internet. Personally, I recommend [Tailscale](https://www.reddit.com/r/FoundryVTT/comments/15lt40x/easy_public_foundry_vtt_hosting_using_tailscale), since it allows other devices to connect via LAN, as well as exposing a port to the internet. It takes some setting up to use, though, unlike other tunnelling software. Maybe I can even help you with this over on Discord!
-
-## Getting Main GM ID
-
-**Option A:**
-
-1. Open browser Inspect/Developer Tools on the Foundry tab
-Chrome: (Windows, Linux, Chrome OS): [F12] or Control+Shift+C
-Chrome (Mac): Command+Option+C
-
-2. Within Console type:
-game.user for current user information
-game.users for all user information
-
-3. Expand to find the correct user's name and find the _id (> data : 16 character string)
-This is the ID needed for the Main GM ID field.
-
-**Option B:**
-
-1. Install and enable the module, and provide a webhook.
-
-2. Type **ftd getID** into chat as the user you would like to get the ID of.
-
-3. Check your discord chat channel as defined by your webhook.
-
-*NOTE:* The Main GM must be logged in for Foundry to Discord to work!
 
 --------------------------------------------------
 
