@@ -5,7 +5,7 @@ import { ThreadedChatConfig } from './src/forms/threadedchatconfig.mjs';
 import { getDefaultAvatarLink } from './scripts/generic.mjs';
 let SYSTEM_ID;
 
-Hooks.on("init", function () {
+Hooks.once("init", function () {
     SYSTEM_ID = game.system.id;
     game.modules.get('foundrytodiscord').api = {
         sendMessage,
@@ -14,10 +14,8 @@ Hooks.on("init", function () {
         generateSendFormData
     };
     game.settings.register('foundrytodiscord', 'mainUserId', {
-        name: "Main GM ID",
-        hint: "If you plan on having two GMs in one session, fill this in with the main GM's ID to avoid duplicated messages. Just type 'ftd getID' in chat to have your ID sent to your discord channel.",
         scope: "world",
-        config: true,
+        config: false,
         default: "",
         type: String
     });
@@ -163,6 +161,29 @@ Hooks.on("init", function () {
     }
 });
 
+Hooks.on('userConnected', async (user, connected) => {
+    if (connected) {
+        //Search for main GM
+        const mainGM = game.users.get(getThisModuleSetting('mainUserId'));
+        if (mainGM && mainGM.active) {
+            return;
+        }
+        else {
+            if (user.isGM) {
+                game.settings.set('foundrytodiscord', 'mainUserId', user.id);
+            }
+        }
+    }
+    else {
+        if (user.isGM && user.id === getThisModuleSetting('mainUserId')) {
+            // Get a list of all GMs currently active
+            const gmList = game.users.filter(user => user.isGM && user.active)
+            if (gmList.length > 0) {
+                game.settings.set('foundrytodiscord', 'mainUserId', gmList[0].id);
+            }
+        }
+    }
+});
 
 Hooks.on('deleteScene', async scene => {
     const setting = getThisModuleSetting('threadedChatMap');
@@ -208,7 +229,15 @@ let messageParse;
 let flushLog = false;
 
 
-Hooks.on("ready", function () {
+Hooks.once("ready", function () {
+    // Search for main GM
+    const mainGM = game.users.get(getThisModuleSetting('mainUserId'));
+    if (!mainGM || !mainGM.active) {
+        if (game.user.isGM) {
+            game.settings.set('foundrytodiscord', 'mainUserId', game.user.id);
+            console.log("foundrytodiscord | Main GM set to this client's user.");
+        }
+    }
     if (getThisModuleSetting('inviteURL') !== "" && !getThisModuleSetting('inviteURL').endsWith("/")) {
         game.settings.set('foundrytodiscord', 'inviteURL', getThisModuleSetting('inviteURL') + "/");
     }
@@ -224,7 +253,7 @@ async function initSystemStatus() {
             const editedMessage = new FormData()
             const body = JSON.stringify({
                 embeds: [{
-                    title: 'Server Status: ' + game.world.name,
+                    title: 'Server Status: ' + game.world.id,
                     description: '**ONLINE**\n' + (getThisModuleSetting('showInvite') ? '**Invite Link: **' + getThisModuleSetting('inviteURL') : ''),
                     footer: {
                         text: 'Type "ftd serveroff" in Foundry to set your server status to OFFLINE. This will persist until the next world restart.\n\n' + (game.modules.get('foundrytodiscord').id + ' v' + game.modules.get('foundrytodiscord').version)
@@ -318,41 +347,13 @@ Hooks.on('createChatMessage', async (msg) => {
         }
         return;
     }
-    else if (msg.content == "ftd getID" && msg.user.isGM) {
-        const hook = getThisModuleSetting('webHookURL');
-
-        const params = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                username: game.world.id,
-                avatar_url: getDefaultAvatarLink(),
-                content: 'UserId: ' + game.userId,
-                embeds: []
-            })
-        };
-
-        fetch(hook, params)
-            .then(response => {
-                if (response.status === 200 || response.status === 204) {
-                    console.log('foundrytodiscord | UserID sent to Discord.');
-                    ChatMessage.create({ content: 'foundrytodiscord | UserID sent to Discord.', whisper: [game.userId] });
-                    msg.delete();
-                } else {
-                    console.error('foundrytodiscord | Error sending UserID:', response.status, response.statusText);
-                }
-            })
-            .catch(error => {
-                console.error('foundrytodiscord | Fetch error:', error);
-            });
-    }
     else if (!getThisModuleSetting('disableMessages')) {
         if (!game.user.isGM || (getThisModuleSetting("ignoreWhispers") && msg.whisper.length > 0)) {
             return;
         }
         if (game.userId != getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") != "") {
+            console.log("foundrytodiscord | The current client's user does not match the main GM.");
+            console.log("foundrytodiscord | If you are seeing this message and no messages are being sent to your webhook, reload your browser.");
             return;
         }
         if (msg.isRoll && (!isCard(msg.content) && msg.rolls.length > 0) && getThisModuleSetting("rollWebHookURL") == "") {
@@ -395,7 +396,7 @@ async function sendOnce() {
     const { hook, formData, msgID } = requestQueue[0];
     const requestOptions = {
         method: 'POST',
-        body: formData 
+        body: formData
     };
 
     console.log("foundrytodiscord | Attempting to send message to webhook...");
@@ -587,7 +588,7 @@ async function editMessage(formData, webhook, messageID) {
     }
     const requestOptions = {
         method: 'PATCH',
-        body: formData 
+        body: formData
     };
     return await fetch(webhook, requestOptions).catch(error => {
         console.error('foundrytodiscord | Error editing message:', error);
