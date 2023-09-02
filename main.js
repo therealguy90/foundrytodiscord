@@ -211,25 +211,6 @@ Hooks.on('closeApplication', (app) => {
     }
 });
 
-Hooks.on('deleteChatMessage', async (msg) => {
-    if ((!flushLog && !getThisModuleSetting('disableDeletions')) && (game.userId === getThisModuleSetting("mainUserId") || getThisModuleSetting("mainUserId") === "")) {
-        if (getThisModuleSetting('messageList').hasOwnProperty(msg.id)) {
-            const { url, message } = getThisModuleSetting('messageList')[msg.id];
-            const response = await deleteMessage(url, message.id);
-            if (response.ok) {
-                console.log("foundrytodiscord | Deleted message with id \"" + message.id + "\"");
-            }
-            else {
-                console.error('foundrytodiscord | Error deleting message:', response.status, response.statusText);
-            }
-        }
-    }
-});
-
-Hooks.on('updateChatMessage', async (msg) => {
-
-});
-
 let requestQueue = [];
 let isProcessing = false;
 let messageParse;
@@ -317,23 +298,6 @@ Hooks.on('createChatMessage', async (msg) => {
 
                 editedMessage.append('payload_json', body);
 
-                const params = {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        embeds: [{
-                            title: 'Server Status: ' + game.world.id,
-                            description: '**OFFLINE**',
-                            footer: {
-                                text: game.modules.get('foundrytodiscord').id + ' v' + game.modules.get('foundrytodiscord').version
-                            },
-                            color: 16711680
-                        }]
-                    })
-                };
-
                 console.log('foundrytodiscord | Attempting to edit server status...');
                 const response = await editMessage(editedMessage, getThisModuleSetting('webHookURL'), getThisModuleSetting('messageID'));
                 if (response.ok) {
@@ -355,7 +319,7 @@ Hooks.on('createChatMessage', async (msg) => {
         if (game.userId !== getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") {
             console.log("foundrytodiscord | The current client's user does not match the main GM.");
             initMainGM();
-            if(game.user.id !== getThisModuleSetting("mainUserId")){
+            if (game.user.id !== getThisModuleSetting("mainUserId")) {
                 return;
             }
         }
@@ -386,30 +350,130 @@ Hooks.on('createChatMessage', async (msg) => {
                 waitHook = requestParams.hook + "?wait=true";
             }
             formData.append('payload_json', JSON.stringify(requestParams.params));
-            requestQueue.push({ hook: waitHook, formData: formData, msgID: msg.id });
+            requestQueue.push({ hook: waitHook, formData: formData, msgID: msg.id, method: 'POST' });
             if (!isProcessing) {
                 isProcessing = true;
-                sendOnce();
+                requestOnce();
             }
         }
     }
 });
 
-async function sendOnce() {
-    const { hook, formData, msgID } = requestQueue[0];
-    const requestOptions = {
-        method: 'POST',
+Hooks.on('updateChatMessage', async (msg) => {
+    let tries = 10; // Number of tries before giving up
+    const checkExist = async () => {
+        if (!getThisModuleSetting('messageList')[msg.id]) {
+            if (tries > 0) {
+                tries--;
+                await wait(500);
+                await checkExist(); // Recursively retry
+            } else {
+                console.log('foundrytodiscord | Attempt to edit message was unsuccessful due to the message not existing on Discord.');
+            }
+        } else {
+            flushLog = false;
+            if (!getThisModuleSetting('disableMessages')) {
+                if (!game.user.isGM || (getThisModuleSetting("ignoreWhispers") && msg.whisper.length > 0)) {
+                    return;
+                }
+                if (game.userId !== getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") {
+                    console.log("foundrytodiscord | The current client's user does not match the main GM.");
+                    initMainGM();
+                    if (game.user.id !== getThisModuleSetting("mainUserId")) {
+                        return;
+                    }
+                }
+                let requestParams = messageParse(msg);
+
+                if (requestParams) {
+                    let editParamsOnly = {
+                        content: requestParams.params.content,
+                        embeds: requestParams.params.embeds
+                    }
+                    let formData = new FormData()
+                    if (game.modules.get("chat-media")?.active) {
+                        const { formDataTemp, contentTemp } = getAttachments(formData, editParamsOnly.content, msg.content);
+                        formData = formDataTemp;
+                        editParamsOnly.content = contentTemp;
+                    }
+                    else if (editParamsOnly.content === "" && editParamsOnly.embeds === []) {
+                        return;
+                    }
+                    let editHook;
+                    let { url, message } = getThisModuleSetting('messageList')[msg.id];
+                    if (url.split('?').length > 1) {
+                        const querysplit = url.split('?');
+                        editHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
+                    } else {
+                        editHook = url + '/messages/' + message.id;
+                    }
+                    formData.append('payload_json', JSON.stringify(editParamsOnly));
+                    requestQueue.push({ hook: editHook, formData: formData, msgID: msg.id, method: 'PATCH' });
+                    if (!isProcessing) {
+                        isProcessing = true;
+                        requestOnce();
+                    }
+                }
+            }
+        }
+    };
+
+    await checkExist();
+});
+
+Hooks.on('deleteChatMessage', async (msg) => {
+    if ((!flushLog && !getThisModuleSetting('disableDeletions')) && (game.userId === getThisModuleSetting("mainUserId") || getThisModuleSetting("mainUserId") === "")) {
+        if (getThisModuleSetting('messageList').hasOwnProperty(msg.id)) {
+            const { url, message } = getThisModuleSetting('messageList')[msg.id];
+            let deleteHook;
+            if (url.split('?').length > 1) {
+                const querysplit = url.split('?');
+                deleteHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
+            } else {
+                deleteHook = url + '/messages/' + message.id;
+            }
+            requestQueue.push({ hook: deleteHook, formData: null, msgID: msg.id, method: 'DELETE' });
+            if (!isProcessing) {
+                isProcessing = true;
+                requestOnce();
+            }
+        }
+    }
+});
+
+
+async function requestOnce() {
+    const { hook, formData, msgID, method } = requestQueue[0];
+    if (method === 'PATCH') {
+        console.log("foundrytodiscord | Attempting to edit message...");
+    }
+    else if (method === 'DELETE') {
+        console.log("foundrytodiscord | Attempting to delete message...");
+    }
+    else {
+        console.log("foundrytodiscord | Attempting to send message to webhook...");
+    }
+
+    let requestOptions = {
+        method: method,
         body: formData
     };
 
-    console.log("foundrytodiscord | Attempting to send message to webhook...");
+    if (method === 'DELETE') {
+        requestOptions = {
+            method: method
+        }
+    }
+
     try {
         const response = await fetch(hook, requestOptions);
         if (response.ok) {
-            addSentMessage(msgID, { url: response.url, message: await response.json() });
+            if (method === 'POST') {
+                addSentMessage(msgID, { url: response.url, message: await response.json() });
+            }
             requestQueue.shift();
             if (requestQueue.length > 0) {
-                sendOnce();
+                requestOnce();
             } else {
                 isProcessing = false;
             }
@@ -418,7 +482,7 @@ async function sendOnce() {
             console.log("foundrytodiscord | Rate Limit exceeded! Next request in " + retryAfter / 100 + " seconds.");
             await wait(retryAfter * 10);
             if (requestQueue.length > 0) {
-                sendOnce();
+                requestOnce();
             } else {
                 isProcessing = false;
             }
@@ -427,10 +491,10 @@ async function sendOnce() {
             throw new Error('foundrytodiscord | HTTP error status = ' + response.status);
         }
     } catch (error) {
-        console.error('foundrytodiscord | Fetch error:', error, ", message not sent.");
+        console.error('foundrytodiscord | Fetch error:', error);
         requestQueue.shift();
         if (requestQueue.length > 0) {
-            sendOnce();
+            requestOnce();
         } else {
             isProcessing = false;
         }
@@ -520,7 +584,7 @@ function addSentMessage(msgID, params) {
     game.settings.set('foundrytodiscord', 'messageList', messageList);
 }
 
-function initMainGM(){
+function initMainGM() {
     const mainGM = game.users.get(getThisModuleSetting('mainUserId'));
     if (!mainGM || !mainGM.active) {
         if (!mainGM || !mainGM.active) {
