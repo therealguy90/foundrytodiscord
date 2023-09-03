@@ -1,4 +1,9 @@
-# 1.4.1
+# 1.4.2
+
+- **NEW**: Officially added (partial) support for the DnD5e system, more specifically, midi-qol mergecards. Currently experimental, so DnD5e users can turn off the setting from the config menu to use the old (not-so-reliable) parser.
+- Minor bug fixes.
+
+## 1.4.1
 
 - Removed the `Main GM ID` setting from the config.
 - New GM detection is now in place. Worlds with multiple GMs won't trigger the webhook anymore.
