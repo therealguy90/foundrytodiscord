@@ -30,13 +30,13 @@ Chat Media
 
 - Image and video links and uploaded images are sent to Discord!
 
-### What it's confirmed *not* to support:
+Midi QOL
 
-- DnD5e midi-qol mergecards, and some of midi-qol in general
+- Mergecards are edited in real-time!
 
-### Future Plans:
+Monk's Token Bar
 
-- DnD5e partial support (likely without midi-qol mergecards)
+- Supports Contested Rolls, Roll Requests, and Experience cards.
 
 ------------------------------------
 
