@@ -142,6 +142,17 @@ Hooks.once("init", function () {
             type: String
         });
     }
+    if (SYSTEM_ID === 'dnd5e') {
+        game.settings.register('foundrytodiscord', 'experimentalFeatures', {
+            name: "(dnd5e+midi-qol) Experimental Parser",
+            hint: "If you're experiencing issues with the experimental message parser, turn this off.",
+            scope: "world",
+            config: true,
+            default: true,
+            requiresReload: true,
+            type: Boolean
+        });
+    }
     game.settings.register('foundrytodiscord', 'disableDeletions', {
         name: "Disable message deletions",
         hint: "If this is turned ON, deleted messages in Foundry won't be synced with your Discord webhook.",
@@ -168,7 +179,14 @@ Hooks.once("init", function () {
             break;
         case "dnd5e":
             console.log("foundrytodiscord | Game system detected as 'dnd5e'.");
-            messageParse = messageParserDnD5e;
+            if (getThisModuleSetting('experimentalFeatures')) {
+                console.log("foundrytodiscord | Experimental features enabled.");
+                messageParse = messageParserDnD5e;
+            }
+            else{
+                console.log("foundrytodiscord | Experimental features disabled.");
+                messageParse = messageParserGeneric;
+            }
             break;
         default:
             console.log("foundrytodiscord | Game system not fully supported. Using 'generic' mode.");
