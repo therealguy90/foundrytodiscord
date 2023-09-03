@@ -4,8 +4,12 @@
 # Foundry to Discord
 
 A lightweight FoundryVTT module that sends all FoundryVTT messages to a Discord webhook.
+Has the capability to edit AND delete messages in real-time!
 
-Only FULLY supports Pathfinder Second Edition, but anyone is welcome to help add custom support for other systems. Contact me @loki123 on Discord.
+System Support:
+- Pathfinder Second Edition
+- DnD 5e (partial)
+
 Will work on other systems, but to what extent, I do not know. Regular chat, chat cards, and rolls seem to work just fine on most other systems.
 
 ### What it supports:
@@ -15,10 +19,6 @@ Anonymous:
 - Mimics the behavior of "anonymous" actors, including using the replacement names for descriptions and message aliases.
 - For separation, sends over the token ID to discord with the replacement name(i.e. "Unknown NPC (V73Oqm1EL1KOoXOl)") This is to avoid discord grouping up same-named messages without checking if the last message was a different token with the same replacement name. This might have problems when the replacement name is REALLY long, but I doubt I need to accommodate for that.
 
-Pf2e Target Damage:
-
-- Multiple targets are also sent in to Discord!
-
 Polyglot:
 
 - Checks if the players know a language, and sends languages the players don't know to Discord as "Unintelligible". (This might change to a random text instead in the future to mimic Polyglot!)
@@ -26,17 +26,21 @@ Polyglot:
 - Adds an option to the config, where the GM can set the only languages this module will "understand", and sends the rest to discord as "Unintelligible". Useful for party splits. Example, if you set this setting to only understand "dwarven, draconic", then even if players know a language different from these, it will still send to Discord as "Unintelligible" unless it's listed here!
 - Adds an option to override what the "common" languages are in your world. This is so that messages sent in this language always pass the check for Polyglot, and are sent to Discord as plaintext.
 
-Chat Media
+Chat Media:
 
 - Image and video links and uploaded images are sent to Discord!
 
-Midi QOL
-
-- Mergecards are edited in real-time!
-
-Monk's Token Bar
+Monk's Token Bar:
 
 - Supports Contested Rolls, Roll Requests, and Experience cards.
+
+Pf2e Target Damage:
+
+- Multiple targets are also sent in to Discord!
+
+Midi QOL:
+
+- Mergecards are edited in real-time!
 
 ------------------------------------
 
