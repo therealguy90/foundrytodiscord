@@ -120,7 +120,7 @@ function DnD5e_reformatMessage(text) {
         reformattedText = DnD5e_reformatMessage(reformattedText); //call this function again as a failsafe for @ tags
     }
     else {
-        /*//replace UUIDs to be consistent with Foundry
+        //replace UUIDs to be consistent with Foundry
         regex = /@UUID\[[^\]]+\]\{([^}]+)\}/g;
         reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
 
@@ -130,11 +130,11 @@ function DnD5e_reformatMessage(text) {
 
         //replace UUID if custom name "{}" is not present (redundancy)
         regex = /@UUID\[(.*?)\]/g;
-        reformattedText = reformattedText.replace(regex, (_, text) => getNameFromItem(text));
+        reformattedText = reformattedText.replace(regex, (_, text) => generic.getNameFromItem(text));
 
         //replace Checks
         regex = /@Check\[[^\]]+\]{([^}]+)}/g;
-        reformattedText = reformattedText.replace(regex, ':game_die: `$1`');*/
+        reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
 
         /*  FOR DND: USE SAME METHOD AS ABOVE FOR REPLACING @ TAGS, such as @Actor[]{}, etc.
         *   Not sure what 5e uses.
