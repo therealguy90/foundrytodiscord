@@ -1,7 +1,10 @@
 export function messageParserGeneric(msg) {
     let constructedMessage = '';
     let hookEmbed = [];
-    if (isCard(msg.content) && msg.rolls?.length < 1) {
+    if(game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)){
+        hookEmbed = generic.tokenBar_createTokenBarCard(msg);
+    }
+    else if (isCard(msg.content) && msg.rolls?.length < 1) {
         constructedMessage = "";
         if (getThisModuleSetting('sendEmbeds')) {
             hookEmbed = createCardEmbed(msg);
@@ -375,15 +378,162 @@ export function anonymizeEmbed(message, embed) {
                         .replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase()) : "";
                 }
                 if (embed.description) {
-                embed.description = embed.description !== "" ? embed.description.replaceAll(speakerToken.name, anon.getName(speakerToken.actor))
-                    .replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase())
-                    .replaceAll(speakerToken.actor.name, anon.getName(speakerToken.actor))
-                    .replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase()) : "";
+                    embed.description = embed.description !== "" ? embed.description.replaceAll(speakerToken.name, anon.getName(speakerToken.actor))
+                        .replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase())
+                        .replaceAll(speakerToken.actor.name, anon.getName(speakerToken.actor))
+                        .replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase()) : "";
                 }
             }
         }
     }
     return embed;
+}
+
+export function tokenBar_createTokenBarCard(message) {
+    // First, list token properties
+    const parser = new DOMParser();
+    let doc = parser.parseFromString(message.content, "text/html");
+    let title = "";
+    let desc = ""
+    let cardheader;
+    let actorData;
+    let footer = {};
+    switch (message.flags["monks-tokenbar"].what) {
+        case 'contestedroll':
+            cardheader = doc.querySelector('.card-header');
+            title = cardheader.querySelector('h3').textContent;
+            const requests = doc.querySelectorAll('.request-name');
+            if (requests.length > 0) {
+                desc += "**__";
+                for (let i = 0; i < requests.length; i++) {
+                    desc += requests[i].textContent;
+                    if (i < requests.length - 1) {
+                        desc += " vs. ";
+                    }
+                }
+                desc += "__**";
+            }
+            if (desc !== "") {
+                desc += "\n\n";
+            }
+            actorData = doc.querySelectorAll('li.item.flexrow');
+            if (actorData.length > 0) {
+                for (let i = 0; i < actorData.length; i++) {
+                    const tokenID = actorData[i].getAttribute('data-item-id');
+                    const tokenData = message.flags["monks-tokenbar"]["token" + tokenID]
+                    switch (tokenData.passed) {
+                        case 'waiting':
+                            desc += ':game_die: ';
+                            break;
+                        case 'won':
+                            desc += ":white_check_mark: ";
+                            break;
+                        case 'failed':
+                            desc += ":negative_squared_cross_mark: ";
+                            break;
+                        default:
+                            desc += ':game_die: ';
+                            break;
+                    }
+                    desc += "**" + (tokenData.passed === 'won' ? "__" : "") + tokenData.name;
+                    if (tokenData.total) {
+                        if (message.flags["monks-tokenbar"].rollmode === 'roll') {
+                            desc += "(" + (tokenData.passed === 'won' ? "" : "__") + tokenData.total + "__)**";
+                        }
+                        else {
+                            let actor = game.actors.get(tokenData.actorid);
+                            if (isOwnedByPlayer(actor)) {
+                                desc += "(" + (tokenData.passed === 'won' ? "" : "__") + tokenData.total + "__)**";
+                            }
+                            else {
+                                desc += "(Rolled)" + (tokenData.passed === 'won' ? "__" : "") + "**";
+                            }
+                        }
+                    }
+                    else {
+                        desc += "**";
+                    }
+                    desc += "\n";
+                }
+            }
+            break;
+        case 'savingthrow':
+            cardheader = doc.querySelector('.card-header');
+            title = cardheader.querySelector('h3').textContent;
+            actorData = doc.querySelectorAll('li.item.flexcol');
+            if (actorData.length > 0) {
+                for (let i = 0; i < actorData.length; i++) {
+                    const tokenID = actorData[i].getAttribute('data-item-id');
+                    const tokenData = message.flags["monks-tokenbar"]["token" + tokenID]
+                    switch (tokenData.passed) {
+                        case 'waiting':
+                            desc += ':game_die: ';
+                            break;
+                        case true:
+                            desc += ":white_check_mark: ";
+                            break;
+                        case false:
+                            desc += ":negative_squared_cross_mark: ";
+                            break;
+                        case 'success':
+                            desc += ":white_check_mark::white_check_mark: ";
+                            break;
+                        case 'failed':
+                            desc += ":no_entry_sign: ";
+                            break;
+                        default:
+                            desc += ':game_die: ';
+                            break;
+                    }
+                    desc += "**" + tokenData.name;
+                    if (tokenData.total || tokenData.total === 0) {
+                        if (message.flags["monks-tokenbar"].rollmode === 'roll') {
+                            desc += "(__" + tokenData.total + "__)**";
+                        }
+                        else {
+                            let actor = game.actors.get(tokenData.actorid);
+                            if (isOwnedByPlayer(actor)) {
+                                desc += "(__" + tokenData.total + "__)**";
+                            }
+                            else {
+                                desc += "(Rolled)" + (tokenData.passed === 'won' ? "__" : "") + "**";
+                            }
+                        }
+                    }
+                    else {
+                        desc += "**";
+                    }
+                    desc += "\n";
+                }
+            }
+            break;
+        default: //"what" doesn't exist in an experience card. Not the cleanest solution.
+            title = "Experience: " + message.flags["monks-tokenbar"].xp;
+            if(message.flags["monks-tokenbar"].actors.length > 0){
+                message.flags["monks-tokenbar"].actors.forEach(actor =>{
+                    desc += "**" + actor.name + " (" + actor.xp + ")**";
+                    if(actor.assigned){
+                        desc += ":white_check_mark:";
+                    }
+                    desc += "\n";
+                });
+            }
+            footer = { text: message.flags["monks-tokenbar"].reason};
+            break;
+    }
+    return [{ title: title, description: desc.trim(), footer: footer }];
+}
+
+export function tokenBar_isTokenBarCard(htmlString) {
+    const htmldocElement = document.createElement('div');
+    htmldocElement.innerHTML = htmlString;
+
+    const divElement = htmldocElement.querySelector('.monks-tokenbar');
+    if (divElement !== null) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 export function isOwnedByPlayer(actor) {

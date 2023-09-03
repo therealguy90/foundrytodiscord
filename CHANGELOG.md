@@ -1,4 +1,8 @@
-# 1.4.2
+# 1.4.3
+
+- **NEW MODULE SUPPORT** [Monk's TokenBar](https://foundryvtt.com/packages/monks-tokenbar)! Contested Rolls, Roll Requests, and Experience cards now have a custom parser, and will be sent to Discord properly.
+
+## 1.4.2
 
 - **NEW**: Officially added (partial) support for the DnD5e system, more specifically, midi-qol mergecards. Currently experimental, so DnD5e users can turn off the setting from the config menu to use the old (not-so-reliable) parser.
 - Minor bug fixes.

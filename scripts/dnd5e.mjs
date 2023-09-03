@@ -6,6 +6,9 @@ export function messageParserDnD5e(msg) {
     if (game.modules.get('midi-qol')?.active && midiqol_isMergeCard(msg.content)) {
         hookEmbed = midiqol_createMergeCard(msg);
     }
+    else if(game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)){
+        hookEmbed = generic.tokenBar_createTokenBarCard(msg);
+    }
     else if (generic.isCard(msg.content) && msg.rolls?.length < 1) {
         constructedMessage = "";
         if (getThisModuleSetting('sendEmbeds')) {

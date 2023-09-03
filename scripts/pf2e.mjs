@@ -37,7 +37,11 @@ export function messageParserPF2e(msg) {
     else if (PF2e_isActionCard(msg.flavor) && msg.rolls?.length < 1) {
         cardType = 2;
     }
-    if (cardType !== 0) {
+    if(game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)){
+        cardType = 0;
+        hookEmbed = generic.tokenBar_createTokenBarCard(msg);
+    }
+    else if (cardType !== 0) {
         constructedMessage = "";
         if (getThisModuleSetting('sendEmbeds')) {
             hookEmbed = PF2e_createCardEmbed(msg, cardType);
