@@ -153,19 +153,47 @@ function midiqol_createMergeCard(message) {
         attackTitle = element.querySelector('div').textContent;
         if (attackTitle && attackTitle !== "") {
             const total = element.querySelector('h4.dice-total');
-            const result = total.textContent;
+            let result = total.textContent;
+            let rollValue = "";
             if (result) {
-                let rollValue = result !== "" ? ":game_die:**Result: __" + result + "__" : result;
-                if (rollValue !== "") {
-                    if (total.classList.contains('critical')) {
+                switch (game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails) {
+                    case 'none':
+                    case 'detailsDSN':
+                    case 'details':
+                        if (result !== "") {
+                            rollValue = ":game_die:**Result: __" + result + "__";
+                        }
+                        break;
+                    case 'd20Only':
+                    case 'd20AttackOnly':
+                        rollValue = ":game_die:**(d20) __" + message.flags['midi-qol'].d20AttackRoll + "__";
+                        break;
+                    case 'hitDamage':
+                    case 'hitCriticalDamage':
+                        if (message.flags['midi-qol'].isHit) {
+                            rollValue = "**__Hits__"
+                        }
+                        else {
+                            rollValue = "**__Misses__"
+                        }
+                        break;
+                    case 'all':
+                        rollValue = ':game_die:**Rolled';
+                        break;
+                }
+                if (['none', 'detailsDSN', 'details', 'hitCriticalDamage', 'd20Only', 'd20AttackOnly'].includes(game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails)) {
+                    if (message.flags['midi-qol'].isCritical) {
                         rollValue += " (Critical!)**";
                     }
-                    else if (total.classList.contains('fumble')){
+                    else if (message.flags['midi-qol'].isFumble) {
                         rollValue += " (Fumble!)**";
                     }
-                    else{
+                    else {
                         rollValue += "**";
                     }
+                }
+                else {
+                    rollValue += "**";
                 }
                 fields.push({ name: attackTitle, value: rollValue, inline: true })
             }
@@ -175,8 +203,15 @@ function midiqol_createMergeCard(message) {
     if (element) {
         damageTitle = element.querySelector('div').textContent;
         if (damageTitle && damageTitle !== "") {
-            const result = element.querySelector('h4.dice-total').textContent;
-            fields.push({ name: damageTitle, value: result ? ":game_die:**Result: __" + result + "__**" : "", inline: true })
+            let rollValue = "";
+            rollValue = element.querySelector('h4.dice-total').textContent;
+            if(rollValue !== "" && ['all', 'd20AttackOnly'].includes(game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails)){
+                rollValue = "Rolled";
+            }
+            else{
+                rollValue = ":game_die:**Result: __" + rollValue + "__**";
+            }
+            fields.push({ name: damageTitle, value: rollValue, inline: true })
         }
     }
     element = divs.querySelector('.midi-qol-damage-roll');
