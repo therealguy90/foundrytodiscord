@@ -368,14 +368,18 @@ export function anonymizeEmbed(message, embed) {
         let speakerToken = curScene.tokens.get(message.speaker.token);
         if (speakerToken) {
             if (!anon.playersSeeName(speakerToken.actor)) {
-                embed.title = embed.title.replaceAll(speakerToken.name, anon.getName(speakerToken.actor))
+                if (embed.title) {
+                    embed.title = embed.title !== "" ? embed.title.replaceAll(speakerToken.name, anon.getName(speakerToken.actor))
+                        .replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase())
+                        .replaceAll(speakerToken.actor.name, anon.getName(speakerToken.actor))
+                        .replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase()) : "";
+                }
+                if (embed.description) {
+                embed.description = embed.description !== "" ? embed.description.replaceAll(speakerToken.name, anon.getName(speakerToken.actor))
                     .replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase())
                     .replaceAll(speakerToken.actor.name, anon.getName(speakerToken.actor))
-                    .replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase());
-                embed.description = embed.description.replaceAll(speakerToken.name, anon.getName(speakerToken.actor))
-                    .replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase())
-                    .replaceAll(speakerToken.actor.name, anon.getName(speakerToken.actor))
-                    .replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase());
+                    .replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase()) : "";
+                }
             }
         }
     }
@@ -567,6 +571,6 @@ function getThisModuleSetting(settingName) {
     return game.settings.get('foundrytodiscord', settingName);
 }
 
-export function getDefaultAvatarLink(){
+export function getDefaultAvatarLink() {
     return getThisModuleSetting('inviteURL') + "modules/foundrytodiscord/src/images/defaultavatar.png";
 }
