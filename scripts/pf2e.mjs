@@ -122,8 +122,7 @@ function PF2e_createCardEmbed(message, cardType) {
 
     //parse card description if source is from a character or actor is owned by a player
     //this is to limit metagame information and is recommended for most systems.
-    //adding a setting to enable this would be an option, but is not a priority.
-    let descVisible = true;
+    let descVisible = getThisModuleSetting('showDescription');
 
     if (speakerActor) {
         if (game.modules.get("anonymous")?.active && !generic.isOwnedByPlayer(speakerActor)) {

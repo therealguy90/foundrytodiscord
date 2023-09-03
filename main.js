@@ -1,8 +1,9 @@
 import { messageParserGeneric } from './scripts/generic.mjs';
 import { isCard } from './scripts/generic.mjs';
-import { messageParserPF2e } from './scripts/pf2e.mjs';
 import { ThreadedChatConfig } from './src/forms/threadedchatconfig.mjs';
 import { getDefaultAvatarLink } from './scripts/generic.mjs';
+import { messageParserPF2e } from './scripts/pf2e.mjs';
+import { messageParserDnD5e } from './scripts/dnd5e.mjs';
 let SYSTEM_ID;
 
 Hooks.once("init", function () {
@@ -107,20 +108,20 @@ Hooks.once("init", function () {
         default: true,
         type: Boolean
     });
-    game.settings.register('foundrytodiscord', "sendEmbeds", {
-        name: "Show chat card embeds",
-        hint: "Disabling this means chat cards are no longer sent to discord.",
+    game.settings.register('foundrytodiscord', 'showDescription', {
+        name: "Show chat card descriptions",
+        hint: "Disabling this means chat cards descriptions are no longer sent to discord.",
         scope: "world",
         config: true,
         default: true,
         type: Boolean
     });
-    game.settings.register('foundrytodiscord', 'disableDeletions', {
-        name: "Disable message deletions",
-        hint: "If this is turned ON, deleted messages in Foundry won't be synced with your Discord webhook.",
+    game.settings.register('foundrytodiscord', 'sendEmbeds', {
+        name: "Show chat card embeds",
+        hint: "Disabling this means chat cards are no longer sent to discord.",
         scope: "world",
         config: true,
-        default: false,
+        default: true,
         type: Boolean
     });
     if (game.modules.get("polyglot")?.active) {
@@ -141,6 +142,14 @@ Hooks.once("init", function () {
             type: String
         });
     }
+    game.settings.register('foundrytodiscord', 'disableDeletions', {
+        name: "Disable message deletions",
+        hint: "If this is turned ON, deleted messages in Foundry won't be synced with your Discord webhook.",
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean
+    });
     game.settings.register('foundrytodiscord', 'disableMessages', {
         name: "Disable ALL messages",
         hint: "If you want to use Foundry to Discord purely as an API or use the Server Status Message ONLY, you can toggle this on. This disables the detection of new chat messages.",
@@ -156,6 +165,10 @@ Hooks.once("init", function () {
         case "pf2e":
             console.log("foundrytodiscord | Game system detected as 'pf2e'.");
             messageParse = messageParserPF2e;
+            break;
+        case "dnd5e":
+            console.log("foundrytodiscord | Game system detected as 'dnd5e'.");
+            messageParse = messageParserDnD5e;
             break;
         default:
             console.log("foundrytodiscord | Game system not fully supported. Using 'generic' mode.");
@@ -334,7 +347,6 @@ Hooks.on('createChatMessage', async (msg) => {
         }
 
         let requestParams = messageParse(msg);
-
         if (requestParams) {
             let formData = new FormData()
             if (game.modules.get("chat-media")?.active) {
@@ -474,35 +486,29 @@ async function requestOnce() {
                 addSentMessage(msgID, { url: response.url, message: await response.json() });
             }
             requestQueue.shift();
-            if (requestQueue.length > 0) {
-                requestOnce();
-            } else {
-                isProcessing = false;
-            }
+            progressQueue()
         } else if (response.status === 429) {
             const retryAfter = Number(response.headers.get("Retry-After")) || 1;
             console.log("foundrytodiscord | Rate Limit exceeded! Next request in " + retryAfter / 100 + " seconds.");
             await wait(retryAfter * 10);
-            if (requestQueue.length > 0) {
-                requestOnce();
-            } else {
-                isProcessing = false;
-            }
+            progressQueue()
         }
         else {
-            throw new Error('foundrytodiscord | HTTP error status = ' + response.status);
+            throw new Error(response.status);
         }
     } catch (error) {
         console.error('foundrytodiscord | Fetch error:', error);
-        requestQueue.shift();
-        if (requestQueue.length > 0) {
-            requestOnce();
-        } else {
-            isProcessing = false;
-        }
+        progressQueue()
     }
 }
 
+function progressQueue(){
+    if (requestQueue.length > 0) {
+        requestOnce();
+    } else {
+        isProcessing = false;
+    }
+}
 
 function getAttachments(formData, msgText, content) {
     const parser = new DOMParser();

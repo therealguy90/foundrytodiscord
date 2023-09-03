@@ -146,30 +146,6 @@ export function createGenericRollEmbed(message) {
     }
     if (message.flavor && message.flavor.length > 0) {
         title = message.flavor;
-        if (propertyExists(message, "user.targets") && message.user.targets.ids.length > 0) {
-            let targetTokenIDs = message.user.targets.ids;
-            if (targetTokenIDs.length == 1) {
-                desc = desc + "**:dart:Target: **";
-            }
-            else {
-                desc = desc + "**:dart:Targets: **";
-            }
-            let curScene = game.scenes.get(message.speaker.scene);
-            for (let i = 0; i < targetTokenIDs.length && curScene; i++) {
-                let curTarget = curScene.tokens.get(targetTokenIDs[i]);
-                if (game.modules.get("anonymous")?.active) {
-                    if (curTarget.actor && !anon.playersSeeName(curTarget.actor)) {
-                        desc = desc + "`" + anon.getName(curTarget.actor) + "` ";
-                    }
-                    else {
-                        desc = desc + "`" + curTarget.name + "` ";
-                    }
-                }
-                else {
-                    desc = desc + "`" + curTarget.name + "` ";
-                }
-            }
-        }
         if (desc !== "") {
             desc = desc + "\n";
         }
