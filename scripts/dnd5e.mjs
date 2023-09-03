@@ -142,7 +142,7 @@ function DnD5e_reformatMessage(text) {
 }
 
 function midiqol_createMergeCard(message) {
-    let embed = DnD5e_createCardEmbed(message);
+    let embeds = DnD5e_createCardEmbed(message);
     const divs = document.createElement('div');
     divs.innerHTML = message.content;
     let attackTitle = "";
@@ -205,23 +205,82 @@ function midiqol_createMergeCard(message) {
         if (damageTitle && damageTitle !== "") {
             let rollValue = "";
             rollValue = element.querySelector('h4.dice-total').textContent;
-            if(rollValue !== "" && ['all', 'd20AttackOnly'].includes(game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails)){
+            if (rollValue !== "" && ['all', 'd20AttackOnly'].includes(game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails)) {
                 rollValue = "Rolled";
             }
-            else{
+            else {
                 rollValue = ":game_die:**Result: __" + rollValue + "__**";
             }
             fields.push({ name: damageTitle, value: rollValue, inline: true })
         }
     }
-    element = divs.querySelector('.midi-qol-damage-roll');
-    embed = [{
-        title: embed[0].title,
-        description: embed[0].description,
+    embeds = [{
+        title: embeds[0].title,
+        description: embeds[0].description,
         fields: fields,
-        footer: embed[0].footer
+        footer: embeds[0].footer
     }];
-    return embed;
+    divs.innerHTML = message.content.replace(/>\s+</g, '><');
+    element = divs.querySelector('.midi-qol-saves-display');
+    let title = "";
+    let desc = "";
+    if (element) {
+        if (element.textContent !== "" && game.settings.get('midi-qol', 'ConfigSettings').displaySaveDC) {
+            title = element.querySelector(".midi-qol-nobox.midi-qol-bigger-text");
+        }
+        if (game.settings.get('midi-qol', 'ConfigSettings').autoCheckSaves !== 'whisper') {
+            element.querySelectorAll('.midi-qol-flex-container').forEach(container => {
+                let parsedTarget = "";
+                const target = container.querySelector('.midi-qol-target-npc-Player.midi-qol-target-name');
+                if (target) {
+                    parsedTarget += target.textContent + " ";
+                }
+                const label = container.querySelector('label')?.textContent;
+                if (label) {
+                    parsedTarget += label + " ";
+                }
+                if (game.settings.get('midi-qol', 'ConfigSettings').autoCheckSaves !== 'allNoRoll') {
+                    const savetotal = container.querySelector('.midi-qol-tooltip.midi-qol-save-total')
+                    if (savetotal) {
+                        parsedTarget += ": " + ":game_die: **__" + savetotal.firstChild.textContent.split(" ")[1] + "__**";
+                    }
+                }
+                parsedTarget = parsedTarget.replace(/\s+/g, ' ').trim();
+                desc += parsedTarget + "\n";
+            });
+            if (title) {
+                embeds.push({ title: title ? generic.parseHTMLText(title.innerHTML) : "", description: desc });
+            }
+            else if (desc !== "") {
+                embeds.push({ description: desc })
+            }
+            return embeds;
+        }
+    }
+    element = divs.querySelector('.midi-qol-hits-display');
+    if (element && game.settings.get('midi-qol', 'ConfigSettings').autoCheckHit === 'all') {
+        element.querySelectorAll('.midi-qol-flex-container').forEach(container => {
+            let parsedTarget = "";
+            const result = container.querySelector('strong');
+            if (result) {
+                parsedTarget += "**" + result.textContent + "** ";
+            }
+            const target = container.querySelector('.midi-qol-target-npc-Player.midi-qol-target-name');
+            if (target) {
+                parsedTarget += target.textContent + " ";
+            }
+            parsedTarget = parsedTarget.replace(/\s+/g, ' ').trim();
+            desc += parsedTarget + "\n";
+        });
+        if (title) {
+            embeds.push({ title: title ? generic.parseHTMLText(title.innerHTML) : "", description: desc });
+        }
+        else if (desc !== "") {
+            embeds.push({ description: desc })
+        }
+        return embeds;
+    }
+    return embeds;
 }
 
 function midiqol_isMergeCard(htmlString) {
