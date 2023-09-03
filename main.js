@@ -419,7 +419,7 @@ Hooks.on('updateChatMessage', async (msg) => {
 
         }
     };
-    
+
     flushLog = false;
     if (!game.user.isGM || (getThisModuleSetting("ignoreWhispers") && msg.whisper.length > 0)) {
         return;
@@ -502,7 +502,7 @@ async function requestOnce() {
     }
 }
 
-function progressQueue(){
+function progressQueue() {
     if (requestQueue.length > 0) {
         requestOnce();
     } else {
