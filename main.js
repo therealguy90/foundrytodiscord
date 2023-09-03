@@ -53,6 +53,9 @@ Hooks.once("init", function () {
         type: Object
     });
     game.settings.register('foundrytodiscord', 'messageList', {
+        // messageList is a list of the past 100 messages that have been sent to discord.
+        // It has a URL and a discord Message object for each entry with a key of the FoundryVTT message ID.
+        // This allows for real-time tracking of messages.
         config: false,
         scope: "world",
         default: {},
@@ -371,54 +374,53 @@ Hooks.on('updateChatMessage', async (msg) => {
                 console.log('foundrytodiscord | Attempt to edit message was unsuccessful due to the message not existing on Discord.');
             }
         } else {
-            flushLog = false;
-            if (!getThisModuleSetting('disableMessages')) {
-                if (!game.user.isGM || (getThisModuleSetting("ignoreWhispers") && msg.whisper.length > 0)) {
+            let requestParams = messageParse(msg);
+            if (requestParams) {
+                let editParamsOnly = {
+                    content: requestParams.params.content,
+                    embeds: requestParams.params.embeds
+                }
+                let formData = new FormData()
+                if (game.modules.get("chat-media")?.active) {
+                    const { formDataTemp, contentTemp } = getAttachments(formData, editParamsOnly.content, msg.content);
+                    formData = formDataTemp;
+                    editParamsOnly.content = contentTemp;
+                }
+                else if (editParamsOnly.content === "" && editParamsOnly.embeds === []) {
                     return;
                 }
-                if (game.userId !== getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") {
-                    console.log("foundrytodiscord | The current client's user does not match the main GM.");
-                    initMainGM();
-                    if (game.user.id !== getThisModuleSetting("mainUserId")) {
-                        return;
-                    }
+                let editHook;
+                let { url, message } = getThisModuleSetting('messageList')[msg.id];
+                if (url.split('?').length > 1) {
+                    const querysplit = url.split('?');
+                    editHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
+                } else {
+                    editHook = url + '/messages/' + message.id;
                 }
-                let requestParams = messageParse(msg);
-
-                if (requestParams) {
-                    let editParamsOnly = {
-                        content: requestParams.params.content,
-                        embeds: requestParams.params.embeds
-                    }
-                    let formData = new FormData()
-                    if (game.modules.get("chat-media")?.active) {
-                        const { formDataTemp, contentTemp } = getAttachments(formData, editParamsOnly.content, msg.content);
-                        formData = formDataTemp;
-                        editParamsOnly.content = contentTemp;
-                    }
-                    else if (editParamsOnly.content === "" && editParamsOnly.embeds === []) {
-                        return;
-                    }
-                    let editHook;
-                    let { url, message } = getThisModuleSetting('messageList')[msg.id];
-                    if (url.split('?').length > 1) {
-                        const querysplit = url.split('?');
-                        editHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
-                    } else {
-                        editHook = url + '/messages/' + message.id;
-                    }
-                    formData.append('payload_json', JSON.stringify(editParamsOnly));
-                    requestQueue.push({ hook: editHook, formData: formData, msgID: msg.id, method: 'PATCH' });
-                    if (!isProcessing) {
-                        isProcessing = true;
-                        requestOnce();
-                    }
+                formData.append('payload_json', JSON.stringify(editParamsOnly));
+                requestQueue.push({ hook: editHook, formData: formData, msgID: msg.id, method: 'PATCH' });
+                if (!isProcessing) {
+                    isProcessing = true;
+                    requestOnce();
                 }
             }
+
         }
     };
-
-    await checkExist();
+    
+    flushLog = false;
+    if (!game.user.isGM || (getThisModuleSetting("ignoreWhispers") && msg.whisper.length > 0)) {
+        return;
+    }
+    if (game.userId !== getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") {
+        initMainGM();
+        if (game.user.id !== getThisModuleSetting("mainUserId")) {
+            return;
+        }
+    }
+    if (!getThisModuleSetting('disableMessages')) {
+        await checkExist();
+    }
 });
 
 Hooks.on('deleteChatMessage', async (msg) => {
