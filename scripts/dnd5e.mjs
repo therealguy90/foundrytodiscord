@@ -124,6 +124,10 @@ function DnD5e_reformatMessage(text) {
         regex = /@UUID\[[^\]]+\]\{([^}]+)\}/g;
         reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
 
+        //replace Actor
+        regex = /@Actor\[[^\]]+\]\{([^}]+)\}/g;
+        reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
+
         //replace compendium links
         regex = /@Compendium\[[^\]]+\]\{([^}]+)\}/g;
         reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
@@ -132,9 +136,11 @@ function DnD5e_reformatMessage(text) {
         regex = /@UUID\[(.*?)\]/g;
         reformattedText = reformattedText.replace(regex, (_, text) => generic.getNameFromItem(text));
 
-        //replace Checks
-        regex = /@Check\[[^\]]+\]{([^}]+)}/g;
-        reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
+        //replace Actor if custom name "{}" is not present (redundancy)
+        regex = /@Actor\[(.*?)\]/g;
+        reformattedText = reformattedText.replace(regex, (_, text) => {
+            return game.actors.get(text);
+        });
 
         /*  FOR DND: USE SAME METHOD AS ABOVE FOR REPLACING @ TAGS, such as @Actor[]{}, etc.
         *   Not sure what 5e uses.
