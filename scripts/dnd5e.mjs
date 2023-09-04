@@ -126,7 +126,7 @@ function DnD5e_reformatMessage(text) {
 
         //replace Actor
         regex = /@Actor\[[^\]]+\]\{([^}]+)\}/g;
-        reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
+        reformattedText = reformattedText.replace(regex, ':bust_in_silhouette: `$1`');
 
         //replace compendium links
         regex = /@Compendium\[[^\]]+\]\{([^}]+)\}/g;
@@ -139,7 +139,7 @@ function DnD5e_reformatMessage(text) {
         //replace Actor if custom name "{}" is not present (redundancy)
         regex = /@Actor\[(.*?)\]/g;
         reformattedText = reformattedText.replace(regex, (_, text) => {
-            return game.actors.get(text);
+            return ':bust_in_silhouette: `' + game.actors.get(text).name + '`';
         });
 
         /*  FOR DND: USE SAME METHOD AS ABOVE FOR REPLACING @ TAGS, such as @Actor[]{}, etc.

@@ -1,7 +1,7 @@
 export function messageParserGeneric(msg) {
     let constructedMessage = '';
     let hookEmbed = [];
-    if(game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)){
+    if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)) {
         hookEmbed = generic.tokenBar_createTokenBarCard(msg);
     }
     else if (isCard(msg.content) && msg.rolls?.length < 1) {
@@ -183,6 +183,9 @@ export function getNameFromItem(itempath) {
             let actor = game.actors.get(actorID);
             let item = actor.items.get(itemID);
             itemName = item ? item.name : undefined;
+            if(itemName){
+                return ":bust_in_silhouette: `" + itemName + "`";
+            }
             break;
         case "Macro":
             let macroID = parts[1];
@@ -509,16 +512,16 @@ export function tokenBar_createTokenBarCard(message) {
             break;
         default: //"what" doesn't exist in an experience card. Not the cleanest solution.
             title = "Experience: " + message.flags["monks-tokenbar"].xp;
-            if(message.flags["monks-tokenbar"].actors.length > 0){
-                message.flags["monks-tokenbar"].actors.forEach(actor =>{
+            if (message.flags["monks-tokenbar"].actors.length > 0) {
+                message.flags["monks-tokenbar"].actors.forEach(actor => {
                     desc += "**" + actor.name + " (" + actor.xp + ")**";
-                    if(actor.assigned){
+                    if (actor.assigned) {
                         desc += ":white_check_mark:";
                     }
                     desc += "\n";
                 });
             }
-            footer = { text: message.flags["monks-tokenbar"].reason};
+            footer = { text: message.flags["monks-tokenbar"].reason };
             break;
     }
     return [{ title: title, description: desc.trim(), footer: footer }];
@@ -631,6 +634,10 @@ export function reformatMessage(text) {
         regex = /@UUID\[[^\]]+\]\{([^}]+)\}/g;
         reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
 
+        //replace Actor
+        regex = /@Actor\[[^\]]+\]\{([^}]+)\}/g;
+        reformattedText = reformattedText.replace(regex, ':bust_in_silhouette: `$1`');
+
         //replace compendium links
         regex = /@Compendium\[[^\]]+\]\{([^}]+)\}/g;
         reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
@@ -638,6 +645,12 @@ export function reformatMessage(text) {
         //replace UUID if custom name is not present (redundancy)
         regex = /@UUID\[(.*?)\]/g;
         reformattedText = reformattedText.replace(regex, (_, text) => getNameFromItem(text));
+
+        //replace Actor if custom name is not present (redundancy)
+        regex = /@Actor\[(.*?)\]/g;
+        reformattedText = reformattedText.replace(regex, (_, text) => {
+            return ':bust_in_silhouette: `' + game.actors.get(text).name + '`';
+        });
 
         //replace Checks
         regex = /@Check\[[^\]]+\]{([^}]+)}/g;

@@ -37,7 +37,7 @@ export function messageParserPF2e(msg) {
     else if (PF2e_isActionCard(msg.flavor) && msg.rolls?.length < 1) {
         cardType = 2;
     }
-    if(game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)){
+    if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)) {
         cardType = 0;
         hookEmbed = generic.tokenBar_createTokenBarCard(msg);
     }
@@ -244,7 +244,7 @@ function PF2e_createRollEmbed(message) {
             else if (PF2e_parseDegree(message.rolls[i].options.degreeOfSuccess) != "Invalid") {
                 desc = desc + " `(" + PF2e_parseDegree(message.rolls[i].options.degreeOfSuccess) + ")`";
             }
-            else if(PF2e_parseDegree(message.flags.pf2e.context.outcome) != "Invalid"){
+            else if (PF2e_parseDegree(message.flags.pf2e.context.outcome) != "Invalid") {
                 desc = desc + " `(" + PF2e_parseDegree(message.flags.pf2e.context.outcome) + ")`";
             }
             desc = desc + "\n";
@@ -442,6 +442,10 @@ function PF2e_reformatMessage(text) {
         regex = /@UUID\[[^\]]+\]\{([^}]+)\}/g;
         reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
 
+        //replace Actor
+        regex = /@Actor\[[^\]]+\]\{([^}]+)\}/g;
+        reformattedText = reformattedText.replace(regex, ':bust_in_silhouette: `$1`');
+
         //replace compendium links
         regex = /@Compendium\[[^\]]+\]\{([^}]+)\}/g;
         reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
@@ -452,6 +456,12 @@ function PF2e_reformatMessage(text) {
         //replace UUID if custom name is not present (redundancy)
         regex = /@UUID\[(.*?)\]/g;
         reformattedText = reformattedText.replace(regex, (_, text) => generic.getNameFromItem(text));
+
+        //replace Actor if custom name is not present (redundancy)
+        regex = /@Actor\[(.*?)\]/g;
+        reformattedText = reformattedText.replace(regex, (_, text) => {
+            return ':bust_in_silhouette: `' + game.actors.get(text).name + '`';
+        });
 
         //replace Checks
         regex = /@Check\[[^\]]+\]{([^}]+)}/g;
