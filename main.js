@@ -474,7 +474,7 @@ Hooks.on('deleteChatMessage', async (msg) => {
 });
 
 
-async function requestOnce() {
+async function requestOnce(retry = 0) {
     const { hook, formData, msgID, method } = requestQueue[0];
     if (method === 'PATCH') {
         console.log("foundrytodiscord | Attempting to edit message...");
@@ -516,13 +516,21 @@ async function requestOnce() {
         }
     } catch (error) {
         console.error('foundrytodiscord | Fetch error:', error);
-        progressQueue()
+        if(retry >= 2){
+            console.log("foundrytodiscord | Message discarded from the queue after retrying 2 times.");
+            requestQueue.shift();
+            retry = 0;
+        }
+        else{
+            retry++;
+        }
+        progressQueue(retry)
     }
 }
 
-function progressQueue() {
+function progressQueue(retry = 0) {
     if (requestQueue.length > 0) {
-        requestOnce();
+        requestOnce(retry);
     } else {
         isProcessing = false;
     }
