@@ -289,7 +289,7 @@ export function createCardEmbed(message) {
     if (descVisible) {
         let descList = doc.querySelectorAll(".card-content");
         descList.forEach(function (paragraph) {
-            let text = paragraph.outerHTML;
+            let text = paragraph.innerHTML;
             desc += text + "\n\n";
         });
     }
@@ -586,7 +586,8 @@ export function parseHTMLText(htmlString) {
     // Format various elements
     formatTextBySelector('.inline-roll, .inline-check', text => `:game_die:\`${text}\``, htmldoc);
     reformattedText = htmldoc.innerHTML;
-    // Format header, strong, and em tags
+
+    // Format everything else
     reformattedText = htmlCodeCleanup(reformattedText);
 
     return reformattedText;
@@ -594,18 +595,20 @@ export function parseHTMLText(htmlString) {
 
 export function htmlCodeCleanup(htmltext) {
     return htmltext.replace(/<(h[1-6])[^>]*>(.*?)<\/\1>/g, '**$2**') // Format header tags
+        .replace(/<table\b[^>]*>(.*?)<\/table>/g, '') // Remove ALL tables, as they will be parsed later.
         .replace(/<(strong|b)>|<\/(strong|b)>/g, '**') // Format strong/bold tags
         .replace(/<em[^>]*>(.*?)<\/em>/g, '*$1*') // Format em/italic tags
         .replace(/<hr[^>]*>/g, '-----------------------') // Format hr tags
         .replace(/>\s+</g, '><') // Remove indentation and formatting
-        .replace(/<li>/g, '') // Remove <li> tags
+        .replace(/<li>/g, '- ') // Remove <li> tags
         .replace(/<\/li>/g, '\n') // Format line breaks after </li>
         .replace(/<input[^>]*>.*?<\/input>|<input[^>]*>/gi, '') // Remove <input> tags
         .replace(/<div>|<\/div>/g, '\n') // Remove <div> tags and format line breaks
         .replace(/<br\s*\/?>/gi, '\n') // Format <br> tags as line breaks
         .replace(/<p>|<\/p>/g, '\n') // Remove <p> tags and format line breaks
         .replace(/<[^>]*>?/gm, '') // Remove all remaining tags
-        .replace(/\n\s+/g, '\n') // Clean up line breaks and whitespace
+        .replace(/\n\s+/g, '\n\n') // Clean up line breaks and whitespace
+        .replace(/\n-+\n/g, '-----------------------') // Redo horizontal lines after cleaning up line breaks
         .replace(/ {2,}/g, ' '); // Clean up excess whitespace
 }
 

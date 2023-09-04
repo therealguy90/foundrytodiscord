@@ -87,7 +87,6 @@ function DnD5e_createCardEmbed(message) {
     //parse card description if source is from a character or actor is owned by a player
     //this is to limit metagame information and is recommended for most systems.
     let descVisible = getThisModuleSetting('showDescription');
-
     if (speakerActor) {
         if (game.modules.get("anonymous")?.active && !generic.isOwnedByPlayer(speakerActor)) {
             descVisible = false;
@@ -96,7 +95,7 @@ function DnD5e_createCardEmbed(message) {
     if (descVisible) {
         let descList = doc.querySelectorAll(".card-content");
         descList.forEach(function (paragraph) {
-            let text = paragraph.outerHTML;
+            let text = paragraph.innerHTML;
             desc += text + "\n\n";
         });
     }
