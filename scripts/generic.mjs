@@ -183,9 +183,6 @@ export function getNameFromItem(itempath) {
             let actor = game.actors.get(actorID);
             let item = actor.items.get(itemID);
             itemName = item ? item.name : undefined;
-            if(itemName){
-                return ":bust_in_silhouette: `" + itemName + "`";
-            }
             break;
         case "Macro":
             let macroID = parts[1];
