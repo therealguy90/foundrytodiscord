@@ -130,7 +130,9 @@ function generateRequestParams(message, msgText, hookEmbed, imgurl) {
             }
         }
     }
-
+    if (hookEmbed[0]?.description?.length > 4000) {
+        hookEmbed = splitEmbed(hookEmbed[0]);
+    }
     const params = {
         username: alias,
         avatar_url: imgurl,
@@ -579,7 +581,7 @@ export function parseHTMLText(htmlString) {
         const elements = htmldoc.querySelectorAll(selector);
         elements.forEach(element => element.parentNode.removeChild(element));
     });
-
+    htmldoc.innerHTML = htmldoc.innerHTML.replace(/<table/g, '\n<table')
     const tables = htmldoc.querySelectorAll('table');
 
     tables.forEach((table) => {
@@ -616,7 +618,7 @@ export function htmlCodeCleanup(htmltext) {
         .replace(/\n\s+/g, '\n\n') // Clean up line breaks and whitespace
         .replace(/\n-+\n/g, '-----------------------') // Redo horizontal lines after cleaning up line breaks
         .replace(/ {2,}/g, ' ') // Clean up excess whitespace
-        .replaceAll(" ", ' '); //Cleanup table filler with real spaces;
+        .replaceAll(" ", ' '); //Cleanup table filler with real spaces
 }
 
 
@@ -808,8 +810,17 @@ function parseTable(table) {
         if (totalHeaderWidths > MAX_EMBED_CHARACTER_WIDTH) {
             return fitTable(tableData, headerWidths, totalHeaderWidths, MAX_EMBED_CHARACTER_WIDTH)
         }
-        else{
-            return formatTable(tableData, columnWidths);
+        else {
+            let i = 0;
+            while (widthTotal < MAX_EMBED_CHARACTER_WIDTH) {
+                columnWidths[i]++;
+                widthTotal++;
+                i++;
+                if (i >= columnWidths.length) {
+                    i = 0;
+                }
+            }
+            return fitTable(tableData, columnWidths, widthTotal, MAX_EMBED_CHARACTER_WIDTH);
         }
     }
     else {
@@ -917,6 +928,7 @@ function formatTable(tableData, columnWidths) {
         }
         paddedTable.push(paddedRow);
     }
+    console.log(paddedTable);
     const combinedRows = [];
     for (let row = 0; row < paddedTable.length; row++) {
         const rowData = paddedTable[row];
@@ -925,7 +937,65 @@ function formatTable(tableData, columnWidths) {
     }
     let fullFormattedTable = "";
     combinedRows.forEach(row => {
-        fullFormattedTable += '`' + row.replaceAll(" ", " ") + '`\n';
+        fullFormattedTable += '`' + row + '`\n';
     });
-    return fullFormattedTable;
+    return fullFormattedTable.replaceAll(" ", " ");
+}
+
+function splitEmbed(embed) {
+    const maxLength = 4000;
+    let description = embed.description;
+    const parts = [];
+
+    let isFirstEmbed = true;
+
+    while (description.length > maxLength) {
+        let splitIndex = maxLength;
+
+        // Find the nearest newline character before the maxLength
+        while (splitIndex >= 0 && description[splitIndex] !== "\n") {
+            splitIndex--;
+        }
+
+        // If no newline character is found, find the nearest whitespace character
+        if (splitIndex < 0) {
+            splitIndex = maxLength;
+            while (splitIndex >= 0 && description[splitIndex] !== " ") {
+                splitIndex--;
+            }
+        }
+
+        // If no whitespace character is found, split at the maxLength
+        if (splitIndex < 0) {
+            splitIndex = maxLength;
+        }
+
+        // Split the description and create a new embed
+        const partDescription = description.substring(0, splitIndex);
+        const partEmbed = { ...embed, description: partDescription };
+
+        // Remove the title from subsequent embeds
+        if (!isFirstEmbed) {
+            delete partEmbed.title;
+        }
+
+        // Add the part embed to the array
+        parts.push(partEmbed);
+
+        // Remove the processed part from the original description
+        description = description.substring(splitIndex + 1);
+
+        isFirstEmbed = false;
+    }
+
+    // Create the final embed with the remaining description
+    const finalEmbed = { ...embed, description };
+
+    // Remove the title from the final embed
+    delete finalEmbed.title;
+
+    // Add the final embed to the array
+    parts.push(finalEmbed);
+
+    return parts;
 }
