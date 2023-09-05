@@ -183,7 +183,7 @@ Hooks.once("init", function () {
                 console.log("foundrytodiscord | Experimental features enabled.");
                 messageParse = messageParserDnD5e;
             }
-            else{
+            else {
                 console.log("foundrytodiscord | Experimental features disabled.");
                 messageParse = messageParserGeneric;
             }
@@ -516,12 +516,12 @@ async function requestOnce(retry = 0) {
         }
     } catch (error) {
         console.error('foundrytodiscord | Fetch error:', error);
-        if(retry >= 2){
+        if (retry >= 2) {
             console.log("foundrytodiscord | Message discarded from the queue after retrying 2 times.");
             requestQueue.shift();
             retry = 0;
         }
-        else{
+        else {
             retry++;
         }
         progressQueue(retry)
@@ -536,7 +536,7 @@ function progressQueue(retry = 0) {
     }
 }
 
-function getAttachments(formData, msgText, content) {
+function getChatMediaAttachments(formData, msgText, content) {
     const parser = new DOMParser();
     let doc = parser.parseFromString(content, "text/html");
     let mediaDivs = doc.querySelectorAll('.chat-media-image, .giphy-container');
@@ -584,7 +584,39 @@ function getAttachments(formData, msgText, content) {
                         msgText += dataSrc;
                     }
                 }
+                else if(src){
+                    if (src.startsWith("data")) {
+                        const byteCharacters = atob(src.split(',')[1]);
+                        const byteArrays = [];
+                        for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
+                            const slice = byteCharacters.slice(offset, offset + 1024);
+                            const byteNumbers = new Array(slice.length);
+                            for (let i = 0; i < slice.length; i++) {
+                                byteNumbers[i] = slice.charCodeAt(i);
                             }
+                            const byteArray = new Uint8Array(byteNumbers);
+                            byteArrays.push(byteArray);
+                        }
+                        const parts = src.split(',');
+                        let mimeType;
+                        if (parts.length > 0) {
+                            // Get the part before the semicolon in the first segment
+                            const mimeTypeSegment = parts[0].split(';')[0];
+
+                            // Extract the actual MIME type
+                            mimeType = mimeTypeSegment.split(':')[1];
+                        }
+                        const blob = new Blob(byteArrays, { type: mimeType });
+                        formData.append('files[' + filecount + ']', blob, altText);
+                        filecount++;
+                    }
+                    else if (src.includes('http')) {
+                        if (msgText !== "") {
+                            msgText += "\n";
+                        }
+                        msgText += src;
+                    }
+                }
             }
 
             if (videoElement) {
