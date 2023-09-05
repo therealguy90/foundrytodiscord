@@ -367,8 +367,8 @@ Hooks.on('createChatMessage', async (msg) => {
         let requestParams = messageParse(msg);
         if (requestParams) {
             let formData = new FormData()
-            if (game.modules.get("chat-media")?.active) {
-                const { formDataTemp, contentTemp } = getAttachments(formData, requestParams.params.content, msg.content);
+            if (game.modules.get("chat-media")?.active || game.modules.get("chatgifs")?.active) {
+                const { formDataTemp, contentTemp } = getChatMediaAttachments(formData, requestParams.params.content, msg.content);
                 formData = formDataTemp;
                 requestParams.params.content = contentTemp;
             }
@@ -412,7 +412,7 @@ Hooks.on('updateChatMessage', async (msg) => {
                 }
                 let formData = new FormData()
                 if (game.modules.get("chat-media")?.active) {
-                    const { formDataTemp, contentTemp } = getAttachments(formData, editParamsOnly.content, msg.content);
+                    const { formDataTemp, contentTemp } = getChatMediaAttachments(formData, editParamsOnly.content, msg.content);
                     formData = formDataTemp;
                     editParamsOnly.content = contentTemp;
                 }
@@ -539,7 +539,7 @@ function progressQueue(retry = 0) {
 function getAttachments(formData, msgText, content) {
     const parser = new DOMParser();
     let doc = parser.parseFromString(content, "text/html");
-    let mediaDivs = doc.querySelectorAll('.chat-media-image');
+    let mediaDivs = doc.querySelectorAll('.chat-media-image, .giphy-container');
     let filecount = 0;
     if (mediaDivs.length > 0) {
         mediaDivs.forEach((div) => {
@@ -548,6 +548,7 @@ function getAttachments(formData, msgText, content) {
 
             if (imgElement) {
                 const dataSrc = imgElement.getAttribute('data-src');
+                const src = imgElement.getAttribute('src');
                 const altText = imgElement.getAttribute('alt');
 
                 if (dataSrc) {
@@ -583,6 +584,7 @@ function getAttachments(formData, msgText, content) {
                         msgText += dataSrc;
                     }
                 }
+                            }
             }
 
             if (videoElement) {
