@@ -800,7 +800,7 @@ function parseTable(table) {
         let headerWidths = [];
         let totalHeaderWidths = 0;
         for (let i = 0; i < tableData[0].length; i++) {
-            headerWidths.push(tableData[0].length + (i < tableData[0].length - 1) ? 1 : 0);
+            headerWidths.push(tableData[0].length + (i < tableData[0].length - 1) ? 2 : 0);
         }
         for (let i = 0; i < headerWidths.length; i++) {
             totalHeaderWidths += headerWidths[i].length;
