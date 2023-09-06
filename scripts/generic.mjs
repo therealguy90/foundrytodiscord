@@ -617,7 +617,7 @@ export function htmlCodeCleanup(htmltext) {
         .replace(/<input[^>]*>.*?<\/input>|<input[^>]*>/gi, '') // Remove <input> tags
         .replace(/<div>|<\/div>/g, '\n') // Remove <div> tags and format line breaks
         .replace(/<br\s*\/?>/gi, '\n') // Format <br> tags as line breaks
-        .replace(/<p>|<\/p>/g, '\n') // Remove <p> tags and format line breaks
+        .replace(/<p>|<\/p>/g, '\n\n') // Remove <p> tags and format line breaks
         .replace(/<[^>]*>?/gm, '') // Remove all remaining tags
         .replace(/\n\s+/g, '\n\n') // Clean up line breaks and whitespace
         .replace(/\n-+\n/g, '-----------------------') // Redo horizontal lines after cleaning up line breaks
