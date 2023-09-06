@@ -55,6 +55,14 @@
         }
       },
       {
+        "id": "chatgifs",
+        "type": "module",
+        "manifest": "https://github.com/YourFavouriteOreo/VTT-Chat-GIFs/releases/download/v1.1.0/module.json",
+        "compatibility": {
+          "verified": "1.1.0"
+        }
+      },
+      {
         "id": "midi-qol",
         "type": "module",
         "manifest": "https://gitlab.com/tposney/midi-qol/raw/v11/package/module.json",

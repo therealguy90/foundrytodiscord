@@ -1,4 +1,5 @@
 import * as generic from './generic.mjs';
+import { getThisModuleSetting } from './helpers/modulesettings.mjs';
 
 export function messageParserDnD5e(msg) {
     let constructedMessage = '';
@@ -101,10 +102,6 @@ function DnD5e_createCardEmbed(message) {
     }
 
     return [{ title: title, description: desc, footer: { text: generic.getCardFooter(card) } }];
-}
-
-function getThisModuleSetting(settingName) {
-    return game.settings.get('foundrytodiscord', settingName);
 }
 
 function DnD5e_reformatMessage(text) {

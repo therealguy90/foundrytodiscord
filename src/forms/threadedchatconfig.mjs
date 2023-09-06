@@ -1,3 +1,5 @@
+import { getThisModuleSetting } from "../../scripts/helpers/modulesettings.mjs";
+
 export class ThreadedChatConfig extends FormApplication {
     static get defaultOptions() {
         return mergeObject(super.defaultOptions, {
@@ -70,8 +72,4 @@ export class ThreadedChatConfig extends FormApplication {
         const setting = getThisModuleSetting('threadedChatMap');
         return setting.hasOwnProperty(sceneId);
     }
-}
-
-function getThisModuleSetting(settingName) {
-    return game.settings.get('foundrytodiscord', settingName);
 }
