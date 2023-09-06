@@ -3,6 +3,7 @@
   "description": "Sends Foundry chat to a Discord webhook! Supports PF2e.",
   "version": "1.4.3",
   "esmodules": [
+    "api.js",
     "main.js"
   ],
   "url": "https://github.com/therealguy90/FoundryToDiscord",

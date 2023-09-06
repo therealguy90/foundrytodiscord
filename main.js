@@ -4,17 +4,12 @@ import { initModuleSettings } from './scripts/helpers/modulesettings.mjs';
 import { initMainGM } from './scripts/helpers/modulesettings.mjs';
 import { getThisModuleSetting } from './scripts/helpers/modulesettings.mjs';
 import { initParser } from './scripts/helpers/modulesettings.mjs';
+import * as api from './api.js';
 
 let messageParse;
 Hooks.once("init", function () {
     initModuleSettings();
     messageParse = initParser();
-    game.modules.get('foundrytodiscord').api = {
-        sendMessage,
-        editMessage,
-        deleteMessage,
-        generateSendFormData
-    };
 });
 
 Hooks.on('userConnected', async (user, connected) => {
@@ -71,7 +66,6 @@ let requestQueue = [];
 let isProcessing = false;
 let flushLog = false;
 
-
 Hooks.once("ready", function () {
     // Search for main GM
     initMainGM();
@@ -101,7 +95,7 @@ async function initSystemStatus() {
             editedMessage.append('payload_json', body)
 
             console.log('foundrytodiscord | Attempting to edit server status...');
-            const response = await editMessage(editedMessage, getThisModuleSetting('webHookURL'), getThisModuleSetting('messageID'));
+            const response = await api.editMessage(editedMessage, getThisModuleSetting('webHookURL'), getThisModuleSetting('messageID'));
             if (response.ok) {
                 console.log('foundrytodiscord | Server state set to ONLINE');
             }
@@ -128,7 +122,7 @@ async function initSystemStatus() {
                         }
                     }]
                 }));
-                await sendMessage(formData);
+                await api.sendMessage(formData);
             }
         }
     }
@@ -154,7 +148,7 @@ Hooks.on('createChatMessage', async (msg) => {
                 editedMessage.append('payload_json', body);
 
                 console.log('foundrytodiscord | Attempting to edit server status...');
-                const response = await editMessage(editedMessage, getThisModuleSetting('webHookURL'), getThisModuleSetting('messageID'));
+                const response = await api.editMessage(editedMessage, getThisModuleSetting('webHookURL'), getThisModuleSetting('messageID'));
                 if (response.ok) {
                     console.log('foundrytodiscord | Server state set to OFFLINE');
                     ChatMessage.create({ content: 'Foundry to Discord | Server state set to OFFLINE.', whisper: [game.user.id] });
@@ -473,89 +467,4 @@ function wait(milliseconds) {
     return new Promise(resolve => {
         setTimeout(resolve, milliseconds);
     });
-}
-
-//API Functions
-
-function generateSendFormData(content, embeds = [], username = game.user.name, avatar_url = getDefaultAvatarLink()) {
-    const formData = new FormData();
-    formData.append("payload_json", JSON.stringify({
-        username: username,
-        avatar_url: avatar_url,
-        content: content,
-        embeds: embeds
-    }));
-    return formData;
-}
-
-async function sendMessage(formData, isRoll = false, sceneID = "") {
-    let hook = "";
-    if (isRoll) {
-        if (sceneID !== "" && getThisModuleSetting("threadedChatMap").hasOwnProperty(sceneID)) {
-            hook = getThisModuleSetting("rollWebHookURL").split('?')[0] + "?thread_id=" + getThisModuleSetting('threadedChatMap')[sceneID].rollThreadId;
-        }
-        else {
-            hook = getThisModuleSetting("rollWebHookURL");
-        }
-    } else {
-        if (sceneID !== "" && getThisModuleSetting("threadedChatMap").hasOwnProperty(sceneID)) {
-            hook = getThisModuleSetting("webHookURL").split('?')[0] + "?thread_id=" + getThisModuleSetting('threadedChatMap')[sceneID].chatThreadId;
-        }
-        else {
-            hook = getThisModuleSetting("webHookURL");
-        }
-    }
-
-    if (hook.includes("?")) {
-        hook += "&wait=true";
-    }
-    else if (hook !== "") {
-        hook += "?wait=true";
-    }
-
-    const requestOptions = {
-        method: 'POST',
-        body: formData
-    };
-
-    console.log("foundrytodiscord | Attempting to send message to webhook...");
-    try {
-        const response = await fetch(hook, requestOptions)
-        if (response.ok) {
-            const message = (await response.json());
-            return { response: response, message: message }
-        }
-    } catch (error) {
-        console.log("foundrytodiscord | Error sending message: ", error);
-        return error;
-    }
-}
-
-async function editMessage(formData, webhook, messageID) {
-    if (webhook.split('?').length > 1) {
-        const querysplit = webhook.split('?');
-        webhook = querysplit[0] + '/messages/' + messageID + '?' + querysplit[1];
-    } else {
-        webhook = webhook + '/messages/' + messageID;
-    }
-    const requestOptions = {
-        method: 'PATCH',
-        body: formData
-    };
-    return await fetch(webhook, requestOptions).catch(error => {
-        console.error('foundrytodiscord | Error editing message:', error);
-    });
-}
-
-async function deleteMessage(webhook, messageID) {
-    if (webhook.split('?').length > 1) {
-        const querysplit = webhook.split('?');
-        webhook = querysplit[0] + '/messages/' + messageID + '?' + querysplit[1];
-    } else {
-        webhook = webhook + '/messages/' + messageID;
-    }
-    return await fetch(webhook, { method: 'DELETE' })
-        .catch(error => {
-            console.log("foundrytodiscord | Error deleting message:", error);
-        });
 }
