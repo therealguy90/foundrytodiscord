@@ -1,4 +1,4 @@
-export function parseTable(table) {
+export function htmlTo2DTable(table) {
     const rows = table.querySelectorAll('tr');
     let tableData = [];
 
@@ -11,6 +11,10 @@ export function parseTable(table) {
         });
         tableData.push(rowData);
     });
+    return tableData;
+}
+
+export function parse2DTable(tableData){
     let columnWidths = []
     // Output the 2D array containing the table data
     // Initialize columnWidths with zeros

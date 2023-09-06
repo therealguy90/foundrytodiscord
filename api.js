@@ -22,7 +22,7 @@ export function generateSendFormData(content, embeds = [], username = game.user.
     return formData;
 }
 
-export async function sendMessage(formData, isRoll = false, sceneID = "") {
+export async function sendMessage(formData, isRoll = false, sceneID = game.user.viewedScene) {
     let hook = "";
     if (isRoll) {
         if (sceneID !== "" && getThisModuleSetting("threadedChatMap").hasOwnProperty(sceneID)) {

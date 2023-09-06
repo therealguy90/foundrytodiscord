@@ -1,4 +1,5 @@
-import { parseTable } from './helpers/tables.mjs';
+import { htmlTo2DTable } from './helpers/tables.mjs';
+import { parse2DTable } from './helpers/tables.mjs';
 import { getThisModuleSetting } from './helpers/modulesettings.mjs';
 import { splitEmbed } from './helpers/embeds.mjs';
 
@@ -589,8 +590,8 @@ export function parseHTMLText(htmlString) {
     const tables = htmldoc.querySelectorAll('table');
 
     tables.forEach((table) => {
-        const newTableHtml = parseTable(table);
-        table.innerHTML = newTableHtml;
+        const newTable2D = htmlTo2DTable(table);
+        table.innerHTML = parse2DTable(newTable2D);
     });
 
     // Remove <img> tags
