@@ -36,8 +36,8 @@ export function parseTable(table) {
         }
     }
     for (let i = 0; i < columnWidths.length; i++) {
-        if (columnWidths[i] < 7) {
-            columnWidths[i] = 7;
+        if (columnWidths[i] < 6) {
+            columnWidths[i] = 6;
         }
     }
     let widthTotal = 0;
