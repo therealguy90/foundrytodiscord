@@ -189,6 +189,9 @@ function splitStringByLength(inputString, chunkLength) {
 }
 
 function padRight(str, width) {
+    if(!str){
+        str = "";
+    }
     if (str.length < width) {
         return str + ' '.repeat(width - str.length);
     } else {
