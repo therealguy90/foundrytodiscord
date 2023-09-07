@@ -182,13 +182,25 @@ Hooks.on('createChatMessage', async (msg) => {
         let requestParams = messageParse(msg);
         if (requestParams) {
             let formData = new FormData()
+            let hasAttachments = false;
             if (game.modules.get("chat-media")?.active || game.modules.get("chatgifs")?.active) {
                 const { formDataTemp, contentTemp } = getChatMediaAttachments(formData, requestParams.params.content, msg.content);
-                formData = formDataTemp;
+                if (formDataTemp !== formData) {
+                    formData = formDataTemp;
+                    hasAttachments = true;
+                }
                 requestParams.params.content = contentTemp;
             }
-            else if (requestParams.params.content === "" && requestParams.params.embeds === []) {
-                return;
+            if (requestParams.params.content === "" && requestParams.params.embeds.length === 0 && !hasAttachments) {
+                if (!msg.content.includes('<img') && !msg.content.includes('<video')) {
+                    return;
+                }
+                else {
+                    requestParams.params.content += addMediaLinks(msg);
+                }
+                if (requestParams.params.content === "") {
+                    return;
+                }
             }
             let waitHook;
             if (requestParams.hook.includes("?")) {
@@ -220,6 +232,7 @@ Hooks.on('updateChatMessage', async (msg) => {
             }
         } else {
             let requestParams = messageParse(msg);
+            let hasAttachments = false;
             if (requestParams) {
                 let editParamsOnly = {
                     content: requestParams.params.content,
@@ -228,11 +241,22 @@ Hooks.on('updateChatMessage', async (msg) => {
                 let formData = new FormData()
                 if (game.modules.get("chat-media")?.active) {
                     const { formDataTemp, contentTemp } = getChatMediaAttachments(formData, editParamsOnly.content, msg.content);
-                    formData = formDataTemp;
+                    if (formDataTemp !== new FormData()) {
+                        formData = formDataTemp;
+                        hasAttachments = true;
+                    }
                     editParamsOnly.content = contentTemp;
                 }
-                else if (editParamsOnly.content === "" && editParamsOnly.embeds === []) {
-                    return;
+                if (requestParams.params.content === "" && requestParams.params.embeds.length === 0 && !hasAttachments) {
+                    if (!msg.content.includes('<img') && !msg.content.includes('<video')) {
+                        return;
+                    }
+                    else {
+                        editParamsOnly += addMediaLinks(msg);
+                    }
+                    if (requestParams.params.content === "") {
+                        return;
+                    }
                 }
                 let editHook;
                 let { url, message } = getThisModuleSetting('messageList')[msg.id];
@@ -360,7 +384,6 @@ function getChatMediaAttachments(formData, msgText, content) {
         mediaDivs.forEach((div) => {
             const imgElement = div.querySelector('img');
             const videoElement = div.querySelector('video');
-
             if (imgElement) {
                 const dataSrc = imgElement.getAttribute('data-src');
                 const src = imgElement.getAttribute('src');
@@ -368,27 +391,7 @@ function getChatMediaAttachments(formData, msgText, content) {
 
                 if (dataSrc) {
                     if (dataSrc.startsWith("data")) {
-                        const byteCharacters = atob(dataSrc.split(',')[1]);
-                        const byteArrays = [];
-                        for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
-                            const slice = byteCharacters.slice(offset, offset + 1024);
-                            const byteNumbers = new Array(slice.length);
-                            for (let i = 0; i < slice.length; i++) {
-                                byteNumbers[i] = slice.charCodeAt(i);
-                            }
-                            const byteArray = new Uint8Array(byteNumbers);
-                            byteArrays.push(byteArray);
-                        }
-                        const parts = dataSrc.split(',');
-                        let mimeType;
-                        if (parts.length > 0) {
-                            // Get the part before the semicolon in the first segment
-                            const mimeTypeSegment = parts[0].split(';')[0];
-
-                            // Extract the actual MIME type
-                            mimeType = mimeTypeSegment.split(':')[1];
-                        }
-                        const blob = new Blob(byteArrays, { type: mimeType });
+                        const blob = dataToBlob(dataSrc);
                         formData.append('files[' + filecount + ']', blob, altText);
                         filecount++;
                     }
@@ -399,29 +402,9 @@ function getChatMediaAttachments(formData, msgText, content) {
                         msgText += dataSrc;
                     }
                 }
-                else if(src){
+                else if (src) {
                     if (src.startsWith("data")) {
-                        const byteCharacters = atob(src.split(',')[1]);
-                        const byteArrays = [];
-                        for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
-                            const slice = byteCharacters.slice(offset, offset + 1024);
-                            const byteNumbers = new Array(slice.length);
-                            for (let i = 0; i < slice.length; i++) {
-                                byteNumbers[i] = slice.charCodeAt(i);
-                            }
-                            const byteArray = new Uint8Array(byteNumbers);
-                            byteArrays.push(byteArray);
-                        }
-                        const parts = src.split(',');
-                        let mimeType;
-                        if (parts.length > 0) {
-                            // Get the part before the semicolon in the first segment
-                            const mimeTypeSegment = parts[0].split(';')[0];
-
-                            // Extract the actual MIME type
-                            mimeType = mimeTypeSegment.split(':')[1];
-                        }
-                        const blob = new Blob(byteArrays, { type: mimeType });
+                        const blob = dataToBlob(src);
                         formData.append('files[' + filecount + ']', blob, altText);
                         filecount++;
                     }
@@ -435,20 +418,71 @@ function getChatMediaAttachments(formData, msgText, content) {
             }
 
             if (videoElement) {
-                const dataSrc = videoElement.getAttribute('data-src');
+                const src = videoElement.getAttribute('src');
 
-                if (dataSrc) {
-                    if (dataSrc.includes('http')) {
+                if (src) {
+                    if (src.includes('http')) {
                         if (msgText !== "") {
                             msgText += "\n";
                         }
-                        msgText += dataSrc;
+                        msgText += src;
                     }
                 }
             }
         });
     }
     return { formDataTemp: formData, contentTemp: msgText };
+}
+
+function addMediaLinks(message) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(message.content, "text/html");
+    const images = doc.querySelectorAll('img');
+    let links = "";
+    console.log(images);
+    images.forEach(imgElement => {
+        const src = imgElement.getAttribute('src');
+        if (src.includes('http')) {
+            if (links !== "") {
+                links += "\n";
+            }
+            links += src;
+        }
+    });
+    const videos = doc.querySelectorAll('video');
+    videos.forEach(videoElement => {
+        const src = videoElement.getAttribute('src');
+        if (src.includes('http')) {
+            if (links !== "") {
+                links += "\n";
+            }
+            links += src;
+        }
+    });
+    return links;
+}
+
+function dataToBlob(base64String) {
+    const byteCharacters = atob(base64String.split(',')[1]);
+    const byteArrays = [];
+    for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
+        const slice = byteCharacters.slice(offset, offset + 1024);
+        const byteNumbers = new Array(slice.length);
+        for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        byteArrays.push(byteArray);
+    }
+    const parts = base64String.split(',');
+    let mimeType;
+    if (parts.length > 0) {
+        // Get the part before the semicolon in the first segment
+        const mimeTypeSegment = parts[0].split(';')[0];
+        // Extract the actual MIME type
+        mimeType = mimeTypeSegment.split(':')[1];
+    }
+    return new Blob(byteArrays, { type: mimeType });
 }
 
 function addSentMessage(msgID, params) {
