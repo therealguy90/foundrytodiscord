@@ -1,14 +1,14 @@
 {
   "title": "Foundry to Discord",
   "description": "Sends Foundry chat to a Discord webhook! Supports PF2e.",
-  "version": "1.4.3",
+  "version": "1.5.0",
   "esmodules": [
     "api.js",
     "main.js"
   ],
   "url": "https://github.com/therealguy90/FoundryToDiscord",
-  "manifest": "https://github.com/therealguy90/foundrytodiscord/releases/download/1.4.3/module.json",
-  "download": "https://github.com/therealguy90/foundrytodiscord/releases/download/1.4.3/foundrytodiscord.zip",
+  "manifest": "https://github.com/therealguy90/foundrytodiscord/releases/download/1.5.0/module.json",
+  "download": "https://github.com/therealguy90/foundrytodiscord/releases/download/1.5.0/foundrytodiscord.zip",
   "readme": "https://github.com/therealguy90/foundrytodiscord/blob/main/README.md",
   "id": "foundrytodiscord",
   "authors": [
@@ -53,14 +53,6 @@
         "manifest": "https://github.com/p4535992/foundryvtt-chat-media/releases/download/3.3.4/module.json",
         "compatibility": {
           "verified": "3.3.4"
-        }
-      },
-      {
-        "id": "chatgifs",
-        "type": "module",
-        "manifest": "https://github.com/YourFavouriteOreo/VTT-Chat-GIFs/releases/download/v1.1.0/module.json",
-        "compatibility": {
-          "verified": "1.1.0"
         }
       },
       {

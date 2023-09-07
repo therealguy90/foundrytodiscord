@@ -1,4 +1,12 @@
-# 1.4.3
+# 1.5.0
+
+- midi-qol GM damage tables are now supported, if whispers are sent to your webhook.
+- Improved readability on chat cards
+- Tables are now parsed properly.
+- If an image was sent to chat without any text, it will also be sent to the webhook.
+- DnD5e support is no longer 'experimental'.
+
+## 1.4.3
 
 - **NEW MODULE SUPPORT** [Monk's TokenBar](https://foundryvtt.com/packages/monks-tokenbar)! Contested Rolls, Roll Requests, and Experience cards now have a custom parser, and will be sent to Discord properly.
 

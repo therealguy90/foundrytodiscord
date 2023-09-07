@@ -26,9 +26,9 @@ Polyglot:
 - Adds an option to the config, where the GM can set the only languages this module will "understand", and sends the rest to discord as "Unintelligible". Useful for party splits. Example, if you set this setting to only understand "dwarven, draconic", then even if players know a language different from these, it will still send to Discord as "Unintelligible" unless it's listed here!
 - Adds an option to override what the "common" languages are in your world. This is so that messages sent in this language always pass the check for Polyglot, and are sent to Discord as plaintext.
 
-Chat Media:
+Chat Media / Chat GIFs / Similar:
 
-- Image and video links and uploaded images are sent to Discord!
+- Image, video links and uploaded images are sent to Discord!
 
 Monk's Token Bar:
 
