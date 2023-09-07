@@ -5,6 +5,7 @@
 - Tables are now parsed properly.
 - If an image was sent to chat without any text, it will also be sent to the webhook.
 - DnD5e support is no longer 'experimental'.
+- API is now in api.js.
 
 ## 1.4.3
 
