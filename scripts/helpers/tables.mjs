@@ -58,7 +58,7 @@ export function parse2DTable(tableData) {
         }
         widthTotal += columnWidths[i];
     }
-    const MAX_EMBED_CHARACTER_WIDTH = 75;
+    const MAX_EMBED_CHARACTER_WIDTH = 74;
     if (widthTotal <= MAX_EMBED_CHARACTER_WIDTH) {
         let headerWidths = [];
         let totalHeaderWidths = 0;
@@ -73,7 +73,7 @@ export function parse2DTable(tableData) {
         }
         else {
             let i = 0;
-            while (widthTotal < MAX_EMBED_CHARACTER_WIDTH) {
+            while (widthTotal + 1 < MAX_EMBED_CHARACTER_WIDTH) {
                 columnWidths[i]++;
                 widthTotal++;
                 i++;

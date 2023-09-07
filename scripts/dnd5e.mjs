@@ -1,5 +1,6 @@
 import * as generic from './generic.mjs';
 import { getThisModuleSetting } from './helpers/modulesettings.mjs';
+import { parse2DTable } from './helpers/tables.mjs';
 
 export function messageParserDnD5e(msg) {
     let constructedMessage = '';
@@ -7,7 +8,10 @@ export function messageParserDnD5e(msg) {
     if (game.modules.get('midi-qol')?.active && midiqol_isMergeCard(msg.content)) {
         hookEmbed = midiqol_createMergeCard(msg);
     }
-    else if(game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)){
+    else if (game.modules.get('midi-qol')?.active && msg.flags?.midiqol?.undoDamage && midiqol_isDamageTable(msg.content)) {
+        hookEmbed = midiqol_createDamageTable(msg);
+    }
+    else if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)) {
         hookEmbed = generic.tokenBar_createTokenBarCard(msg);
     }
     else if (generic.isCard(msg.content) && msg.rolls?.length < 1) {
@@ -288,11 +292,69 @@ function midiqol_createMergeCard(message) {
     return embeds;
 }
 
+function midiqol_createDamageTable(message) {
+    const divs = document.createElement('div');
+    divs.innerHTML = message.content;
+    // Instead of parsing from the table itself, create a card with a table using flags
+    const damages = message.flags.midiqol.undoDamage;
+    let damageArray = [["Actor", "Old HP", "Damage Taken", "New HP"], ["", "", "", ""]];
+    damages.forEach(damage => {
+        let damageItem = damage.damageItem;
+        let damageRow = [];
+        const scene = damageItem.sceneId;
+        const token = game.scenes.get(scene).tokens.get(damageItem.tokenId);
+        damageRow.push(token.name);
+        let oldHP = String(damageItem.oldHP);
+        if (damageItem.oldTempHP > 0) {
+            oldHP += "(Temp: " + damageItem.oldTempHP + ")";
+        }
+        damageRow.push(oldHP);
+        let damageBreakdown = damageItem.appliedDamage + "(";
+        for (let i = 0; i < damageItem.damageDetail.length; i++) {
+            if (damageItem.damageDetail[i] !== null) {
+                if (i > 0) {
+                    damageBreakdown += ",";
+                }
+                damageItem.damageDetail[i].forEach(breakdown => {
+                    damageBreakdown += breakdown.damage + " " + breakdown.type;
+                });
+            }
+        }
+        damageBreakdown += ")";
+        damageRow.push(damageBreakdown);
+        let newHP = String(damageItem.newHP);
+        if (damageItem.newTempHP > 0) {
+            newHP += "(Temp: " + damageItem.newTempHP + ")";
+        }
+        damageRow.push(newHP);
+        damageArray.push(damageRow);
+    });
+    console.log(damageArray);
+    if (damageArray.length > 1) {
+        return [{ title: "HP Updates", description: parse2DTable(damageArray)}];
+    }
+    else{
+        return [{ title: "HP Updates", description: ""}];
+    }
+}
+
 function midiqol_isMergeCard(htmlString) {
     const tempElement = document.createElement('div');
     tempElement.innerHTML = htmlString;
     const midiQOLItemCard = tempElement.querySelector('.midi-qol-item-card');
     if (midiQOLItemCard) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function midiqol_isDamageTable(htmlString) {
+    const tempElement = document.createElement('div');
+    tempElement.innerHTML = htmlString;
+    const midiQOLFlexContainer = tempElement.querySelector('.xmidi-qol-flex-container');
+    const midiQOLDamageTable = midiQOLFlexContainer.querySelector('table');
+    if (midiQOLDamageTable) {
         return true;
     } else {
         return false;
