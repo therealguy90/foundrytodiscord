@@ -1,8 +1,15 @@
+/* Parsing an HTML table into readable plaintext is difficult.
+*  The method that is used here is as follows:
+*  HTML table is converted into a 2D array. Next, the column widths are dynamically set using the widths of the contents.
+*  Discord embeds can only fit 75 characters per line, so widths are reduced, starting from the largest width
+*  Once the table fits, it is then formatted, splitting cells that do not meet the maximum width into several lines.
+*  Then, it is padded, and finally, joined.
+*/
 export function htmlTo2DTable(table) {
     const rows = table.querySelectorAll('tr');
     let tableData = [];
 
-    // Remove unnecessary whitespaces and newlines and extract table data into a 2D array
+    // Remove unnecessary whitespaces and newlines, extract table data into a 2D array
     rows.forEach((row) => {
         const cells = row.querySelectorAll('td, th');
         let rowData = [];
@@ -14,7 +21,7 @@ export function htmlTo2DTable(table) {
     return tableData;
 }
 
-export function parse2DTable(tableData){
+export function parse2DTable(tableData) {
     let columnWidths = []
     // Output the 2D array containing the table data
     // Initialize columnWidths with zeros
@@ -82,7 +89,8 @@ export function parse2DTable(tableData){
     }
 }
 
-
+// Fit the contents of the 2D array into a 75-character width (maximum allowed width for a discord embed)
+// Will only really be readable on desktop. Better solution than the alternatives.
 function fitTable(tableData, columnWidths, widthTotal, MAX_EMBED_CHARACTER_WIDTH) {
     let toRemove = widthTotal - MAX_EMBED_CHARACTER_WIDTH;
     while (toRemove > 0) {
@@ -145,6 +153,7 @@ function fitTable(tableData, columnWidths, widthTotal, MAX_EMBED_CHARACTER_WIDTH
     return formatTable(combinedArray, columnWidths);
 }
 
+// Formats the 2D table into a proper plaintext table using fixed column widths that were calculated earlier.
 function formatTable(tableData, columnWidths) {
     const paddedTable = [];
     for (let row = 0; row < tableData.length; row++) {
@@ -167,10 +176,12 @@ function formatTable(tableData, columnWidths) {
     let fullFormattedTable = "";
     combinedRows.forEach(row => {
         fullFormattedTable += '`' + row + '`\n';
-    });
+    });// Use invisible table filler to prevent the message cleaning algorithm from trying to mess it up later
     return fullFormattedTable.replaceAll(" ", " ") + "\n";
 }
 
+// Chops up a string by a specific length
+// Example: "Proficiency" divided into 4 character chunks is ["Prof", "icie", "ncy"].
 function splitStringByLength(inputString, chunkLength) {
     if (chunkLength <= 0) {
         return [inputString];
@@ -188,8 +199,9 @@ function splitStringByLength(inputString, chunkLength) {
     return result;
 }
 
+// Pads table contents to the right.
 function padRight(str, width) {
-    if(!str){
+    if (!str) {
         str = "";
     }
     if (str.length < width) {
