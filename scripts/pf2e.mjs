@@ -34,7 +34,7 @@ export function messageParserPF2e(msg) {
     if ((generic.isCard(msg.content) && msg.rolls?.length < 1)) {
         cardType = 1;
     }
-    else if (PF2e_isActionCard(msg.flavor) && msg.rolls?.length < 1) {
+    else if (PF2e_isActionCard(msg) && msg.rolls?.length < 1) {
         cardType = 2;
     }
     if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)) {
@@ -475,11 +475,12 @@ function PF2e_reformatMessage(text) {
     return reformattedText.trim();
 }
 
-function PF2e_isActionCard(flavor) {
+function PF2e_isActionCard(message) {
+    const flavor = message.flavor;
     const parser = new DOMParser();
     const doc = parser.parseFromString(flavor, "text/html");
     const action = doc.querySelectorAll("h4.action");
-    if (action.length > 0) {
+    if (action.length > 0 && message.flags?.pf2e?.context?.item) {
         return true;
     }
     else {
