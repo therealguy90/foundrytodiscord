@@ -343,12 +343,13 @@ async function requestOnce(retry = 0) {
                 addSentMessage(msgID, { url: response.url, message: await response.json() });
             }
             requestQueue.shift();
-            progressQueue()
+            console.log("foundrytodiscord | " + method + " request succeeded.");
+            progressQueue();
         } else if (response.status === 429) {
             const retryAfter = Number(response.headers.get("Retry-After")) || 1;
             console.log("foundrytodiscord | Rate Limit exceeded! Next request in " + retryAfter / 100 + " seconds.");
             await wait(retryAfter * 10);
-            progressQueue()
+            progressQueue();
         }
         else {
             throw new Error(response.status);
@@ -363,7 +364,8 @@ async function requestOnce(retry = 0) {
         else {
             retry++;
         }
-        progressQueue(retry)
+        console.log("foundrytodiscord | Retrying...");
+        progressQueue(retry);
     }
 }
 
