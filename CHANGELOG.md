@@ -1,4 +1,10 @@
-# 1.5.0
+# 1.5.1
+
+- (pf2e) Minor bug fixes related to action cards
+- Implemented a more robust, language-independent method to detect chat log flushing
+- Added more logging to requests
+
+## 1.5.0
 
 - midi-qol GM damage tables are now supported, if whispers are sent to your webhook.
 - Improved readability on chat cards

@@ -1,14 +1,14 @@
 {
   "title": "Foundry to Discord",
   "description": "Sends Foundry chat to a Discord webhook! Supports PF2e.",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "esmodules": [
     "api.js",
     "main.js"
   ],
   "url": "https://github.com/therealguy90/FoundryToDiscord",
   "manifest": "https://github.com/therealguy90/foundrytodiscord/releases/latest/download/module.json",
-  "download": "https://github.com/therealguy90/foundrytodiscord/releases/latest/download/foundrytodiscord.zip",
+  "download": "https://github.com/therealguy90/foundrytodiscord/releases/download/1.5.1/foundrytodiscord.zip",
   "readme": "https://github.com/therealguy90/foundrytodiscord/blob/main/README.md",
   "id": "foundrytodiscord",
   "authors": [
@@ -26,9 +26,9 @@
       {
         "id": "polyglot",
         "type": "module",
-        "manifest": "https://github.com/mclemente/fvtt-module-polyglot/releases/download/2.1.1/module.json",
+        "manifest": "https://github.com/mclemente/fvtt-module-polyglot/releases/download/2.1.6/module.json",
         "compatibility": {
-          "verified": "2.1.1"
+          "verified": "2.1.6"
         }
       },
       {
@@ -42,17 +42,17 @@
       {
         "id": "anonymous",
         "type": "module",
-        "manifest": "https://github.com/reonZ/anonymous/releases/download/1.4.2/module.json",
+        "manifest": "https://github.com/reonZ/anonymous/releases/download/1.4.4/module.json",
         "compatibility": {
-          "verified": "1.4.2"
+          "verified": "1.4.4"
         }
       },
       {
         "id": "chat-media",
         "type": "module",
-        "manifest": "https://github.com/p4535992/foundryvtt-chat-media/releases/download/3.3.4/module.json",
+        "manifest": "https://github.com/p4535992/foundryvtt-chat-media/releases/download/3.3.5/module.json",
         "compatibility": {
-          "verified": "3.3.4"
+          "verified": "3.3.5"
         }
       },
       {
@@ -60,7 +60,7 @@
         "type": "module",
         "manifest": "https://gitlab.com/tposney/midi-qol/raw/v11/package/module.json",
         "compatibility": {
-          "verified": "11.0.14.1"
+          "verified": "11.0.16"
         }
       },
       {
