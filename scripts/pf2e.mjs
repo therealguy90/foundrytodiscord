@@ -47,7 +47,7 @@ export function messageParserPF2e(msg) {
             hookEmbed = PF2e_createCardEmbed(msg, cardType);
         }
     }
-    else if (!msg.isRoll) {
+    else if (!msg.isRoll || (msg.isRoll && msg.rolls.length < 1)) {
         /*Attempt polyglot support. This will ONLY work if the structure is similar:
         * for PF2e and DnD5e, this would be actor.system.traits.languages.value
         */
@@ -165,7 +165,7 @@ function PF2e_createRollEmbed(message) {
         }
     }
 
-    if (title == "") {
+    if (title === "") {
         regex = /<strong>(.*?)<\/strong>/g;
         while ((m = regex.exec(str)) !== null) {
             if (m.index === regex.lastIndex) {
@@ -175,6 +175,10 @@ function PF2e_createRollEmbed(message) {
                 title = m[1];
             }
         }
+    }
+
+    if (title === "" && message.flavor !== "") {
+        title = message.flavor;
     }
 
     if (game.modules.get("anonymous")?.active) {
@@ -231,7 +235,7 @@ function PF2e_createRollEmbed(message) {
     }
     desc = desc + "\n";
 
-    if (!message.flags.pf2e.context.isReroll) {
+    if (!message.flags.pf2e?.context?.isReroll) {
         //Add roll information to embed:
         for (let i = 0; i < message.rolls.length; i++) {
             desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
@@ -241,10 +245,10 @@ function PF2e_createRollEmbed(message) {
                 }
                 desc = desc + PF2e_parseDamageTypes(message.rolls[i]);
             }
-            else if (PF2e_parseDegree(message.rolls[i].options.degreeOfSuccess) != "Invalid") {
+            else if (PF2e_parseDegree(message.rolls[i].options?.degreeOfSuccess) != "Invalid") {
                 desc = desc + " `(" + PF2e_parseDegree(message.rolls[i].options.degreeOfSuccess) + ")`";
             }
-            else if (PF2e_parseDegree(message.flags.pf2e.context.outcome) != "Invalid") {
+            else if (PF2e_parseDegree(message.flags.pf2e?.context?.outcome) != "Invalid") {
                 desc = desc + " `(" + PF2e_parseDegree(message.flags.pf2e.context.outcome) + ")`";
             }
             desc = desc + "\n";
