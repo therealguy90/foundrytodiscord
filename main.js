@@ -51,16 +51,26 @@ Hooks.on('deleteScene', async scene => {
     }
 });
 
-Hooks.on('closeApplication', (app) => {
-    // Avoid removing discord messages when chat log is flushed
-    try {
-        if (app.data.title === "Flush Chat Log" && game.user.isGM) {
-            flushLog = true;
-        }
-    } catch (error) {
+Hooks.on("renderChatLog", (app, html) => {
+    // Add event listener for the "Clear Chat Log" button
+    const clearButton = html.find('a.delete.chat-flush');
+    clearButton.on("click", () => {
+        flushLog = true;
+    });
+});
 
+Hooks.on("renderApplication", (app, html) => {
+    // Check if the 'yes' button was pressed to flush the chat log
+    // This is the most consistent method.
+    const yesButton = html.find('button.dialog-button.yes.bright, button[data-button="yes"]');
+    if (yesButton && yesButton.length > 0) {
+        yesButton.on("click", () => {
+            console.log("foundrytodiscord | Avoiding deleting messages in Discord...");
+            flushLog = true;
+        });
     }
 });
+
 
 let requestQueue = [];
 let isProcessing = false;
