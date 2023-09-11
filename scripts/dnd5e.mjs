@@ -21,6 +21,16 @@ export function messageParserDnD5e(msg) {
         }
     }
     else if (!msg.isRoll) {
+        if (generic.hasDiceRolls(msg.content)) {
+            hookEmbed = generic.createHTMLDiceRollEmbed(msg);
+            const elements = document.createElement('div');
+            elements.innerHTML = msg.content;
+            const diceRolls = elements.querySelectorAll('.dice-roll');
+            for (const div of diceRolls) {
+                div.parentNode.removeChild(div);
+            }
+            msg.content = elements.innerHTML;
+        }
         /*Attempt polyglot support. This will ONLY work if the structure is similar:
         * for PF2e and DnD5e, this would be actor.system.traits.languages.value
         * polyglotize() can be edited for other systems.
@@ -142,6 +152,11 @@ function DnD5e_reformatMessage(text) {
             return ':bust_in_silhouette: `' + game.actors.get(text).name + '`';
         });
 
+        //replace Inline Roll Commands
+        regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
+        reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
+        regex = /\[\[\/(.*?) (.*?)\]\]/g;
+        reformattedText = reformattedText.replace(regex, ':game_die: `$2`');
         /*  FOR DND: USE SAME METHOD AS ABOVE FOR REPLACING @ TAGS, such as @Actor[]{}, etc.
         *   Not sure what 5e uses.
         */
@@ -303,7 +318,18 @@ function midiqol_createDamageTable(message) {
         let damageRow = [];
         const scene = damageItem.sceneId;
         const token = game.scenes.get(scene).tokens.get(damageItem.tokenId);
-        damageRow.push(token.name);
+        if (game.modules.get("anonymous")?.active) {
+            const anon = game.modules.get("anonymous").api;
+            if (token.actor && !anon.playersSeeName(token.actor)) {
+                damageRow.push(anon.getName(token.actor));
+            }
+            else {
+                damageRow.push(token.name);
+            }
+        }
+        else {
+            damageRow.push(token.name);
+        }
         let oldHP = String(damageItem.oldHP);
         if (damageItem.oldTempHP > 0) {
             oldHP += "(Temp: " + damageItem.oldTempHP + ")";
@@ -313,10 +339,15 @@ function midiqol_createDamageTable(message) {
         for (let i = 0; i < damageItem.damageDetail.length; i++) {
             if (damageItem.damageDetail[i] !== null) {
                 if (i > 0) {
-                    damageBreakdown += ",";
+                    damageBreakdown += ", ";
                 }
+                let cnt = 0;
                 damageItem.damageDetail[i].forEach(breakdown => {
+                    if (cnt > 0) {
+                        damageBreakdown += ", ";
+                    }
                     damageBreakdown += breakdown.damage + " " + breakdown.type;
+                    cnt++;
                 });
             }
         }
@@ -331,10 +362,10 @@ function midiqol_createDamageTable(message) {
     });
     console.log(damageArray);
     if (damageArray.length > 1) {
-        return [{ title: "HP Updates", description: parse2DTable(damageArray)}];
+        return [{ title: "HP Updates", description: parse2DTable(damageArray) }];
     }
-    else{
-        return [{ title: "HP Updates", description: ""}];
+    else {
+        return [{ title: "HP Updates", description: "" }];
     }
 }
 
@@ -360,3 +391,4 @@ function midiqol_isDamageTable(htmlString) {
         return false;
     }
 }
+

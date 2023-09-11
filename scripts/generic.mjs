@@ -17,6 +17,16 @@ export function messageParserGeneric(msg) {
         }
     }
     else if (!msg.isRoll) {
+        if (hasDiceRolls(msg.content)) {
+            hookEmbed = createHTMLDiceRollEmbed(msg);
+            const elements = document.createElement('div');
+            elements.innerHTML = msg.content;
+            const diceRolls = elements.querySelectorAll('.dice-roll');
+            for (const div of diceRolls) {
+                div.parentNode.removeChild(div);
+            }
+            msg.content = elements.innerHTML;
+        }
         /*Attempt polyglot support. This will ONLY work if the structure is similar:
         * for PF2e and DnD5e, this would be actor.system.traits.languages.value
         * the polyglotize() function should be edited for other systems
@@ -188,6 +198,18 @@ export function createGenericRollEmbed(message) {
     return [{ title: title, description: desc }];
 }
 
+export function createHTMLDiceRollEmbed(message) {
+    const title = message.flavor;
+    let desc = "";
+    const elements = document.createElement('div');
+    elements.innerHTML = message.content;
+    const diceResults = elements.querySelectorAll('.dice-total');
+    diceResults.forEach((total) => {
+        desc += ":game_die: **Result: __" + total.textContent + "__**\n";
+    })
+    return [{ title: title, description: desc }];
+}
+
 export function getLocalizedText(localizationKey) {
     return game.i18n.localize(localizationKey);
 }
@@ -264,6 +286,18 @@ export function isCard(htmlString) {
         return true;
     } else {
         return false;
+    }
+}
+
+export function hasDiceRolls(htmlString) {
+    const elements = document.createElement('div');
+    elements.innerHTML = htmlString;
+    const diceRolls = elements.querySelectorAll('.dice-roll');
+    if (diceRolls.length > 0) {
+        return true;
+    }
+    else { 
+        return false; 
     }
 }
 
