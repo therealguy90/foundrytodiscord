@@ -55,3 +55,13 @@ export function splitEmbed(embed) {
 
     return parts;
 }
+
+export function hexToColor(hex) {
+    // Remove the '#' character if it exists at the beginning of the hex string
+    hex = hex.replace(/^#/, '');
+
+    // Parse the hex string into a decimal number
+    const decimalColor = parseInt(hex, 16);
+
+    return decimalColor;
+}

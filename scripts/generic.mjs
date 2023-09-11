@@ -2,6 +2,7 @@ import { htmlTo2DTable } from './helpers/tables.mjs';
 import { parse2DTable } from './helpers/tables.mjs';
 import { getThisModuleSetting } from './helpers/modulesettings.mjs';
 import { splitEmbed } from './helpers/embeds.mjs';
+import { hexToColor } from './helpers/embeds.mjs';
 
 export function messageParserGeneric(msg) {
     let constructedMessage = '';
@@ -138,6 +139,12 @@ function generateRequestParams(message, msgText, hookEmbed, imgurl) {
     if (hookEmbed[0]?.description?.length > 4000) {
         hookEmbed = splitEmbed(hookEmbed[0]);
     }
+    // Add color to all embeds
+    hookEmbed.forEach((embed) =>{
+        if(message.user?.color){
+            embed.color = hexToColor(message.user.color);
+        }
+    })
     const params = {
         username: alias,
         avatar_url: imgurl,
