@@ -139,12 +139,20 @@ function generateRequestParams(message, msgText, hookEmbed, imgurl) {
     if (hookEmbed[0]?.description?.length > 4000) {
         hookEmbed = splitEmbed(hookEmbed[0]);
     }
-    // Add color to all embeds
-    hookEmbed.forEach((embed) =>{
-        if(message.user?.color){
+    // Add username to embed
+    if (hookEmbed[0] && message.user && message.alias !== message.user && getThisModuleSetting('showAuthor')) {
+        hookEmbed[0].author = {
+            name: message.user.name,
+            icon_url: generateimglink(message.user.avatar)
+        }
+    }
+    hookEmbed.forEach((embed) => {
+        // Add color to all embeds
+        if (message.user?.color) {
             embed.color = hexToColor(message.user.color);
         }
     })
+
     const params = {
         username: alias,
         avatar_url: imgurl,

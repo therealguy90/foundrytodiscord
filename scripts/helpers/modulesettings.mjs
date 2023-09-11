@@ -145,6 +145,14 @@ export function initModuleSettings(){
             type: Boolean
         });
     }*/
+    game.settings.register('foundrytodiscord', 'showAuthor', {
+        name: "Show username on embeds",
+        hint: "Include the Foundry username and avatar(if any) of the message sender in embeds.",
+        scope: "world",
+        config: true,
+        default: true,
+        type: Boolean
+    });
     game.settings.register('foundrytodiscord', 'disableDeletions', {
         name: "Disable message deletions",
         hint: "If this is turned ON, deleted messages in Foundry won't be synced with your Discord webhook.",
