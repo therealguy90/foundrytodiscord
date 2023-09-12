@@ -48,16 +48,6 @@ export function messageParserPF2e(msg) {
         }
     }
     else if (!msg.isRoll || (msg.isRoll && msg.rolls.length < 1)) {
-        if (generic.hasDiceRolls(msg.content)) {
-            hookEmbed = generic.createHTMLDiceRollEmbed(msg);
-            const elements = document.createElement('div');
-            elements.innerHTML = msg.content;
-            const diceRolls = elements.querySelectorAll('.dice-roll');
-            for (const div of diceRolls) {
-                div.parentNode.removeChild(div);
-            }
-            msg.content = elements.innerHTML;
-        }
         /*Attempt polyglot support. This will ONLY work if the structure is similar:
         * for PF2e and DnD5e, this would be actor.system.traits.languages.value
         */
