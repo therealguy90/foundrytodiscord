@@ -1,4 +1,11 @@
-# 1.5.1
+# 1.5.2
+
+- (pf2e) Fix to rolls without degree of success flag set
+- Parse isRoll flagged messages without roll objects as regular chat messages instead
+- Show embed colors as foundry user color
+- Show username on embeds (toggleable in settings)
+
+## 1.5.1
 
 - (pf2e) Minor bug fixes related to action cards
 - Implemented a more robust, language-independent method to detect chat log flushing
