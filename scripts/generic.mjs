@@ -205,7 +205,12 @@ export function createHTMLDiceRollEmbed(message) {
     elements.innerHTML = message.content;
     const diceResults = elements.querySelectorAll('.dice-total');
     diceResults.forEach((total) => {
-        desc += ":game_die: **Result: __" + total.textContent + "__**\n";
+        if (Number(total.textContent)) {
+            desc += ":game_die: **Result: __" + total.textContent + "__**\n";
+        }
+        else{
+            desc += "**" + total.textContent + "**\n";
+        }
     })
     return [{ title: title, description: desc }];
 }
@@ -296,8 +301,8 @@ export function hasDiceRolls(htmlString) {
     if (diceRolls.length > 0) {
         return true;
     }
-    else { 
-        return false; 
+    else {
+        return false;
     }
 }
 
