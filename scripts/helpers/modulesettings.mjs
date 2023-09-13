@@ -4,7 +4,7 @@ import { messageParserPF2e } from '../pf2e.mjs';
 import { messageParserDnD5e } from '../dnd5e.mjs';
 let SYSTEM_ID;
 
-export function initModuleSettings(){
+export function initModuleSettings() {
     SYSTEM_ID = game.system.id;
     game.settings.register('foundrytodiscord', 'mainUserId', {
         scope: "world",
@@ -134,6 +134,16 @@ export function initModuleSettings(){
             type: String
         });
     }
+    if (game.modules.get("anonymous")?.active) {
+        game.settings.register('foundrytodiscord', 'enableAnon', {
+            name: "(anonymous) Use Replacement Names",
+            hint: "Use Anonymous in Discord messages, such as replacing names, removing descriptions and footers. Do not turn this off if you want to limit metagame information as usual.",
+            scope: "world",
+            config: true,
+            default: true,
+            type: Boolean
+        });
+    }
     /*if (SYSTEM_ID === '') {
         game.settings.register('foundrytodiscord', 'experimentalFeatures', {
             name: "() Experimental Parser",
@@ -163,7 +173,7 @@ export function initModuleSettings(){
     });
     game.settings.register('foundrytodiscord', 'disableMessages', {
         name: "Disable ALL messages",
-        hint: "If you want to use Foundry to Discord purely as an API or use the Server Status Message ONLY, you can toggle this on. This disables the detection of new chat messages.",
+        hint: "This disables the detection of new chat messages. If you want to use Foundry to Discord purely as an API or use the Server Status Message ONLY, you can toggle this on.",
         scope: "world",
         config: true,
         default: false,
@@ -191,7 +201,7 @@ export function getThisModuleSetting(settingName) {
     return game.settings.get('foundrytodiscord', settingName);
 }
 
-export function initParser(){
+export function initParser() {
     switch (SYSTEM_ID) {
         case "pf2e":
             console.log("foundrytodiscord | Game system detected as 'pf2e'.");
@@ -206,4 +216,8 @@ export function initParser(){
             return messageParserGeneric;
             break;
     }
+}
+
+export function anonEnabled(){
+    return game.modules.get("anonymous")?.active && getThisModuleSetting('enableAnon');
 }

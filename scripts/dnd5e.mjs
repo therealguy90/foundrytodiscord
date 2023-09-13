@@ -1,5 +1,5 @@
 import * as generic from './generic.mjs';
-import { getThisModuleSetting } from './helpers/modulesettings.mjs';
+import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
 import { parse2DTable } from './helpers/tables.mjs';
 
 export function messageParserDnD5e(msg) {
@@ -62,7 +62,7 @@ export function messageParserDnD5e(msg) {
         constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === hookEmbed[0].title) ? "" : msg.flavor;
         //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
-        if (game.modules.get("anonymous")?.active) {
+        if (anonEnabled()) {
             for (let i = 0; i < hookEmbed.length; i++) {
                 hookEmbed[i] = generic.anonymizeEmbed(msg, hookEmbed[i]);
             }
@@ -103,7 +103,7 @@ function DnD5e_createCardEmbed(message) {
     //this is to limit metagame information and is recommended for most systems.
     let descVisible = getThisModuleSetting('showDescription');
     if (speakerActor) {
-        if (game.modules.get("anonymous")?.active && !generic.isOwnedByPlayer(speakerActor)) {
+        if (anonEnabled() && getThisModuleSetting('enableAnon') && !generic.isOwnedByPlayer(speakerActor)) {
             descVisible = false;
         }
     }
@@ -318,7 +318,7 @@ function midiqol_createDamageTable(message) {
         let damageRow = [];
         const scene = damageItem.sceneId;
         const token = game.scenes.get(scene).tokens.get(damageItem.tokenId);
-        if (game.modules.get("anonymous")?.active) {
+        if (anonEnabled()) {
             const anon = game.modules.get("anonymous").api;
             if (token.actor && !anon.playersSeeName(token.actor)) {
                 damageRow.push(anon.getName(token.actor));

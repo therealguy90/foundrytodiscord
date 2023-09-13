@@ -1,4 +1,5 @@
 import * as generic from './generic.mjs';
+import { anonEnabled } from './helpers/modulesettings.mjs';
 
 const damageEmoji = {
     "bludgeoning": ':hammer:',
@@ -86,7 +87,7 @@ export function messageParserPF2e(msg) {
         constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === hookEmbed[0].title) ? "" : msg.flavor;
         //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
-        if (game.modules.get("anonymous")?.active) {
+        if (anonEnabled()) {
             for (let i = 0; i < hookEmbed.length; i++) {
                 hookEmbed[i] = generic.anonymizeEmbed(msg, hookEmbed[i]);
             }
@@ -129,7 +130,7 @@ function PF2e_createCardEmbed(message, cardType) {
     let descVisible = getThisModuleSetting('showDescription');
 
     if (speakerActor) {
-        if (game.modules.get("anonymous")?.active && !generic.isOwnedByPlayer(speakerActor)) {
+        if (anonEnabled() && !generic.isOwnedByPlayer(speakerActor)) {
             descVisible = false;
         }
     }
@@ -181,7 +182,7 @@ function PF2e_createRollEmbed(message) {
         title = message.flavor;
     }
 
-    if (game.modules.get("anonymous")?.active) {
+    if (anonEnabled()) {
         var anon = game.modules.get('anonymous').api; //optional implementation for "anonymous" module
     }
 
@@ -200,7 +201,7 @@ function PF2e_createRollEmbed(message) {
         message.flags['pf2e-target-damage'].targets.forEach(target => {
             const curScene = game.scenes.get(message.speaker.scene);
             const curToken = curScene.tokens.get(target.id);
-            if (game.modules.get("anonymous")?.active) {
+            if (anonEnabled()) {
                 if (!anon.playersSeeName(curToken.actor)) {
                     desc = desc + "`" + anon.getName(curToken.actor) + "` ";
                 }
@@ -219,7 +220,7 @@ function PF2e_createRollEmbed(message) {
             const targetTokenId = message.flags.pf2e.context.target.token.split(".")[3];
             const targetToken = game.scenes.get(message.speaker.scene).tokens.get(targetTokenId);
             if (targetToken) {
-                if (game.modules.get("anonymous")?.active) {
+                if (anonEnabled()) {
                     if (!anon.playersSeeName(targetToken.actor)) {
                         desc = desc + "`" + anon.getName(targetToken.actor) + "` ";
                     }
@@ -390,7 +391,7 @@ function PF2e_replaceDamageFormat(damagestring) {
 function PF2e_parseTraits(text) {
     let displayTraits = true;
     //check if anonymous allows traits to be displayed
-    if (game.modules.get("anonymous")?.active) {
+    if (anonEnabled()) {
         if (game.settings.get("anonymous", "pf2e.traits")) {
             if (game.settings.get("anonymous", "pf2e.traits") !== "never") {
                 displayTraits = false;

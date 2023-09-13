@@ -1,6 +1,6 @@
 import { htmlTo2DTable } from './helpers/tables.mjs';
 import { parse2DTable } from './helpers/tables.mjs';
-import { getThisModuleSetting } from './helpers/modulesettings.mjs';
+import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
 import { splitEmbed } from './helpers/embeds.mjs';
 import { hexToColor } from './helpers/embeds.mjs';
 
@@ -67,7 +67,7 @@ export function messageParserGeneric(msg) {
         constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === hookEmbed[0].title) ? "" : msg.flavor;
         //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
-        if (game.modules.get("anonymous")?.active) {
+        if (anonEnabled()) {
             let anon = game.modules.get("anonymous").api;
             let curScene = game.scenes.get(msg.speaker.scene);
             if (curScene) {
@@ -121,7 +121,7 @@ export function getRequestParams(message, msgText, hookEmbed) {
 function generateRequestParams(message, msgText, hookEmbed, imgurl) {
     let alias = message.alias;
     let speakerActor;
-    if (game.modules.get("anonymous")?.active) {
+    if (anonEnabled()) {
         let anon = game.modules.get('anonymous').api;
         //First priority: Use speaker token name and check if actor's name is visible through anonymous
         if (propertyExists(message, "speaker.token")) {
@@ -176,7 +176,7 @@ export function createGenericRollEmbed(message) {
     let desc = ""
     let title = ""
     let anon;
-    if (game.modules.get("anonymous")?.active) {
+    if (anonEnabled()) {
         anon = game.modules.get("anonymous").api;
     }
     if (message.flavor && message.flavor.length > 0) {
@@ -343,7 +343,7 @@ export function createCardEmbed(message) {
     let descVisible = true;
 
     if (speakerActor) {
-        if (game.modules.get("anonymous")?.active && !isOwnedByPlayer(speakerActor)) {
+        if (anonEnabled() && !isOwnedByPlayer(speakerActor)) {
             descVisible = false;
         }
     }
@@ -360,7 +360,7 @@ export function createCardEmbed(message) {
 
 export function getCardFooter(card) {
     let displayFooter = true;
-    if (game.modules.get('anonymous')?.active) {
+    if (anonEnabled()) {
         //true = hide, false = show
         if (game.settings.get('anonymous', "footer")) {
             displayFooter = false;
