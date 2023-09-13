@@ -4,7 +4,7 @@
 # Foundry to Discord
 
 A lightweight FoundryVTT module that sends all FoundryVTT messages to a Discord webhook.
-Has the capability to edit AND delete messages in real-time!
+Has the capability to edit AND delete messages in real-time! Great for PBP-style campaigns, logging, and more!
 
 System Support:
 - Pathfinder Second Edition
