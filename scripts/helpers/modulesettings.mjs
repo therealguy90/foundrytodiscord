@@ -144,9 +144,9 @@ export function initModuleSettings() {
             type: Boolean
         });
     }
-    /*if (SYSTEM_ID === '') {
+    /*if (SYSTEM_ID === 'PLACEHOLDER') {
         game.settings.register('foundrytodiscord', 'experimentalFeatures', {
-            name: "() Experimental Parser",
+            name: "(PLACEHOLDER) Experimental Parser",
             hint: "If you're experiencing issues with the experimental message parser, turn this off.",
             scope: "world",
             config: true,
