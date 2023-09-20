@@ -7,8 +7,8 @@ import { hexToColor } from './helpers/embeds.mjs';
 export function messageParserGeneric(msg) {
     let constructedMessage = '';
     let hookEmbed = [];
-    if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)) {
-        hookEmbed = generic.tokenBar_createTokenBarCard(msg);
+    if (game.modules.get('monks-tokenbar')?.active && tokenBar_isTokenBarCard(msg.content)) {
+        hookEmbed = tokenBar_createTokenBarCard(msg);
     }
     else if (isCard(msg.content) && msg.rolls?.length < 1) {
         constructedMessage = "";
