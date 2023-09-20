@@ -240,6 +240,15 @@ function PF2e_createRollEmbed(message) {
         //Add roll information to embed:
         for (let i = 0; i < message.rolls.length; i++) {
             desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
+            if(generic.isOwnedByPlayer(game.actors.get(message.speaker?.actor)) && message.rolls[i].dice[0].faces === 20){
+                if(message.rolls[i].result.startsWith('20 ')){
+                    desc += " __(Nat 20!)__";
+                }
+                else if(message.rolls[i].result.startsWith('1 ')){
+                    desc += " __(Nat 1)__";
+                }
+                desc += "||(" + message.rolls[i].result + ")||";
+            }
             if (generic.propertyExists(message, "flags.pf2e.context.type") && message.flags.pf2e.context.type == "damage-roll") {
                 if (title === "") {
                     title = "Damage Roll";
@@ -247,10 +256,10 @@ function PF2e_createRollEmbed(message) {
                 desc = desc + PF2e_parseDamageTypes(message.rolls[i]);
             }
             else if (PF2e_parseDegree(message.rolls[i].options?.degreeOfSuccess) != "Invalid") {
-                desc = desc + " `(" + PF2e_parseDegree(message.rolls[i].options.degreeOfSuccess) + ")`";
+                desc = desc + "`(" + PF2e_parseDegree(message.rolls[i].options.degreeOfSuccess) + ")`";
             }
             else if (PF2e_parseDegree(message.flags.pf2e?.context?.outcome) != "Invalid") {
-                desc = desc + " `(" + PF2e_parseDegree(message.flags.pf2e.context.outcome) + ")`";
+                desc = desc + "`(" + PF2e_parseDegree(message.flags.pf2e.context.outcome) + ")`";
             }
             desc = desc + "\n";
         }
@@ -258,8 +267,17 @@ function PF2e_createRollEmbed(message) {
     else {
         desc = desc + "~~:game_die:Result: " + "__" + PF2e_getDiscardedRoll(message) + "__~~\n";
         desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[0].total + "**__";
+        if(generic.isOwnedByPlayer(game.actors.get(message.speaker?.actor)) && message.rolls[i].dice[0].faces === 20){
+            if(message.rolls[i].result.startsWith('20 ')){
+                desc += " __(Nat 20!)__";
+            }
+            else if(message.rolls[i].result.startsWith('1 ')){
+                desc += " __(Nat 1)__";
+            }
+            desc += "||(" + message.rolls[i].result + ")||";
+        }
         if (PF2e_parseDegree(message.flags.pf2e.context.outcome) != "Invalid") {
-            desc = desc + " `(" + PF2e_parseDegree(message.flags.pf2e.context.outcome) + ")`";
+            desc = desc + "`(" + PF2e_parseDegree(message.flags.pf2e.context.outcome) + ")`";
         }
         desc = desc + "\n";
     }
