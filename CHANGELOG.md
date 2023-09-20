@@ -4,7 +4,7 @@
 - (pf2e) checks now display roll arguments, including if the roll was a nat 1 or 20.
 - Adds a setting to disable the anonymous module from blocking names on this module.
 
-# 1.5.2
+## 1.5.2
 
 - (pf2e) Fix to rolls without degree of success flag set
 - Parse isRoll flagged messages without roll objects as regular chat messages instead
