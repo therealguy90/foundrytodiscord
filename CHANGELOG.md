@@ -1,3 +1,9 @@
+# 1.5.3
+
+- Fixed a typo that seldom made the module not work on systems that were not pf2e nor dnd5e.
+- (pf2e) checks now display roll arguments, including if the roll was a nat 1 or 20.
+- Adds a setting to disable the anonymous module from blocking names on this module.
+
 # 1.5.2
 
 - (pf2e) Fix to rolls without degree of success flag set
