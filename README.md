@@ -73,13 +73,13 @@ Do note that this follows message deletions as well. If a message is deleted in 
 
 #### Threaded Scenes
 
-Discord threads are supported by Foundry to Discord by adding a `?thread_id` query parameter to your webhook URL. One application of threads is the **Threaded Scenes** feature. Select a Scene in your world, and paste your Thread ID into the boxes. When this feature is used, all message traffic that is found in one scene is automatically sent to the corresponding thread.
+Discord threads are supported by Foundry to Discord by adding a `?thread_id` query parameter to your webhook URL, but one application of threads is the **Threaded Scenes** feature. Select a Scene in your world, and paste your Thread ID into the boxes. When this feature is used, all message traffic that is found in one scene is automatically sent to the corresponding thread.
 
 ![Threaded Scenes Example](https://github.com/therealguy90/foundrytodiscord/assets/100253440/c11578ba-5e52-4baf-b4ce-e6476cebcc20)
 
 #### Server Status Message
 
-Allow your players to check if your world is online by setting your server status as ONLINE in your Server Status Message when a GM logs in. To indicate it's offline, have a GM type "ftd serveroff" in your world chat. Enable this feature in the config with a step-by-step tutorial. Note that this feature is only available for your main Webhook URL.
+Allow your players to check if your world is online by setting your server status as ONLINE in your Server Status Message when a GM logs in. To indicate it's offline, have a GM type "ftd serveroff" in your world chat. Enable this feature in the config with a step-by-step tutorial. Note that this feature is only available for your main Webhook URL. Modules work client-side, so there's not much other better solutions to the problem other than the GM manually using the command to set it offline.
 
 ![Server Status Message Example](https://github.com/therealguy90/foundrytodiscord/assets/100253440/8a7c5d08-870f-4155-9153-a822f82d0d6c)
 
