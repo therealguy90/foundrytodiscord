@@ -15,8 +15,8 @@ Hooks.once("init", function () {
 Hooks.on('userConnected', async (user, connected) => {
     if (connected) {
         //Search for main GM
-        const mainGM = game.users.get(getThisModuleSetting('mainUserId'));
-        if (mainGM && mainGM.active) {
+        const mainUser = game.users.get(getThisModuleSetting('mainUserId'));
+        if (mainUser && mainUser.active) {
             // If there is already an online main GM
             return;
         }
@@ -32,11 +32,14 @@ Hooks.on('userConnected', async (user, connected) => {
         if (user.isGM && user.id === getThisModuleSetting('mainUserId')) {
             // Get a list of all GMs currently active
             const gmList = game.users.filter(user => user.isGM && user.active)
+            const nonGmList = game.users.filter(user => !user.isGM && user.active)
             if (gmList.length > 0) {
                 game.settings.set('foundrytodiscord', 'mainUserId', gmList[0].id);
             }
+            else if (nonGmList.length > 0) {
+                game.settings.set('foundrytodiscord', 'mainUserId', nonGmList[0].id);
+            }
             else {
-                // If no GMs exist, force search of a new GM when one does reconnect.
                 game.settings.set('foundrytodiscord', 'mainUserId', "");
             }
         }
@@ -172,13 +175,12 @@ Hooks.on('createChatMessage', async (msg) => {
         return;
     }
     else if (!getThisModuleSetting('disableMessages')) {
-        if (!game.user.isGM || (getThisModuleSetting("ignoreWhispers") && msg.whisper.length > 0)) {
+        if (getThisModuleSetting("ignoreWhispers") && msg.whisper.length > 0) {
             return;
         }
-        if (game.userId !== getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") {
-            console.log("foundrytodiscord | The current client's user does not match the main GM.");
+        if (game.user.id !== getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") {
             initMainGM();
-            if (game.user.id !== getThisModuleSetting("mainUserId")) {
+            if (game.user.id !== getThisModuleSetting("mainUserId") && game.users.filter(user => user.isGM).length > 0 && game.user.id !== game.users.filter(user => user.active)[0].id) {
                 return;
             }
         }
@@ -219,7 +221,9 @@ Hooks.on('createChatMessage', async (msg) => {
             else {
                 waitHook = requestParams.hook + "?wait=true";
             }
+            console.log(formData);
             formData.append('payload_json', JSON.stringify(requestParams.params));
+            console.log(formData);
             requestQueue.push({ hook: waitHook, formData: formData, msgID: msg.id, method: 'POST' });
             if (!isProcessing) {
                 isProcessing = true;
@@ -232,7 +236,7 @@ Hooks.on('createChatMessage', async (msg) => {
 Hooks.on('updateChatMessage', async (msg) => {
     let tries = 10; // Number of tries before giving up
     const checkExist = async () => {
-        if (!getThisModuleSetting('messageList')[msg.id]) {
+        if (!getThisModuleSetting('messageList')[msg.id] && !getThisModuleSetting('clientMessageList')[msg.id]) {
             if (tries > 0) {
                 tries--;
                 await wait(500);
@@ -269,7 +273,16 @@ Hooks.on('updateChatMessage', async (msg) => {
                     }
                 }
                 let editHook;
-                let { url, message } = getThisModuleSetting('messageList')[msg.id];
+                let url, message;
+                if (game.users.filter(user => user.isGM && user.active).length > 0) {
+                    const msgObject = getThisModuleSetting('messageList')[msg.id];
+                    url = msgObject.url;
+                    message = msgObject.message;
+                } else {
+                    const msgObject = getThisModuleSetting('clientMessageList')[msg.id];
+                    url = msgObject.url;
+                    message = msgObject.message;
+                }
                 if (url.split('?').length > 1) {
                     const querysplit = url.split('?');
                     editHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
@@ -288,12 +301,12 @@ Hooks.on('updateChatMessage', async (msg) => {
     };
 
     flushLog = false;
-    if (!game.user.isGM || (getThisModuleSetting("ignoreWhispers") && msg.whisper.length > 0)) {
+    if (getThisModuleSetting("ignoreWhispers") && msg.whisper.length > 0) {
         return;
     }
-    if (game.userId !== getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") {
+    if (game.user.id !== getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") {
         initMainGM();
-        if (game.user.id !== getThisModuleSetting("mainUserId")) {
+        if (game.user.id !== getThisModuleSetting("mainUserId") && game.users.filter(user => user.isGM).length > 0 && game.user.id !== game.users.filter(user => user.active)[0].id) {
             return;
         }
     }
@@ -303,9 +316,18 @@ Hooks.on('updateChatMessage', async (msg) => {
 });
 
 Hooks.on('deleteChatMessage', async (msg) => {
-    if ((!flushLog && !getThisModuleSetting('disableDeletions')) && (game.userId === getThisModuleSetting("mainUserId") || getThisModuleSetting("mainUserId") === "")) {
-        if (getThisModuleSetting('messageList').hasOwnProperty(msg.id)) {
-            const { url, message } = getThisModuleSetting('messageList')[msg.id];
+    if ((!flushLog && !getThisModuleSetting('disableDeletions')) && ((game.userId === getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") || (game.users.filter(user => user.isGM && user.active).length > 0 && game.user.id === game.users.filter(user => user.active)[0].id))) {
+        if (getThisModuleSetting('messageList').hasOwnProperty(msg.id) || getThisModuleSetting('clientMessageList').hasOwnProperty(msg.id)) {
+            let url, message;
+            if (game.users.filter(user => user.isGM && user.active).length > 0) {
+                const moduleSetting = getThisModuleSetting('messageList')[msg.id];
+                url = moduleSetting.url;
+                message = moduleSetting.message;
+            } else {
+                const moduleSetting = getThisModuleSetting('clientMessageList')[msg.id];
+                url = moduleSetting.url;
+                message = moduleSetting.message;
+            }
             let deleteHook;
             if (url.split('?').length > 1) {
                 const querysplit = url.split('?');
@@ -498,7 +520,13 @@ function dataToBlob(base64String) {
 }
 
 function addSentMessage(msgID, params) {
-    const messageList = game.settings.get('foundrytodiscord', 'messageList');
+    let messageList;
+    if (game.users.filter(user => user.active && user.isGM).length > 0) {
+        messageList = game.settings.get('foundrytodiscord', 'messageList');
+    }
+    else {
+        messageList = game.settings.get('foundrytodiscord', 'clientMessageList');
+    }
     messageList[msgID] = params;
 
     const keys = Object.keys(messageList);
@@ -506,7 +534,12 @@ function addSentMessage(msgID, params) {
         delete messageList[keys[0]]; // Remove the oldest property from the object
     }
 
-    game.settings.set('foundrytodiscord', 'messageList', messageList);
+    if (game.user.isGM) {
+        game.settings.set('foundrytodiscord', 'messageList', messageList);
+    }
+    else{
+        game.settings.set('foundrytodiscord', 'clientMessageList', messageList);
+    }
 }
 
 function wait(milliseconds) {

@@ -52,7 +52,15 @@ export function initModuleSettings() {
         config: false,
         scope: "world",
         default: {},
-        type: Object,
+        type: Object
+    });
+    game.settings.register('foundrytodiscord', 'clientMessageList', {
+        // clientMessageList is a list of the past 100 messages that the client has sent to discord.
+        // This has the same functionality as messageList, but is used only when there is no GM in the world to allow for PBP-style games.
+        config: false,
+        scope: "client",
+        default: {},
+        type: Object
     });
     game.settings.registerMenu('foundrytodiscord', 'threadedChatConfig', {
         name: 'Threaded Scenes',
@@ -187,11 +195,9 @@ export function initModuleSettings() {
 export function initMainGM() {
     const mainGM = game.users.get(getThisModuleSetting('mainUserId'));
     if (!mainGM || !mainGM.active) {
-        if (!mainGM || !mainGM.active) {
-            if (game.user.isGM) {
-                game.settings.set('foundrytodiscord', 'mainUserId', game.user.id);
-                console.log("foundrytodiscord | Main GM set to this client's user.");
-            }
+        if (game.user.isGM) {
+            game.settings.set('foundrytodiscord', 'mainUserId', game.user.id);
+            console.log("foundrytodiscord | Main GM set to this client's user.");
         }
     }
     return getThisModuleSetting('mainUserId');
