@@ -1,109 +1,91 @@
-<a href='https://ko-fi.com/loki123' target='_blank'><img height='35' style='border:0px;height:46px;' src='https://az743702.vo.msecnd.net/cdn/kofi3.png?v=0' border='0' alt='Buy Me a Coffee at ko-fi.com' />
-
+[![Buy Me a Coffee](https://az743702.vo.msecnd.net/cdn/kofi3.png?v=0)](https://ko-fi.com/loki123)
 
 # Foundry to Discord
 
-A lightweight FoundryVTT module that sends all FoundryVTT messages to a Discord webhook.
-Has the capability to edit AND delete messages in real-time! Great for PBP-style campaigns, logging, and more!
+A lightweight FoundryVTT module that sends all FoundryVTT messages to a Discord webhook. It has the capability to edit AND delete messages in real-time, making it great for play-by-post-style campaigns, logging, and more!
 
-System Support:
+**System Support:**
 - Pathfinder Second Edition
 - DnD 5e (partial)
 
-Will work on other systems, but to what extent, I do not know. Regular chat, chat cards, and rolls seem to work just fine on most other systems.
+While it will work with other systems, the extent of compatibility may vary. Regular chat, chat cards, and rolls seem to work just fine on most other systems.
 
-### What it supports:
+### What it Supports
 
-Anonymous:
+**Anonymous:**
+- Mimics the behavior of "anonymous" actors, including using replacement names for descriptions and message aliases.
+- To avoid Discord grouping up same-named messages, it sends the token ID to Discord with the replacement name (e.g., "Unknown NPC (V73Oqm1EL1KOoXOl)").
 
-- Mimics the behavior of "anonymous" actors, including using the replacement names for descriptions and message aliases.
-- For separation, sends over the token ID to discord with the replacement name(i.e. "Unknown NPC (V73Oqm1EL1KOoXOl)") This is to avoid discord grouping up same-named messages without checking if the last message was a different token with the same replacement name. This might have problems when the replacement name is REALLY long, but I doubt I need to accommodate for that.
+**Polyglot:**
+- Detects the languages known by players and sends languages they don't know to Discord as "Unintelligible."
+- Adds options for the GM to specify which languages the module will "understand" and sends the rest to Discord as "Unintelligible."
+- Allows overriding "common" languages in your world to ensure they pass the Polyglot check and are sent to Discord as plaintext.
 
-Polyglot:
+**Chat Media / Chat GIFs / Similar:**
+- Sends image, video links, and uploaded images to Discord.
 
-- Checks if the players know a language, and sends languages the players don't know to Discord as "Unintelligible". (This might change to a random text instead in the future to mimic Polyglot!)
-- Useful for using Polyglot primarily for RP and knowing what the players can and can't understand by simply looking at Discord.
-- Adds an option to the config, where the GM can set the only languages this module will "understand", and sends the rest to discord as "Unintelligible". Useful for party splits. Example, if you set this setting to only understand "dwarven, draconic", then even if players know a language different from these, it will still send to Discord as "Unintelligible" unless it's listed here!
-- Adds an option to override what the "common" languages are in your world. This is so that messages sent in this language always pass the check for Polyglot, and are sent to Discord as plaintext.
-
-Chat Media / Chat GIFs / Similar:
-
-- Image, video links and uploaded images are sent to Discord!
-
-Monk's Token Bar:
-
+**Monk's Token Bar:**
 - Supports Contested Rolls, Roll Requests, and Experience cards.
 
-Pf2e Target Damage:
+**Pf2e Target Damage:**
+- Multiple targets are also sent to Discord.
 
-- Multiple targets are also sent in to Discord!
-
-Midi QOL:
-
-- Mergecards are edited in real-time!
-
-------------------------------------
+**Midi QOL:**
+- Edits Mergecards in real-time.
 
 ## Setup
 
- 1. Create a Webhook in your Discord server, and specify which channel to output chat to. Copy  the Webhook URL, you'll need it later.
-    
-  a. Server Settings (or channel settings) > Integrations > Webhooks > [New Webhook]
- 
-  b. Set webhook name and channel to post to.
- 
-  c. [Copy Webhook URL]
- 
-  *NOTE:* if you're planning on having different Foundry Worlds post to separate Discord OR a separate channel for Rolls, additional Webhooks will need to be created.
- 
- 2. Add the module to FoundryVTT.
-    
- Add-on Modules > Install Module > Search for Foundry to Discord
- 
- 3. Open Foundry and enable the module.
-    
- Game Settings > Manage Modules
+1. Create a Webhook in your Discord server and specify the channel to output chat to. Copy the Webhook URL; you'll need it later.
+    - Server Settings (or channel settings) > Integrations > Webhooks > [New Webhook]
+    - Set the webhook name and channel to post to.
+    - [Copy Webhook URL]
+   
+   *NOTE:* If you plan on having different Foundry Worlds post to separate Discord OR a separate channel for Rolls, you'll need additional Webhooks.
 
- 4. Configure the module settings in Foundry.
-    
- Game Settings > Configure Settings > Foundry to Discord
+2. Add the module to FoundryVTT.
+    - Add-on Modules > Install Module > Search for Foundry to Discord
 
- For Invite URL: Make sure your address is public! Use a tunnelling software if you can't forward ports.
+3. Open Foundry and enable the module.
+    - Game Settings > Manage Modules
+
+4. Configure the module settings in Foundry.
+    - Game Settings > Configure Settings > Foundry to Discord
+    - For the Invite URL, make sure your address is public. Use a tunneling software if you can't forward ports.
 
 ### NOTE: This module will ONLY work if a GM account is logged into the world!
 
-Simply follow the hints provided by the settings, and use the webhook link from your channel as the Webhook URL. Also, make sure your invite URL is public, which means you'll need to be port-forwarded as usual. This is needed to supply the token images from your server to Discord. If you can't forward ports due to some limitation, you can use a network tunnel to expose your port to the internet. Personally, I recommend [Tailscale](https://www.reddit.com/r/FoundryVTT/comments/15lt40x/easy_public_foundry_vtt_hosting_using_tailscale), since it allows other devices to connect via LAN, as well as exposing a port to the internet. It takes some setting up to use, though, unlike other tunnelling software. Maybe I can even help you with this over on Discord!
+Follow the hints provided by the settings, and use the webhook link from your channel as the Webhook URL. Also, ensure your invite URL is public, which means you'll need to be port-forwarded as usual. If you can't forward ports due to limitations, you can use a network tunnel to expose your port to the internet. [Tailscale](https://www.reddit.com/r/FoundryVTT/comments/15lt40x/easy_public_foundry_vtt_hosting_using_tailscale) is recommended for this purpose.
 
---------------------------------------------------
+---
 
 ### Full Features:
 
 #### Chat Mirroring
 
-Publicly-seen messages are sent to Discord while attempting to block as much metagame data as possible depending on your other modules that may change how ChatMessages display information. This works well with the "anonymous" module.
+Publicly-seen messages are sent to Discord while attempting to block as much metagame data as possible, depending on your other modules that may change how ChatMessages display information. This works well with the "anonymous" module.
 
-Screenshots are from a Pathfinder Second Edition game. I do not guarantee other systems will have support for some ChatMessages, but regular rolls, regular chat-cards, and chat will work fine on ANY system.
+Screenshots are from a Pathfinder Second Edition game. Compatibility with other systems may vary, but regular rolls, regular chat cards, and chat will work fine on ANY system.
 
-Do note that this follows message deletions as well. If a message is deleted in Foundry, it will also be deleted in the channel. Although this can be disabled in the config, I suggest you keep it on for any "oopsie" moments.
+Do note that this follows message deletions as well. If a message is deleted in Foundry, it will also be deleted in the channel. Although this can be disabled in the config, it is recommended to keep it on for any "oopsie" moments.
 
-![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/b7eb9ebd-e64d-4f1e-9ffc-5fd85f025a99)
-![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/caaa5350-fdf2-4aeb-a697-41f59551b506)
+![Chat Mirroring Example](https://github.com/therealguy90/foundrytodiscord/assets/100253440/b7eb9ebd-e64d-4f1e-9ffc-5fd85f025a99)
+![Chat Mirroring Example](https://github.com/therealguy90/foundrytodiscord/assets/100253440/caaa5350-fdf2-4aeb-a697-41f59551b506)
 
 #### Threaded Scenes
 
-Discord threads are also supported by Foundry to Discord simply by adding a `?thread_id` query parameter to your webhook URL, but one application of the threads is the **Threaded Scenes** feature. The configuration is quite simple, select a Scene in your world, and paste your Thread ID into the boxes. Do note that a Chat Thread must be a thread in the channel where you have your regular Webhook URL, and a Roll Thread must be a thread in the channel where you have your Roll Webhook URL. When this feature is used, all message traffic that is found in one scene is automatically sent to the corresponding thread.
+Discord threads are supported by Foundry to Discord by adding a `?thread_id` query parameter to your webhook URL, but one application of threads is the **Threaded Scenes** feature. Select a Scene in your world, and paste your Thread ID into the boxes. When this feature is used, all message traffic that is found in one scene is automatically sent to the corresponding thread.
 
-![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/c11578ba-5e52-4baf-b4ce-e6476cebcc20)
+![Threaded Scenes Example](https://github.com/therealguy90/foundrytodiscord/assets/100253440/c11578ba-5e52-4baf-b4ce-e6476cebcc20)
 
 #### Server Status Message
 
-Ever wanted your players to check for themselves if your world is online? Now you can! When a GM logs in to a world, it will set your server status as ONLINE in your Server Status Message. To let your players know it's offline, just have a GM type "ftd serveroff" in your world chat. Enable this feature in the config to set it up with a comprehensive step-by-step tutorial. Note that this feature is only available for your main Webhook URL.
+Allow your players to check if your world is online by setting your server status as ONLINE in your Server Status Message when a GM logs in. To indicate it's offline, have a GM type "ftd serveroff" in your world chat. Enable this feature in the config with a step-by-step tutorial. Note that this feature is only available for your main Webhook URL. Modules work client-side, so there's not much other better solutions to the problem other than the GM manually using the command to set it offline.
 
-![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/8a7c5d08-870f-4155-9153-a822f82d0d6c)
+![Server Status Message Example](https://github.com/therealguy90/foundrytodiscord/assets/100253440/8a7c5d08-870f-4155-9153-a822f82d0d6c)
 
 #### The Foundry to Discord API
 
-Foundry to Discord also lets you use its features externally! With the API, you can use a macro to send to, edit, and delete messages from your Discord channel-- the whole package! You just need a bit of javascripting knowledge to learn how to use it. Also works for advanced users of the API. 
+Foundry to Discord also lets you use its features externally with the API. You can use a macro to send to, edit, and delete messages from your Discord channel. A bit of JavaScript knowledge is required to use it.
 
 **Usage**
 
