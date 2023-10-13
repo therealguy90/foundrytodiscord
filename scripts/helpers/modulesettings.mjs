@@ -108,6 +108,14 @@ export function initModuleSettings() {
         default: true,
         type: Boolean
     });
+    game.settings.register('foundrytodiscord', 'allowNoGM', {
+        name: "Allow chat mirroring without a GM",
+        hint: "Foundry to Discord will only function when a GM is in the world if you turn this off.",
+        scope: "world",
+        config: true,
+        default: true,
+        type: Boolean
+    });
     game.settings.register('foundrytodiscord', 'showDescription', {
         name: "Show chat card descriptions",
         hint: "Disabling this means chat cards descriptions are no longer sent to discord.",

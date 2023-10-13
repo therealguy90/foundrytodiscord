@@ -178,7 +178,7 @@ Hooks.on('createChatMessage', async (msg) => {
         }
         if (game.user.id !== getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") {
             initMainGM();
-            if (game.user.id !== getThisModuleSetting("mainUserId") && game.users.filter(user => user.isGM).length > 0 && game.user.id !== game.users.filter(user => user.active)[0].id) {
+            if (!getThisModuleSetting("allowNoGM") && game.user.id !== getThisModuleSetting("mainUserId") && game.users.filter(user => user.isGM).length > 0 && game.user.id !== game.users.filter(user => user.active)[0].id) {
                 return;
             }
         }
@@ -302,7 +302,7 @@ Hooks.on('updateChatMessage', async (msg) => {
     }
     if (game.user.id !== getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") {
         initMainGM();
-        if (game.user.id !== getThisModuleSetting("mainUserId") && game.users.filter(user => user.isGM).length > 0 && game.user.id !== game.users.filter(user => user.active)[0].id) {
+        if (!getThisModuleSetting("allowNoGM") && game.user.id !== getThisModuleSetting("mainUserId") && game.users.filter(user => user.isGM).length > 0 && game.user.id !== game.users.filter(user => user.active)[0].id) {
             return;
         }
     }
@@ -312,7 +312,7 @@ Hooks.on('updateChatMessage', async (msg) => {
 });
 
 Hooks.on('deleteChatMessage', async (msg) => {
-    if ((!flushLog && !getThisModuleSetting('disableDeletions')) && ((game.userId === getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") || (game.users.filter(user => user.isGM && user.active).length > 0 && game.user.id === game.users.filter(user => user.active)[0].id))) {
+    if ((!flushLog && !getThisModuleSetting('disableDeletions')) && ((game.userId === getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") || (getThisModuleSetting("allowNoGM") && game.users.filter(user => user.isGM && user.active).length > 0 && game.user.id === game.users.filter(user => user.active)[0].id))) {
         if (getThisModuleSetting('messageList').hasOwnProperty(msg.id) || getThisModuleSetting('clientMessageList').hasOwnProperty(msg.id)) {
             let url, message;
             if (game.users.filter(user => user.isGM && user.active).length > 0) {
