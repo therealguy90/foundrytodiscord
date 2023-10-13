@@ -13,34 +13,32 @@ Hooks.once("init", function () {
 });
 
 Hooks.on('userConnected', async (user, connected) => {
-    if (connected) {
-        //Search for main GM
-        const mainUser = game.users.get(getThisModuleSetting('mainUserId'));
-        if (mainUser && mainUser.active) {
-            // If there is already an online main GM
-            return;
-        }
-        else {
-            // If the main GM doesn't exist, the connecting GM becomes the main GM
-            if (user.isGM) {
-                game.settings.set('foundrytodiscord', 'mainUserId', user.id);
-            }
-        }
-    }
-    else {
-        // If the main GM disconnects, reassign a new GM from the list
-        if (user.isGM && user.id === getThisModuleSetting('mainUserId')) {
-            // Get a list of all GMs currently active
-            const gmList = game.users.filter(user => user.isGM && user.active)
-            const nonGmList = game.users.filter(user => !user.isGM && user.active)
-            if (gmList.length > 0) {
-                game.settings.set('foundrytodiscord', 'mainUserId', gmList[0].id);
-            }
-            else if (nonGmList.length > 0) {
-                game.settings.set('foundrytodiscord', 'mainUserId', nonGmList[0].id);
+    if (game.user.isGM && game.user.id === game.users.filter(user => user.active && user.isGM)[0]) {
+        if (connected) {
+            //Search for main GM
+            const mainUser = game.users.get(getThisModuleSetting('mainUserId'));
+            if (mainUser && mainUser.active) {
+                // If there is already an online main GM
+                return;
             }
             else {
-                game.settings.set('foundrytodiscord', 'mainUserId', "");
+                // If the main GM doesn't exist, the connecting GM becomes the main GM
+                if (user.isGM) {
+                    game.settings.set('foundrytodiscord', 'mainUserId', user.id);
+                }
+            }
+        }
+        else {
+            // If the main GM disconnects, reassign a new GM from the list
+            if (user.isGM && user.id === getThisModuleSetting('mainUserId')) {
+                // Get a list of all GMs currently active
+                const gmList = game.users.filter(user => user.isGM && user.active)
+                if (gmList.length > 0) {
+                    game.settings.set('foundrytodiscord', 'mainUserId', gmList[0].id);
+                }
+                else {
+                    game.settings.set('foundrytodiscord', 'mainUserId', "");
+                }
             }
         }
     }
@@ -535,7 +533,7 @@ function addSentMessage(msgID, params) {
     if (game.user.isGM) {
         game.settings.set('foundrytodiscord', 'messageList', messageList);
     }
-    else{
+    else {
         game.settings.set('foundrytodiscord', 'clientMessageList', messageList);
     }
 }
