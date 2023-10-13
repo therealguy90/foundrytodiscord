@@ -1,7 +1,7 @@
 # 1.5.4
 
 - Allows the Chat Mirroring feature to function without a GM in the world. (Toggleable in Settings)
-- (dnd5e) Add support fpr missing midi-qol chat cards when mergecards are turned off
+- (dnd5e) Add support for missing midi-qol chat cards when mergecards are turned off
 
 ## 1.5.3
 
