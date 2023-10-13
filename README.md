@@ -52,8 +52,6 @@ While it will work with other systems, the extent of compatibility may vary. Reg
     - Game Settings > Configure Settings > Foundry to Discord
     - For the Invite URL, make sure your address is public. Use a tunneling software if you can't forward ports.
 
-### NOTE: This module will ONLY work if a GM account is logged into the world!
-
 Follow the hints provided by the settings, and use the webhook link from your channel as the Webhook URL. Also, ensure your invite URL is public, which means you'll need to be port-forwarded as usual. If you can't forward ports due to limitations, you can use a network tunnel to expose your port to the internet. [Tailscale](https://www.reddit.com/r/FoundryVTT/comments/15lt40x/easy_public_foundry_vtt_hosting_using_tailscale) is recommended for this purpose.
 
 ---

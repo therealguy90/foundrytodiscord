@@ -1,4 +1,9 @@
-# 1.5.3
+# 1.5.4
+
+- Allows the Chat Mirroring feature to function without a GM in the world. (Toggleable in Settings)
+- (dnd5e) Add support fpr missing midi-qol chat cards when mergecards are turned off
+
+## 1.5.3
 
 - Fixed a typo that seldom made the module not work on systems that were not pf2e nor dnd5e.
 - (pf2e) checks now display roll arguments, including if the roll was a nat 1 or 20.
