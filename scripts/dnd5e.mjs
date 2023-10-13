@@ -11,6 +11,9 @@ export function messageParserDnD5e(msg) {
     else if (game.modules.get('midi-qol')?.active && msg.flags?.midiqol?.undoDamage && midiqol_isDamageTable(msg.content)) {
         hookEmbed = midiqol_createDamageTable(msg);
     }
+    else if (game.modules.get('midi-qol')?.active && midiqol_isSingleHitCard(msg.content)) {
+        hookEmbed = midiqol_createSingleHitCard(msg);
+    }
     else if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)) {
         hookEmbed = generic.tokenBar_createTokenBarCard(msg);
     }
@@ -369,6 +372,28 @@ function midiqol_createDamageTable(message) {
     }
 }
 
+function midiqol_createSingleHitCard(message) {
+    const divs = document.createElement('div');
+    divs.innerHTML = message.content;
+    let element = divs.querySelector('.midi-qol-single-hit-card');
+    let desc = "";
+    const title = element.querySelector('div').textContent;
+    element.querySelectorAll('.midi-qol-flex-container').forEach(container => {
+        let parsedTarget = "";
+        const result = container.querySelector('strong');
+        if (result) {
+            parsedTarget += "**" + result.textContent + "** ";
+        }
+        const target = container.querySelector('.midi-qol-target-npc-Player.midi-qol-target-name');
+        if (target) {
+            parsedTarget += target.textContent + " ";
+        }
+        parsedTarget = parsedTarget.replace(/\s+/g, ' ').trim();
+        desc += parsedTarget + "\n";
+    });
+    return [{ title: title, description: desc }];
+}
+
 function midiqol_isMergeCard(htmlString) {
     const tempElement = document.createElement('div');
     tempElement.innerHTML = htmlString;
@@ -386,6 +411,17 @@ function midiqol_isDamageTable(htmlString) {
     const midiQOLFlexContainer = tempElement.querySelector('.xmidi-qol-flex-container');
     const midiQOLDamageTable = midiQOLFlexContainer.querySelector('table');
     if (midiQOLDamageTable) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function midiqol_isSingleHitCard(htmlString) {
+    const tempElement = document.createElement('div');
+    tempElement.innerHTML = htmlString;
+    const midiQOLSingleHitCard = tempElement.querySelector('.midi-qol-single-hit-card');
+    if (midiQOLSingleHitCard) {
         return true;
     } else {
         return false;
