@@ -221,9 +221,7 @@ Hooks.on('createChatMessage', async (msg) => {
             else {
                 waitHook = requestParams.hook + "?wait=true";
             }
-            console.log(formData);
             formData.append('payload_json', JSON.stringify(requestParams.params));
-            console.log(formData);
             requestQueue.push({ hook: waitHook, formData: formData, msgID: msg.id, method: 'POST' });
             if (!isProcessing) {
                 isProcessing = true;
