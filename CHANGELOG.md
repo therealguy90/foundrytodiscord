@@ -1,7 +1,7 @@
 
 # 1.6.0
 
-- Nea feature! Added buttons to the window headers of Image Popouts and Journal Entries. They do exactly as what's labeled.
+- New feature! Added buttons to the window headers of Image Popouts and Journal Entries. They do exactly as what's labeled.
 - Hotfix for a message duplication issue when "Allow chat mirroring without a GM" setting is turned on.
 
 ## 1.5.4
