@@ -662,6 +662,16 @@ export function parseHTMLText(htmlString) {
 }
 
 export function htmlCodeCleanup(htmltext) {
+    const entities = {
+        '&amp;': '&',
+        '&lt;': '<',
+        '&gt;': '>',
+        '&nbsp;': ' ',
+    };
+    for (const entity in entities) {
+        const character = entities[entity];
+        htmltext = htmltext.replace(new RegExp(entity, 'g'), character);
+    }
     return htmltext.replace(/<(h[1-6])[^>]*>(.*?)<\/\1>/g, '**$2**') // Format header tags
         .replace(/<(strong|b)>|<\/(strong|b)>/g, '**') // Format strong/bold tags
         .replace(/<em[^>]*>(.*?)<\/em>/g, '*$1*') // Format em/italic tags
@@ -757,8 +767,8 @@ function generateDiscordAvatar(message) {
     return generateimglink(message.user.avatar);
 }
 
-function generateimglink(img) {
-    const supportedFormats = ['jpg', 'jpeg', 'png', 'webp'];
+export function generateimglink(img) {
+    const supportedFormats = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
     let imgUrl;
     if (!img || (img && img === "")) {
         return getDefaultAvatarLink()
@@ -769,7 +779,7 @@ function generateimglink(img) {
         if (getThisModuleSetting('inviteURL') !== "http://") {
             imgUrl = (getThisModuleSetting('inviteURL') + img);
         }
-        else{
+        else {
             return "";
         }
     }
