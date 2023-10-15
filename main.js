@@ -80,10 +80,13 @@ let flushLog = false;
 Hooks.once("ready", function () {
     // Search for main GM
     initMainGM();
-    if (getThisModuleSetting('inviteURL') !== "" && !getThisModuleSetting('inviteURL').endsWith("/")) {
-        game.settings.set('foundrytodiscord', 'inviteURL', getThisModuleSetting('inviteURL') + "/");
-    }
     if (game.user.isGM) {
+        if (getThisModuleSetting('inviteURL') !== "" && !getThisModuleSetting('inviteURL').endsWith("/")) {
+            game.settings.set('foundrytodiscord', 'inviteURL', getThisModuleSetting('inviteURL') + "/");
+        }
+        else if(getThisModuleSetting('inviteURL') === ""){
+            game.settings.set('foundrytodiscord', 'inviteURL', "http://");
+        }
         initSystemStatus();
     }
     console.log("foundrytodiscord | Ready");
@@ -191,6 +194,9 @@ Hooks.on('createChatMessage', async (msg) => {
 
         let requestParams = messageParse(msg);
         if (requestParams) {
+            if(requestParams.params.avatar_url === ""){
+                console.warn("foundrytodiscord | Your Invite URL is not set! Avatar images cannot be displayed on Discord.")
+            }
             let formData = new FormData()
             let hasAttachments = false;
             if (game.modules.get("chat-media")?.active || game.modules.get("chatgifs")?.active) {
@@ -284,6 +290,9 @@ Hooks.on('updateChatMessage', async (msg) => {
                     editHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
                 } else {
                     editHook = url + '/messages/' + message.id;
+                }
+                if(!getThisModuleSetting("inviteURL").includes('.')){
+
                 }
                 formData.append('payload_json', JSON.stringify(editParamsOnly));
                 requestQueue.push({ hook: editHook, formData: formData, msgID: msg.id, method: 'PATCH' });

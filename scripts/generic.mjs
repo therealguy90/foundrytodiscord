@@ -208,7 +208,7 @@ export function createHTMLDiceRollEmbed(message) {
         if (Number(total.textContent)) {
             desc += ":game_die: **Result: __" + total.textContent + "__**\n";
         }
-        else{
+        else {
             desc += "**" + total.textContent + "**\n";
         }
     })
@@ -766,7 +766,12 @@ function generateimglink(img) {
     if (img.includes("http")) {
         imgUrl = img;
     } else {
-        imgUrl = (getThisModuleSetting('inviteURL') + img);
+        if (getThisModuleSetting('inviteURL') !== "http://") {
+            imgUrl = (getThisModuleSetting('inviteURL') + img);
+        }
+        else{
+            return "";
+        }
     }
     const urlParts = imgUrl.split('.');
     let fileExtension = urlParts[urlParts.length - 1].toLowerCase();
@@ -777,7 +782,7 @@ function generateimglink(img) {
         return imgUrl;
     }
     else {
-        return getDefaultAvatarLink()
+        return getDefaultAvatarLink();
     }
 }
 
@@ -799,6 +804,11 @@ export function propertyExists(jsonObj, propertyPath) {
 }
 
 export function getDefaultAvatarLink() {
-    return getThisModuleSetting('inviteURL') + "modules/foundrytodiscord/src/images/defaultavatar.png";
+    if (getThisModuleSetting('inviteURL') !== "http://") {
+        return getThisModuleSetting('inviteURL') + "modules/foundrytodiscord/src/images/defaultavatar.png";
+    }
+    else {
+        return "";
+    }
 }
 
