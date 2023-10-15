@@ -7,7 +7,7 @@ import { initMainGM } from './scripts/helpers/modulesettings.mjs';
 import { getThisModuleSetting } from './scripts/helpers/modulesettings.mjs';
 import { initParser } from './scripts/helpers/modulesettings.mjs';
 import { splitEmbed } from './scripts/helpers/embeds.mjs';
-
+import { hexToColor } from './scripts/helpers/embeds.mjs';
 import { reformatMessage } from './scripts/generic.mjs';
 import { PF2e_reformatMessage } from './scripts/pf2e.mjs';
 import { DnD5e_reformatMessage } from './scripts/dnd5e.mjs';
@@ -110,7 +110,7 @@ Hooks.on('getJournalSheetHeaderButtons', (sheet, buttons) => {
             const pageData = sheet._pages[pageIndex];
             let formData = new FormData();
             let reformat;
-            switch(game.system.id){
+            switch (game.system.id) {
                 case 'pf2e':
                     reformat = PF2e_reformatMessage;
                     break;
@@ -121,33 +121,53 @@ Hooks.on('getJournalSheetHeaderButtons', (sheet, buttons) => {
                     reformat = reformatMessage;
                     break;
             }
+            let embeds = [];
+            let msgText = "";
             switch (pageData.type) {
                 case "text":
-                    let embeds = [{ 
-                        author: { name: "From Journal " + sheet.title }, 
-                        title: pageData.name, 
+                    embeds = [{
+                        author: { name: "From Journal " + sheet.title },
+                        title: pageData.name,
                         description: reformat(pageData.text.content)
                     }];
                     if (embeds[0].description.length > 4000) {
                         embeds = splitEmbed(embeds[0]);
                     }
-                    embeds.forEach((embed) => {
-                        // Add color to all embeds
-                        if (message.user?.color) {
-                            embed.color = hexToColor(message.user.color);
+                    break;
+                case "image":
+                    embeds = [{
+                        author: { name: "From Journal " + sheet.title },
+                        title: pageData.name,
+                        image: {
+                            url: generateimglink(pageData.src)
+                        },
+                        footer: {
+                            text: pageData.image.caption
                         }
-                    })
-                    const params = {
-                        username: game.user.name,
-                        avatar_url: generateimglink(game.user.avatar),
-                        content: "",
-                        embeds: embeds
-                    }
-                    formData.append('payload_json', JSON.stringify(params));
-                    api.sendMessage(formData, false, game.user.viewedScene);
+                    }];
+                    break;
+                case "video":
+                    msgText += generateimglink(pageData.src);
                     break;
                 default:
+                    console.warn("foundrytodiscord | Journal page type not supported.");
                     break;
+            }
+            if (embeds.length > 0 || msgText !== "") {
+                embeds.forEach((embed) => {
+                    // Add color to all embeds
+                    if (game.user?.color) {
+                        embed.color = hexToColor(game.user.color);
+                    }
+                })
+                const params = {
+                    username: game.user.name,
+                    avatar_url: generateimglink(game.user.avatar),
+                    content: msgText,
+                    embeds: embeds
+                }
+                formData.append('payload_json', JSON.stringify(params));
+                api.sendMessage(formData, false, game.user.viewedScene);
             }
         }
     })
