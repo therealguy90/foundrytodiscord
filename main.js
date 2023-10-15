@@ -84,12 +84,24 @@ Hooks.once("ready", function () {
         if (getThisModuleSetting('inviteURL') !== "" && !getThisModuleSetting('inviteURL').endsWith("/")) {
             game.settings.set('foundrytodiscord', 'inviteURL', getThisModuleSetting('inviteURL') + "/");
         }
-        else if(getThisModuleSetting('inviteURL') === ""){
+        else if (getThisModuleSetting('inviteURL') === "") {
             game.settings.set('foundrytodiscord', 'inviteURL', "http://");
         }
         initSystemStatus();
     }
     console.log("foundrytodiscord | Ready");
+});
+
+Hooks.on('getChatLogEntryContext', (html, options) => {
+    options.unshift({
+        name: "Send to Discord",
+        icon: '<i class="fa-brands fa-discord"></i>',
+        condition: game.user.isGM, // optional condition
+        callback: li => {
+            let message = game.messages.get(li.attr("data-message-id"));
+            tryRequest(message, 'POST');
+        }
+    })
 });
 
 async function initSystemStatus() {
@@ -192,46 +204,7 @@ Hooks.on('createChatMessage', async (msg) => {
             return;
         }
 
-        let requestParams = messageParse(msg);
-        if (requestParams) {
-            if(requestParams.params.avatar_url === ""){
-                console.warn("foundrytodiscord | Your Invite URL is not set! Avatar images cannot be displayed on Discord.")
-            }
-            let formData = new FormData()
-            let hasAttachments = false;
-            if (game.modules.get("chat-media")?.active || game.modules.get("chatgifs")?.active) {
-                const { formDataTemp, contentTemp } = getChatMediaAttachments(formData, requestParams.params.content, msg.content);
-                if (formDataTemp !== formData) {
-                    formData = formDataTemp;
-                    hasAttachments = true;
-                }
-                requestParams.params.content = contentTemp;
-            }
-            if (requestParams.params.content === "" && requestParams.params.embeds.length === 0 && !hasAttachments) {
-                if (!msg.content.includes('<img') && !msg.content.includes('<video')) {
-                    return;
-                }
-                else {
-                    requestParams.params.content += addMediaLinks(msg);
-                }
-                if (requestParams.params.content === "") {
-                    return;
-                }
-            }
-            let waitHook;
-            if (requestParams.hook.includes("?")) {
-                waitHook = requestParams.hook + "&wait=true";
-            }
-            else {
-                waitHook = requestParams.hook + "?wait=true";
-            }
-            formData.append('payload_json', JSON.stringify(requestParams.params));
-            requestQueue.push({ hook: waitHook, formData: formData, msgID: msg.id, method: 'POST' });
-            if (!isProcessing) {
-                isProcessing = true;
-                requestOnce();
-            }
-        }
+        tryRequest(msg, 'POST');
     }
 });
 
@@ -247,61 +220,24 @@ Hooks.on('updateChatMessage', async (msg) => {
                 console.log('foundrytodiscord | Attempt to edit message was unsuccessful due to the message not existing on Discord.');
             }
         } else {
-            let requestParams = messageParse(msg);
-            let hasAttachments = false;
-            if (requestParams) {
-                let editParamsOnly = {
-                    content: requestParams.params.content,
-                    embeds: requestParams.params.embeds
-                }
-                let formData = new FormData()
-                if (game.modules.get("chat-media")?.active) {
-                    const { formDataTemp, contentTemp } = getChatMediaAttachments(formData, editParamsOnly.content, msg.content);
-                    if (formDataTemp !== new FormData()) {
-                        formData = formDataTemp;
-                        hasAttachments = true;
-                    }
-                    editParamsOnly.content = contentTemp;
-                }
-                if (requestParams.params.content === "" && requestParams.params.embeds.length === 0 && !hasAttachments) {
-                    if (!msg.content.includes('<img') && !msg.content.includes('<video')) {
-                        return;
-                    }
-                    else {
-                        editParamsOnly += addMediaLinks(msg);
-                    }
-                    if (requestParams.params.content === "") {
-                        return;
-                    }
-                }
-                let editHook;
-                let url, message;
-                if (game.users.filter(user => user.isGM && user.active).length > 0) {
-                    const msgObject = getThisModuleSetting('messageList')[msg.id];
-                    url = msgObject.url;
-                    message = msgObject.message;
-                } else {
-                    const msgObject = getThisModuleSetting('clientMessageList')[msg.id];
-                    url = msgObject.url;
-                    message = msgObject.message;
-                }
+            let editHook;
+            let msgObjects;
+            if (game.users.filter(user => user.isGM && user.active).length > 0) {
+                msgObjects = getThisModuleSetting('messageList')[msg.id];
+            } else {
+                msgObjects = getThisModuleSetting('clientMessageList')[msg.id];
+            }
+            msgObjects.forEach(msgObject => {
+                const url = msgObject.url;
+                const message = msgObject.message;
                 if (url.split('?').length > 1) {
                     const querysplit = url.split('?');
                     editHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
                 } else {
                     editHook = url + '/messages/' + message.id;
                 }
-                if(!getThisModuleSetting("inviteURL").includes('.')){
-
-                }
-                formData.append('payload_json', JSON.stringify(editParamsOnly));
-                requestQueue.push({ hook: editHook, formData: formData, msgID: msg.id, method: 'PATCH' });
-                if (!isProcessing) {
-                    isProcessing = true;
-                    requestOnce();
-                }
-            }
-
+                tryRequest(msg, 'PATCH', editHook);
+            });
         }
     };
 
@@ -323,32 +259,74 @@ Hooks.on('updateChatMessage', async (msg) => {
 Hooks.on('deleteChatMessage', async (msg) => {
     if ((!flushLog && !getThisModuleSetting('disableDeletions')) && ((game.userId === getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") || (getThisModuleSetting("allowNoGM") && game.users.filter(user => user.isGM && user.active).length > 0 && game.user.id === game.users.filter(user => user.active)[0].id))) {
         if (getThisModuleSetting('messageList').hasOwnProperty(msg.id) || getThisModuleSetting('clientMessageList').hasOwnProperty(msg.id)) {
-            let url, message;
-            if (game.users.filter(user => user.isGM && user.active).length > 0) {
-                const moduleSetting = getThisModuleSetting('messageList')[msg.id];
-                url = moduleSetting.url;
-                message = moduleSetting.message;
-            } else {
-                const moduleSetting = getThisModuleSetting('clientMessageList')[msg.id];
-                url = moduleSetting.url;
-                message = moduleSetting.message;
-            }
             let deleteHook;
-            if (url.split('?').length > 1) {
-                const querysplit = url.split('?');
-                deleteHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
+            let msgObjects;
+            if (game.users.filter(user => user.isGM && user.active).length > 0) {
+                msgObjects = getThisModuleSetting('messageList')[msg.id];
             } else {
-                deleteHook = url + '/messages/' + message.id;
+                msgObjects = getThisModuleSetting('clientMessageList')[msg.id];
             }
-            requestQueue.push({ hook: deleteHook, formData: null, msgID: msg.id, method: 'DELETE' });
-            if (!isProcessing) {
-                isProcessing = true;
-                requestOnce();
-            }
+            msgObjects.forEach(msgObject => {
+                const url = msgObject.url;
+                const message = msgObject.message;
+                if (url.split('?').length > 1) {
+                    const querysplit = url.split('?');
+                    deleteHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
+                } else {
+                    deleteHook = url + '/messages/' + message.id;
+                }
+                requestQueue.push({ hook: deleteHook, formData: null, msgID: msg.id, method: 'DELETE' });
+                if (!isProcessing) {
+                    isProcessing = true;
+                    requestOnce();
+                }
+            });
         }
     }
 });
 
+function tryRequest(msg, method, hookOverride = "") {
+    let requestParams = messageParse(msg);
+    if (requestParams) {
+        if (requestParams.params.avatar_url === "") {
+            console.warn("foundrytodiscord | Your Invite URL is not set! Avatar images cannot be displayed on Discord.")
+        }
+        let formData = new FormData()
+        let hasAttachments = false;
+        if (game.modules.get("chat-media")?.active || game.modules.get("chatgifs")?.active) {
+            const { formDataTemp, contentTemp } = getChatMediaAttachments(formData, requestParams.params.content, msg.content);
+            if (formDataTemp !== formData) {
+                formData = formDataTemp;
+                hasAttachments = true;
+            }
+            requestParams.params.content = contentTemp;
+        }
+        if (requestParams.params.content === "" && requestParams.params.embeds.length === 0 && !hasAttachments) {
+            if (!msg.content.includes('<img') && !msg.content.includes('<video')) {
+                return;
+            }
+            else {
+                requestParams.params.content += addMediaLinks(msg);
+            }
+            if (requestParams.params.content === "") {
+                return;
+            }
+        }
+        let waitHook;
+        if (requestParams.hook.includes("?")) {
+            waitHook = requestParams.hook + "&wait=true";
+        }
+        else {
+            waitHook = requestParams.hook + "?wait=true";
+        }
+        formData.append('payload_json', JSON.stringify(requestParams.params));
+        requestQueue.push({ hook: hookOverride === "" ? waitHook : hookOverride, formData: formData, msgID: msg.id, method: method });
+        if (!isProcessing) {
+            isProcessing = true;
+            requestOnce();
+        }
+    }
+}
 
 async function requestOnce(retry = 0) {
     const { hook, formData, msgID, method } = requestQueue[0];
@@ -532,7 +510,12 @@ function addSentMessage(msgID, params) {
     else {
         messageList = game.settings.get('foundrytodiscord', 'clientMessageList');
     }
-    messageList[msgID] = params;
+    if (!messageList.hasOwnProperty(msgID)) {
+        messageList[msgID] = [params];
+    }
+    else {
+        messageList[msgID].push(params);
+    }
 
     const keys = Object.keys(messageList);
     if (keys.length > 100) {
