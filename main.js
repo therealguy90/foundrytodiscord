@@ -393,7 +393,7 @@ Hooks.on('updateChatMessage', async (msg) => {
 });
 
 Hooks.on('deleteChatMessage', async (msg) => {
-    if ((!flushLog && !getThisModuleSetting('disableDeletions')) && ((game.userId === getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") || (getThisModuleSetting("allowNoGM") && game.users.filter(user => user.isGM && user.active).length > 0 && game.user.id === game.users.filter(user => user.active).sort((a, b) => a.name.localeCompare(b.name))[0].id))) {
+    if ((!flushLog && !getThisModuleSetting('disableDeletions')) && ((game.userId === getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") || (getThisModuleSetting("allowNoGM") && game.users.filter(user => user.isGM && user.active).length === 0 && game.user.id === game.users.filter(user => user.active).sort((a, b) => a.name.localeCompare(b.name))[0].id))) {
         if (getThisModuleSetting('messageList').hasOwnProperty(msg.id) || getThisModuleSetting('clientMessageList').hasOwnProperty(msg.id)) {
             let deleteHook;
             let msgObjects;
