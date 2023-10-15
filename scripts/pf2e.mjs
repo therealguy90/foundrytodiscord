@@ -493,6 +493,11 @@ function PF2e_reformatMessage(text) {
         //replace checks without name labels, different arguments on every system for @Check(if it exists), so pf2e gets a different one
         regex = /@Check\[(.*?)\]/g;
         reformattedText = reformattedText.replace(regex, (_, text) => PF2e_getNameFromCheck(text));
+
+        regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
+        reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
+        regex = /\[\[\/(.*?) (.*?)\]\]/g;
+        reformattedText = reformattedText.replace(regex, ':game_die: `$2`');    
     }
 
     return reformattedText.trim();
