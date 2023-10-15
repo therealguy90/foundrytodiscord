@@ -1,10 +1,16 @@
 import { isCard } from './scripts/generic.mjs';
 import { generateimglink } from './scripts/generic.mjs';
 import { getDefaultAvatarLink } from './scripts/generic.mjs';
+import { parseHTMLText } from './scripts/generic.mjs';
 import { initModuleSettings } from './scripts/helpers/modulesettings.mjs';
 import { initMainGM } from './scripts/helpers/modulesettings.mjs';
 import { getThisModuleSetting } from './scripts/helpers/modulesettings.mjs';
 import { initParser } from './scripts/helpers/modulesettings.mjs';
+import { splitEmbed } from './scripts/helpers/embeds.mjs';
+
+import { reformatMessage } from './scripts/generic.mjs';
+import { PF2e_reformatMessage } from './scripts/pf2e.mjs';
+import { DnD5e_reformatMessage } from './scripts/dnd5e.mjs';
 import * as api from './api.js';
 
 let messageParse;
@@ -93,14 +99,66 @@ Hooks.once("ready", function () {
     console.log("foundrytodiscord | Ready");
 });
 
+Hooks.on('getJournalSheetHeaderButtons', (sheet, buttons) => {
+    buttons.unshift({
+        label: "Send Current Page to Discord",
+        class: 'send-to-discord',
+        icon: 'fa-brands fa-discord',
+        onclick: () => {
+            console.log(sheet);
+            const pageIndex = sheet.pageIndex;
+            const pageData = sheet._pages[pageIndex];
+            let formData = new FormData();
+            let reformat;
+            switch(game.system.id){
+                case 'pf2e':
+                    reformat = PF2e_reformatMessage;
+                    break;
+                case 'dnd5e':
+                    reformat = DnD5e_reformatMessage;
+                    break;
+                default:
+                    reformat = reformatMessage;
+                    break;
+            }
+            switch (pageData.type) {
+                case "text":
+                    let embeds = [{ 
+                        author: { name: "From Journal " + sheet.title }, 
+                        title: pageData.name, 
+                        description: reformat(pageData.text.content)
+                    }];
+                    if (embeds[0].description.length > 4000) {
+                        embeds = splitEmbed(embeds[0]);
+                    }
+                    embeds.forEach((embed) => {
+                        // Add color to all embeds
+                        if (message.user?.color) {
+                            embed.color = hexToColor(message.user.color);
+                        }
+                    })
+                    const params = {
+                        username: game.user.name,
+                        avatar_url: generateimglink(game.user.avatar),
+                        content: "",
+                        embeds: embeds
+                    }
+                    formData.append('payload_json', JSON.stringify(params));
+                    api.sendMessage(formData, false, game.user.viewedScene);
+                    break;
+                default:
+                    break;
+            }
+        }
+    })
+});
+
 Hooks.on('getImagePopoutHeaderButtons', (sheet, buttons) => {
     buttons.unshift({
         label: "Send Image to Discord",
         class: 'send-to-discord',
         icon: 'fa-brands fa-discord',
         onclick: () => {
-            console.log(sheet);
-            console.log(typeof sheet.object);
             let formData = new FormData();
             let msgText = "";
             let imgblob;
@@ -137,7 +195,6 @@ Hooks.on('getImagePopoutHeaderButtons', (sheet, buttons) => {
                     console.error("foundrytodiscord | Your Invite URL isn't set! Image was not sent.");
                     return;
                 }
-                console.log(link);
                 msgText += link;
                 const params = {
                     username: game.user.name,

@@ -124,7 +124,7 @@ function DnD5e_createCardEmbed(message) {
     return [{ title: title, description: desc, footer: { text: generic.getCardFooter(card) } }];
 }
 
-function DnD5e_reformatMessage(text) {
+export function DnD5e_reformatMessage(text) {
     let reformattedText = ""
     //First check if the text is formatted in HTML to use a different function
     //parse Localize first, since it will have html elements

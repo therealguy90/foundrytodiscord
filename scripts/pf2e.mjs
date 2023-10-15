@@ -449,7 +449,7 @@ function PF2e_parseTraits(text) {
     }
 }
 
-function PF2e_reformatMessage(text) {
+export function PF2e_reformatMessage(text) {
     let reformattedText = ""
     //First check if the text is formatted in HTML to use a different function
     //parse Localize first, since it will have html elements

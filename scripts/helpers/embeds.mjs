@@ -33,6 +33,7 @@ export function splitEmbed(embed) {
         // Remove the title from subsequent embeds
         if (!isFirstEmbed) {
             delete partEmbed.title;
+            delete partEmbed.author;
         }
 
         // Add the part embed to the array
@@ -49,7 +50,7 @@ export function splitEmbed(embed) {
 
     // Remove the title from the final embed
     delete finalEmbed.title;
-
+    delete finalEmbed.author;
     // Add the final embed to the array
     parts.push(finalEmbed);
 
