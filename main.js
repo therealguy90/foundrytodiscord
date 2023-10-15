@@ -1,4 +1,5 @@
 import { isCard } from './scripts/generic.mjs';
+import { generateimglink } from './scripts/generic.mjs';
 import { getDefaultAvatarLink } from './scripts/generic.mjs';
 import { initModuleSettings } from './scripts/helpers/modulesettings.mjs';
 import { initMainGM } from './scripts/helpers/modulesettings.mjs';
@@ -90,6 +91,64 @@ Hooks.once("ready", function () {
         initSystemStatus();
     }
     console.log("foundrytodiscord | Ready");
+});
+
+Hooks.on('getImagePopoutHeaderButtons', (sheet, buttons) => {
+    buttons.unshift({
+        label: "Send Image to Discord",
+        class: 'send-to-discord',
+        icon: 'fa-brands fa-discord',
+        onclick: () => {
+            console.log(sheet);
+            console.log(typeof sheet.object);
+            let formData = new FormData();
+            let msgText = "";
+            let imgblob;
+            if (sheet.object.startsWith("data")) {
+                imgblob = dataToBlob(sheet.object);
+                console.log(sheet.object);
+                const parts = sheet.object.split(';');
+                if (parts.length < 2) {
+                    return 'jpg';
+                }
+                const mimeType = parts[0].split(':')[1];
+                const fileExt = mimeType.split('/')[1];
+                const supportedFormats = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4'];
+                if (supportedFormats.includes(fileExt)) {
+                    const params = {
+                        username: game.user.name,
+                        avatar_url: generateimglink(game.user.avatar),
+                        content: ""
+                    }
+                    formData.append('files[0]', imgblob, "foundrytodiscord_sharedimage." + fileExt);
+                    formData.append('payload_json', JSON.stringify(params));
+                    api.sendMessage(formData, false, game.user.viewedScene);
+                }
+            }
+            else {
+                let link;
+                if (!sheet.object.includes("http")) {
+                    link = generateimglink(sheet.object);
+                }
+                else {
+                    link = sheet.object;
+                }
+                if (link === "") {
+                    console.error("foundrytodiscord | Your Invite URL isn't set! Image was not sent.");
+                    return;
+                }
+                console.log(link);
+                msgText += link;
+                const params = {
+                    username: game.user.name,
+                    avatar_url: generateimglink(game.user.avatar),
+                    content: msgText
+                }
+                formData.append('payload_json', JSON.stringify(params));
+                api.sendMessage(formData, false, game.user.viewedScene);
+            }
+        }
+    })
 });
 
 Hooks.on('getChatLogEntryContext', (html, options) => {
@@ -297,18 +356,17 @@ function tryRequest(msg, method, hookOverride = "") {
             const { formDataTemp, contentTemp } = getChatMediaAttachments(formData, requestParams.params.content, msg.content);
             if (formDataTemp !== formData) {
                 formData = formDataTemp;
-                hasAttachments = true;
             }
             requestParams.params.content = contentTemp;
         }
-        if (requestParams.params.content === "" && requestParams.params.embeds.length === 0 && !hasAttachments) {
+        if (requestParams.params.content === "" && requestParams.params.embeds.length === 0 && !formData.get('files[0]')) {
             if (!msg.content.includes('<img') && !msg.content.includes('<video')) {
                 return;
             }
             else {
                 requestParams.params.content += addMediaLinks(msg);
             }
-            if (requestParams.params.content === "") {
+            if (requestParams.params.content === "" && !hasAttachments) {
                 return;
             }
         }
