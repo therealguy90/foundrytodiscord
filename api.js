@@ -61,6 +61,7 @@ export async function sendMessage(formData, isRoll = false, sceneID = game.user.
         }
     } catch (error) {
         console.log("foundrytodiscord | Error sending message: ", error);
+        throw new Error("An error occurred.");
         return error;
     }
 }

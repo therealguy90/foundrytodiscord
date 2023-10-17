@@ -46,10 +46,19 @@ export function initMenuHooks() {
                         }];
                         break;
                     case "video":
-                        msgText += generateimglink(pageData.src);
+                        if (pageData.src.includes("http")) {
+                            msgText = pageData.src;
+                        } else {
+                            if (getThisModuleSetting('inviteURL') !== "http://") {
+                                msgText = (getThisModuleSetting('inviteURL') + img);
+                            }
+                            else {
+                                ui.notifications.error("foundrytodiscord | Invite URL not set!");
+                            }
+                        }
                         break;
                     default:
-                        console.warn("foundrytodiscord | Journal page type not supported.");
+                        ui.notifications.warn("Journal page type not supported.");
                         break;
                 }
                 if (embeds.length > 0 || msgText !== "") {
@@ -66,7 +75,18 @@ export function initMenuHooks() {
                         embeds: embeds
                     }
                     formData.append('payload_json', JSON.stringify(params));
-                    api.sendMessage(formData, false, game.user.viewedScene);
+                    api.sendMessage(formData, false, game.user.viewedScene)
+                        .then(({ response, message }) => {
+                            if (response.ok) {
+                                ui.notifications.info("Successfully sent to Discord.");
+                            }
+                            else {
+                                throw new Error("An error occurred.");
+                            }
+                        })
+                        .catch(error => {
+                            ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
+                        });
                 }
             }
         })
@@ -99,7 +119,18 @@ export function initMenuHooks() {
                         }
                         formData.append('files[0]', imgblob, "foundrytodiscord_sharedimage." + fileExt);
                         formData.append('payload_json', JSON.stringify(params));
-                        api.sendMessage(formData, false, game.user.viewedScene);
+                        api.sendMessage(formData, false, game.user.viewedScene)
+                            .then(({ response, message }) => {
+                                if (response.ok) {
+                                    ui.notifications.info("Successfully sent to Discord.");
+                                }
+                                else {
+                                    throw new Error("An error occurred.");
+                                }
+                            })
+                            .catch(error => {
+                                ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
+                            });
                     }
                 }
                 else {
@@ -116,116 +147,141 @@ export function initMenuHooks() {
                         content: msgText
                     }
                     formData.append('payload_json', JSON.stringify(params));
-                    api.sendMessage(formData, false, game.user.viewedScene);
+                    api.sendMessage(formData, false, game.user.viewedScene)
+                        .then(({ response, message }) => {
+                            if (response.ok) {
+                                ui.notifications.info("Successfully sent to Discord.");
+                            }
+                            else {
+                                throw new Error("An error occurred.");
+                            }
+                        })
+                        .catch(error => {
+                            ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
+                        });
                 }
             }
         })
     });
 
+
     //Forien's Quest Log
-    Hooks.on('getQuestPreviewHeaderButtons', (app, buttons) => {
-        buttons.unshift({
-            label: "Send Quest Details to Discord",
-            class: 'send-to-discord',
-            icon: 'fa-brands fa-discord',
-            onclick: () => {
-                console.log(app);
-                const questData = app._quest;
-                let embeds = [];
-                //Build author object
-                let author = { name: "", icon_url: "" };
-                if (questData.giverData) {
-                    author.name = questData.giverData.name;
-                    author.icon_url = generateimglink(questData.giverData.img);
-                }
-                //
-                let thumbnail = { url: "" };
-                if (questData.splash) {
-                    thumbnail.url = generateimglink(questData.splash);
-                }
-                //Build embed title
-                let title = "QUEST: " + questData._name;
-                switch (questData.status) {
-                    case "active":
-                        title = ":arrow_forward: " + title;
-                        break;
-                    case "inactive":
-                        title = ":stop_button: " + title;
-                        break;
-                    case "available":
-                        title = ":clipboard: " + title;
-                        break;
-                    case "completed":
-                        title = ":white_check_mark: " + title;
-                        break;
-                    case "failed":
-                        title = ":x: " + title;
-                        break;
-                    default:
-                        break;
-                }
-                // Build Description
-                const reformat = getReformatter();
-                let description = reformat(questData.description);
+    if (game.modules.get("forien-quest-log")?.active) {
+        Hooks.on('getQuestPreviewHeaderButtons', (app, buttons) => {
+            buttons.unshift({
+                label: "Send Quest Details to Discord",
+                class: 'send-to-discord',
+                icon: 'fa-brands fa-discord',
+                onclick: () => {
+                    console.log(app);
+                    const questData = app._quest;
+                    let embeds = [];
+                    //Build author object
+                    let author = { name: "", icon_url: "" };
+                    if (questData.giverData) {
+                        author.name = questData.giverData.name;
+                        author.icon_url = generateimglink(questData.giverData.img);
+                    }
+                    //
+                    let thumbnail = { url: "" };
+                    if (questData.splash) {
+                        thumbnail.url = generateimglink(questData.splash);
+                    }
+                    //Build embed title
+                    let title = "QUEST: " + questData._name;
+                    switch (questData.status) {
+                        case "active":
+                            title = ":arrow_forward: " + title;
+                            break;
+                        case "inactive":
+                            title = ":stop_button: " + title;
+                            break;
+                        case "available":
+                            title = ":clipboard: " + title;
+                            break;
+                        case "completed":
+                            title = ":white_check_mark: " + title;
+                            break;
+                        case "failed":
+                            title = ":x: " + title;
+                            break;
+                        default:
+                            break;
+                    }
+                    // Build Description
+                    const reformat = getReformatter();
+                    let description = reformat(questData.description);
 
-                let fields = [];
-                // Build Objectives field
-                const shownTasks = questData.tasks.filter(task => !task.hidden);
-                if (shownTasks && shownTasks.length > 0) {
-                    let value = ""
-                    shownTasks.forEach(task => {
-                        if (task.completed) {
-                            value += ":white_check_mark: ";
-                        }
-                        else if (task.failed) {
-                            value += ":no_entry: ";
-                        }
-                        else {
-                            value += ":blue_square: ";
-                        }
-                        value += task.name + "\n";
-                    });
-                    fields.push({
-                        name: "Objectives",
-                        value: value.trim()
-                    })
-                }
+                    let fields = [];
+                    // Build Objectives field
+                    const shownTasks = questData.tasks.filter(task => !task.hidden);
+                    if (shownTasks && shownTasks.length > 0) {
+                        let value = ""
+                        shownTasks.forEach(task => {
+                            if (task.completed) {
+                                value += ":white_check_mark: ";
+                            }
+                            else if (task.failed) {
+                                value += ":no_entry: ";
+                            }
+                            else {
+                                value += ":blue_square: ";
+                            }
+                            value += task.name + "\n";
+                        });
+                        fields.push({
+                            name: "Objectives",
+                            value: value.trim()
+                        })
+                    }
 
-                // Build Rewards field
-                const shownRewards = questData.rewards.filter(reward => !reward.hidden);
-                if(shownRewards && shownRewards.length > 0){
-                    let value = ""
-                    shownRewards.forEach(reward => {
-                        value += reward.name + "\n";
-                    });
-                    fields.push({
-                        name: "Rewards",
-                        value: value.trim()
-                    })
+                    // Build Rewards field
+                    const shownRewards = questData.rewards.filter(reward => !reward.hidden);
+                    if (shownRewards && shownRewards.length > 0) {
+                        let value = ""
+                        shownRewards.forEach(reward => {
+                            value += reward.name + "\n";
+                        });
+                        fields.push({
+                            name: "Rewards",
+                            value: value.trim()
+                        })
+                    }
+                    embeds = [{
+                        author: author,
+                        title: title,
+                        thumbnail: thumbnail,
+                        description: description,
+                        fields: fields
+                    }];
+                    const params = {
+                        username: game.user.name,
+                        avatar_url: generateimglink(game.user.avatar),
+                        content: "",
+                        embeds: embeds
+                    };
+                    const formData = new FormData();
+                    formData.append('payload_json', JSON.stringify(params));
+                    api.sendMessage(formData, false, game.user.viewedScene)
+                        .then(({ response, message }) => {
+                            console.log(response)
+                            if (response.ok) {
+                                ui.notifications.info("Successfully sent to Discord.");
+                            }
+                            else {
+                                throw new Error("An error occurred.");
+                            }
+                        })
+                        .catch(error => {
+                            ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
+                        });
                 }
-                embeds = [{
-                    author: author,
-                    title: title,
-                    thumbnail: thumbnail,
-                    description: description,
-                    fields: fields
-                }];
-                const params = {
-                    username: game.user.name,
-                    avatar_url: generateimglink(game.user.avatar),
-                    content: "",
-                    embeds: embeds
-                };
-                const formData = new FormData();
-                formData.append('payload_json', JSON.stringify(params));
-                api.sendMessage(formData, false, game.user.viewedScene);
-
-            }
+            });
         });
-    });
+    }
 }
 
-function getReformatter(){
+function getReformatter() {
     switch (game.system.id) {
         case 'pf2e':
             return PF2e_reformatMessage;
