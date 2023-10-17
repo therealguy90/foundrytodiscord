@@ -1,16 +1,10 @@
 import { isCard } from './scripts/generic.mjs';
-import { generateimglink } from './scripts/generic.mjs';
 import { getDefaultAvatarLink } from './scripts/generic.mjs';
-import { parseHTMLText } from './scripts/generic.mjs';
 import { initModuleSettings } from './scripts/helpers/modulesettings.mjs';
 import { initMainGM } from './scripts/helpers/modulesettings.mjs';
 import { getThisModuleSetting } from './scripts/helpers/modulesettings.mjs';
 import { initParser } from './scripts/helpers/modulesettings.mjs';
-import { splitEmbed } from './scripts/helpers/embeds.mjs';
-import { hexToColor } from './scripts/helpers/embeds.mjs';
-import { reformatMessage } from './scripts/generic.mjs';
-import { PF2e_reformatMessage } from './scripts/pf2e.mjs';
-import { DnD5e_reformatMessage } from './scripts/dnd5e.mjs';
+import { initMenuHooks } from './scripts/apphooks.mjs';
 import * as api from './api.js';
 
 let messageParse;
@@ -79,12 +73,26 @@ Hooks.on("renderApplication", (app, html) => {
     }
 });
 
+Hooks.on('getChatLogEntryContext', (html, options) => {
+    options.unshift({
+        name: "Send to Discord",
+        icon: '<i class="fa-brands fa-discord"></i>',
+        condition: game.user.isGM, // optional condition
+        callback: li => {
+            let message = game.messages.get(li.attr("data-message-id"));
+            tryRequest(message, 'POST');
+        }
+    })
+});
+
 
 let requestQueue = [];
 let isProcessing = false;
 let flushLog = false;
 
 Hooks.once("ready", function () {
+    // Application and context menu buttons
+    initMenuHooks();
     // Search for main GM
     initMainGM();
     if (game.user.isGM) {
@@ -97,147 +105,6 @@ Hooks.once("ready", function () {
         initSystemStatus();
     }
     console.log("foundrytodiscord | Ready");
-});
-
-Hooks.on('getJournalSheetHeaderButtons', (sheet, buttons) => {
-    buttons.unshift({
-        label: "Send Current Page to Discord",
-        class: 'send-to-discord',
-        icon: 'fa-brands fa-discord',
-        onclick: () => {
-            console.log(sheet);
-            const pageIndex = sheet.pageIndex;
-            const pageData = sheet._pages[pageIndex];
-            let formData = new FormData();
-            let reformat;
-            switch (game.system.id) {
-                case 'pf2e':
-                    reformat = PF2e_reformatMessage;
-                    break;
-                case 'dnd5e':
-                    reformat = DnD5e_reformatMessage;
-                    break;
-                default:
-                    reformat = reformatMessage;
-                    break;
-            }
-            let embeds = [];
-            let msgText = "";
-            switch (pageData.type) {
-                case "text":
-                    embeds = [{
-                        author: { name: "From Journal " + sheet.title },
-                        title: pageData.name,
-                        description: reformat(pageData.text.content)
-                    }];
-                    if (embeds[0].description.length > 4000) {
-                        embeds = splitEmbed(embeds[0]);
-                    }
-                    break;
-                case "image":
-                    embeds = [{
-                        author: { name: "From Journal " + sheet.title },
-                        title: pageData.name,
-                        image: {
-                            url: generateimglink(pageData.src)
-                        },
-                        footer: {
-                            text: pageData.image.caption
-                        }
-                    }];
-                    break;
-                case "video":
-                    msgText += generateimglink(pageData.src);
-                    break;
-                default:
-                    console.warn("foundrytodiscord | Journal page type not supported.");
-                    break;
-            }
-            if (embeds.length > 0 || msgText !== "") {
-                embeds.forEach((embed) => {
-                    // Add color to all embeds
-                    if (game.user?.color) {
-                        embed.color = hexToColor(game.user.color);
-                    }
-                })
-                const params = {
-                    username: game.user.name,
-                    avatar_url: generateimglink(game.user.avatar),
-                    content: msgText,
-                    embeds: embeds
-                }
-                formData.append('payload_json', JSON.stringify(params));
-                api.sendMessage(formData, false, game.user.viewedScene);
-            }
-        }
-    })
-});
-
-Hooks.on('getImagePopoutHeaderButtons', (sheet, buttons) => {
-    buttons.unshift({
-        label: "Send Image to Discord",
-        class: 'send-to-discord',
-        icon: 'fa-brands fa-discord',
-        onclick: () => {
-            let formData = new FormData();
-            let msgText = "";
-            let imgblob;
-            if (sheet.object.startsWith("data")) {
-                imgblob = dataToBlob(sheet.object);
-                console.log(sheet.object);
-                const parts = sheet.object.split(';');
-                if (parts.length < 2) {
-                    return 'jpg';
-                }
-                const mimeType = parts[0].split(':')[1];
-                const fileExt = mimeType.split('/')[1];
-                const supportedFormats = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4'];
-                if (supportedFormats.includes(fileExt)) {
-                    const params = {
-                        username: game.user.name,
-                        avatar_url: generateimglink(game.user.avatar),
-                        content: ""
-                    }
-                    formData.append('files[0]', imgblob, "foundrytodiscord_sharedimage." + fileExt);
-                    formData.append('payload_json', JSON.stringify(params));
-                    api.sendMessage(formData, false, game.user.viewedScene);
-                }
-            }
-            else {
-                let link;
-                if (!sheet.object.includes("http")) {
-                    link = generateimglink(sheet.object);
-                }
-                else {
-                    link = sheet.object;
-                }
-                if (link === "") {
-                    console.error("foundrytodiscord | Your Invite URL isn't set! Image was not sent.");
-                    return;
-                }
-                msgText += link;
-                const params = {
-                    username: game.user.name,
-                    avatar_url: generateimglink(game.user.avatar),
-                    content: msgText
-                }
-                formData.append('payload_json', JSON.stringify(params));
-                api.sendMessage(formData, false, game.user.viewedScene);
-            }
-        }
-    })
-});
-
-Hooks.on('getChatLogEntryContext', (html, options) => {
-    options.unshift({
-        name: "Send to Discord",
-        icon: '<i class="fa-brands fa-discord"></i>',
-        condition: game.user.isGM, // optional condition
-        callback: li => {
-            let message = game.messages.get(li.attr("data-message-id"));
-            tryRequest(message, 'POST');
-        }
-    })
 });
 
 async function initSystemStatus() {
