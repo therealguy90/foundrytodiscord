@@ -27,6 +27,9 @@ While it will work with other systems, the extent of compatibility may vary. Reg
 **Monk's Token Bar:**
 - Supports Contested Rolls, Roll Requests, and Experience cards.
 
+**Forien's Quest Log:**
+- Adds a button to the window of a Quest that allows the details to be sent to Discord.
+
 **Pf2e Target Damage:**
 - Multiple targets are also sent to Discord.
 
