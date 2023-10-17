@@ -125,7 +125,7 @@ export function initMenuHooks() {
     //Forien's Quest Log
     Hooks.on('getQuestPreviewHeaderButtons', (app, buttons) => {
         buttons.unshift({
-            label: "Send to Discord",
+            label: "Send Quest Details to Discord",
             class: 'send-to-discord',
             icon: 'fa-brands fa-discord',
             onclick: () => {
