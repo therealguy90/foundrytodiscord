@@ -54,6 +54,9 @@ While it will work with other systems, the extent of compatibility may vary. Reg
 
 Follow the hints provided by the settings, and use the webhook link from your channel as the Webhook URL. Also, ensure your invite URL is public, which means you'll need to be port-forwarded as usual. If you can't forward ports due to limitations, you can use a network tunnel to expose your port to the internet. [Tailscale](https://www.reddit.com/r/FoundryVTT/comments/15lt40x/easy_public_foundry_vtt_hosting_using_tailscale) is recommended for this purpose.
 
+**FAQ: Is the Invite URL necessary for the module to work?**
+- The full features **require** a public invite link to be added to the config. Otherwise, Discord can't access images located on your server for avatars and etc. This should be done manually, since some people use network tunneling software to expose a port to the public internet.
+
 ---
 
 ### Full Features:
@@ -68,6 +71,10 @@ Do note that this follows message deletions as well. If a message is deleted in 
 
 ![Chat Mirroring Example](https://github.com/therealguy90/foundrytodiscord/assets/100253440/b7eb9ebd-e64d-4f1e-9ffc-5fd85f025a99)
 ![Chat Mirroring Example](https://github.com/therealguy90/foundrytodiscord/assets/100253440/caaa5350-fdf2-4aeb-a697-41f59551b506)
+
+#### Send to Discord
+
+Journal Entries, Image Popouts, and even individual chat messages (Revealing whispers does not automatically mirror them on Discord!) have a "Send to Discord" button on the window header, or on the chat message context menu. Journal Entries will send the current page you're looking at!
 
 #### Threaded Scenes
 
