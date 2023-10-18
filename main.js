@@ -46,6 +46,7 @@ Hooks.on('userConnected', async (user, connected) => {
 });
 
 Hooks.on('deleteScene', async scene => {
+    // Used for Threaded Scenes to delete a thread map if a scene is deleted.
     const setting = getThisModuleSetting('threadedChatMap');
     if (setting.hasOwnProperty(scene.id)) {
         delete setting[scene.id];
@@ -53,6 +54,12 @@ Hooks.on('deleteScene', async scene => {
     }
 });
 
+
+/* Since the module looks out for message deletions in real time, 
+* messages should not be deleted if the GM clears the chat log.
+* To avoid this, we add two event listeners for two layers of protection.
+* one is for the Clear Chat Log "trash can" button, the other is the "Yes" button on the confirmation dialog.
+*/
 Hooks.on("renderChatLog", (app, html) => {
     // Add event listener for the "Clear Chat Log" button
     const clearButton = html.find('a.delete.chat-flush');
@@ -73,6 +80,9 @@ Hooks.on("renderApplication", (app, html) => {
     }
 });
 
+// For the "Send to Discord" context menu on chat messages.
+// Seldom needed, since there's no hooks for revealing whispers,
+// so a manual send button must be implemented.
 Hooks.on('getChatLogEntryContext', (html, options) => {
     options.unshift({
         name: "Send to Discord",
@@ -84,7 +94,6 @@ Hooks.on('getChatLogEntryContext', (html, options) => {
         }
     })
 });
-
 
 let requestQueue = [];
 let isProcessing = false;
@@ -107,6 +116,8 @@ Hooks.once("ready", function () {
     console.log("foundrytodiscord | Ready");
 });
 
+
+// For Server Status Message
 async function initSystemStatus() {
     if (getThisModuleSetting('serverStatusMessage')) {
         if (getThisModuleSetting('messageID') && getThisModuleSetting('messageID') !== "") {
@@ -288,6 +299,14 @@ Hooks.on('deleteChatMessage', async (msg) => {
     }
 });
 
+/* A brief explanation of the queueing system:
+* All requests are put into a queue such that everything executes in the order the hooks are detected in-game.
+* This also allows any and all requests to stop if a rate limit is reached.
+* The queue consists of a hook string, a FormData object, the message id, and the request method.
+* The client will attempt to send a message thrice, and if it fails every time, the message gets discarded from the queue.
+* A successfully sent message is added to the object stored in a hidden module setting. This allows all clients to access
+* previously-sent messages, and for the messages to not be erased after the client reloads their browser.
+*/
 function tryRequest(msg, method, hookOverride = "") {
     let requestParams = messageParse(msg);
     if (requestParams) {
