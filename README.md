@@ -66,18 +66,21 @@ Follow the hints provided by the settings, and use the webhook link from your ch
 
 #### Chat Mirroring
 
-Publicly-seen messages are sent to Discord while attempting to block as much metagame data as possible, depending on your other modules that may change how ChatMessages display information. This works well with the "anonymous" module.
+Publicly-seen messages are sent to Discord while **attempting to block as much metagame data as possible**, depending on your other modules that may change how ChatMessages display information. This works well with the "anonymous" module.
 
 Screenshots are from a Pathfinder Second Edition game. Compatibility with other systems may vary, but regular rolls, regular chat cards, and chat will work fine on ANY system.
+On DnD5e, roll cards from midi-qol are also supported.
 
-Do note that this follows message deletions as well. If a message is deleted in Foundry, it will also be deleted in the channel. Although this can be disabled in the config, it is recommended to keep it on for any "oopsie" moments.
+Do note that this follows message deletions as well. If a message is deleted in Foundry, it will also be deleted in the channel. Although this can be disabled in the config, it is recommended to keep it on for any "oopsie" moments. When clicking on Reveal Message or Hide Message, it will also mirror it onto Discord, unless you have Ignore Whispers turned off, in which case whispers will always be displayed.
+
+There is currently no config to disable the hiding of metagame information, and it is currently not in consideration. 
 
 ![Chat Mirroring Example](https://github.com/therealguy90/foundrytodiscord/assets/100253440/b7eb9ebd-e64d-4f1e-9ffc-5fd85f025a99)
 ![Chat Mirroring Example](https://github.com/therealguy90/foundrytodiscord/assets/100253440/caaa5350-fdf2-4aeb-a697-41f59551b506)
 
 #### Send to Discord
 
-Journal Entries, Image Popouts, and even individual chat messages (Revealing whispers does not automatically mirror them on Discord!) have a "Send to Discord" button on the window header, or on the chat message context menu. Journal Entries will send the current page you're looking at!
+Journal Entries, Image Popouts, and even individual chat messages have a "Send _ to Discord" button on the window header, or on the chat message context menu. Journal Entries will send the current page you're looking at!
 
 #### Threaded Scenes
 
