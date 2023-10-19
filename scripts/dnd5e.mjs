@@ -150,7 +150,7 @@ export function DnD5e_reformatMessage(text) {
 
         //replace UUID if custom name "{}" is not present (redundancy)
         regex = /@UUID\[(.*?)\]/g;
-        reformattedText = reformattedText.replace(regex, (_, text) => generic.getNameFromItem(text));
+        reformattedText = reformattedText.replace(regex, (_, text) => ":baggage_claim: `" + fromUuidSync(text).name + "`");
 
         //replace Actor if custom name "{}" is not present (redundancy)
         regex = /@Actor\[(.*?)\]/g;

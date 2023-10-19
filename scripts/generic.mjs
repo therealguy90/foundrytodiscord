@@ -219,52 +219,6 @@ export function getLocalizedText(localizationKey) {
     return game.i18n.localize(localizationKey);
 }
 
-export function getNameFromItem(itempath) {
-    let itemID = ""
-    let itemName = ""
-    const parts = (itempath).split('.');
-    if (parts.length > 1) {
-        itemID = parts[parts.length - 1];
-    }
-    switch (parts[0]) {
-        case "Actor":
-            let actorID = parts[1];
-            let actor = game.actors.get(actorID);
-            let item = actor.items.get(itemID);
-            itemName = item ? item.name : undefined;
-            break;
-        case "Macro":
-            let macroID = parts[1];
-            let macro = game.macros.get(actorID);
-            itemName = macro ? macro.name : undefined;
-            break;
-        case "Compendium":
-            let compendiumName = ""
-            for (let i = 1; i < parts.length - 2; i++) {
-                compendiumName = compendiumName + parts[i];
-                if (i < parts.length - 3) {
-                    compendiumName = compendiumName + ".";
-                }
-            }
-            itemName = game.packs.get(compendiumName).get(itemID).name;
-            break;
-        default:
-            if (itemID == "") {
-                itemID = (itempath);
-            }
-            itemName = ":baggage_claim: `" + game.items.get(itemID).name + "`";
-            return itemName;
-            break;
-    }
-
-    if (itemName) {
-        return ":baggage_claim: `" + itemName + "`";
-    }
-    else { //Failsafe just in case.
-        return ":baggage_claim: `undefined`";
-    }
-}
-
 //Separates @Check arguments into individual objects, might be used in some systems
 export function parseCheckString(checkString) {
     let check = {};
@@ -722,7 +676,7 @@ export function reformatMessage(text) {
 
         //replace UUID if custom name is not present (redundancy)
         regex = /@UUID\[(.*?)\]/g;
-        reformattedText = reformattedText.replace(regex, (_, text) => getNameFromItem(text));
+        reformattedText = reformattedText.replace(regex, (_, text) => ":baggage_claim: `" + fromUuidSync(text).name + "`");
 
         //replace Actor if custom name is not present (redundancy)
         regex = /@Actor\[(.*?)\]/g;
