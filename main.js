@@ -81,8 +81,7 @@ Hooks.on("renderApplication", (app, html) => {
 });
 
 // For the "Send to Discord" context menu on chat messages.
-// Seldom needed, since there's no hooks for revealing whispers,
-// so a manual send button must be implemented.
+// Seldom needed, but if chat mirroring is disabled, this is one way to circumvent it.
 Hooks.on('getChatLogEntryContext', (html, options) => {
     options.unshift({
         name: "Send to Discord",
@@ -222,16 +221,16 @@ Hooks.on('createChatMessage', async (msg) => {
     }
 });
 
-Hooks.on('updateChatMessage', async (msg) => {
+Hooks.on('updateChatMessage', async (msg, change, options) => {
     let tries = 10; // Number of tries before giving up
-    const checkExist = async () => {
+    const checkExist = async (msgChange) => {
         if (!getThisModuleSetting('messageList')[msg.id] && !getThisModuleSetting('clientMessageList')[msg.id]) {
             if (tries > 0) {
                 tries--;
                 await wait(500);
                 await checkExist(); // Recursively retry
             } else {
-                console.log('foundrytodiscord | Attempt to edit message was unsuccessful due to the message not existing on Discord.');
+                console.log(`foundrytodiscord | Attempt to ${msgChange} message was unsuccessful due to the message not existing on Discord.`);
             }
         } else {
             let editHook;
@@ -241,24 +240,27 @@ Hooks.on('updateChatMessage', async (msg) => {
             } else {
                 msgObjects = getThisModuleSetting('clientMessageList')[msg.id];
             }
-            msgObjects.forEach(msgObject => {
-                const url = msgObject.url;
-                const message = msgObject.message;
-                if (url.split('?').length > 1) {
-                    const querysplit = url.split('?');
-                    editHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
-                } else {
-                    editHook = url + '/messages/' + message.id;
+            if (msgObjects) {
+                if (msgChange === "edit") {
+                    msgObjects.forEach(msgObject => {
+                        const url = msgObject.url;
+                        const message = msgObject.message;
+                        if (url.split('?').length > 1) {
+                            const querysplit = url.split('?');
+                            editHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
+                        } else {
+                            editHook = url + '/messages/' + message.id;
+                        }
+                        tryRequest(msg, 'PATCH', editHook);
+                    });
                 }
-                tryRequest(msg, 'PATCH', editHook);
-            });
+                else if (msgChange === "delete") {
+                    deleteAll(msgObjects, msg);
+                }
+            }
         }
     };
-
     flushLog = false;
-    if (getThisModuleSetting("ignoreWhispers") && msg.whisper.length > 0) {
-        return;
-    }
     if (game.user.id !== getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") {
         initMainGM();
         if (game.users.filter(user => user.isGM && user.active).length > 0 || (!getThisModuleSetting("allowNoGM") && game.user.id !== getThisModuleSetting("mainUserId") && game.user.id !== game.users.filter(user => user.active).sort((a, b) => a.name.localeCompare(b.name))[0].id)) {
@@ -266,38 +268,60 @@ Hooks.on('updateChatMessage', async (msg) => {
         }
     }
     if (!getThisModuleSetting('disableMessages')) {
-        await checkExist();
+        if (getThisModuleSetting("ignoreWhispers")) {
+            if (change.whisper?.length > 1) {
+                await checkExist("delete");
+                return;
+            }
+            else if (change.whisper?.length === 0) {
+                let msgObjects;
+                if (game.users.filter(user => user.isGM && user.active).length > 0) {
+                    msgObjects = getThisModuleSetting('messageList')[msg.id];
+                } else {
+                    msgObjects = getThisModuleSetting('clientMessageList')[msg.id];
+                }
+                if (!msgObjects || msgObjects.length === 0) {
+                    tryRequest(msg, "POST");
+                    return;
+                }
+            }
+        }
+        await checkExist("edit");
     }
 });
 
 Hooks.on('deleteChatMessage', async (msg) => {
     if ((!flushLog && !getThisModuleSetting('disableDeletions')) && ((game.userId === getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") || (getThisModuleSetting("allowNoGM") && game.users.filter(user => user.isGM && user.active).length === 0 && game.user.id === game.users.filter(user => user.active).sort((a, b) => a.name.localeCompare(b.name))[0].id))) {
         if (getThisModuleSetting('messageList').hasOwnProperty(msg.id) || getThisModuleSetting('clientMessageList').hasOwnProperty(msg.id)) {
-            let deleteHook;
             let msgObjects;
             if (game.users.filter(user => user.isGM && user.active).length > 0) {
                 msgObjects = getThisModuleSetting('messageList')[msg.id];
             } else {
                 msgObjects = getThisModuleSetting('clientMessageList')[msg.id];
             }
-            msgObjects.forEach(msgObject => {
-                const url = msgObject.url;
-                const message = msgObject.message;
-                if (url.split('?').length > 1) {
-                    const querysplit = url.split('?');
-                    deleteHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
-                } else {
-                    deleteHook = url + '/messages/' + message.id;
-                }
-                requestQueue.push({ hook: deleteHook, formData: null, msgID: msg.id, method: 'DELETE' });
-                if (!isProcessing) {
-                    isProcessing = true;
-                    requestOnce();
-                }
-            });
+            deleteAll(msgObjects, msg);
         }
     }
 });
+
+function deleteAll(msgObjects, msg) {
+    let deleteHook;
+    msgObjects.forEach(msgObject => {
+        const url = msgObject.url;
+        const message = msgObject.message;
+        if (url.split('?').length > 1) {
+            const querysplit = url.split('?');
+            deleteHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
+        } else {
+            deleteHook = url + '/messages/' + message.id;
+        }
+        requestQueue.push({ hook: deleteHook, formData: null, msgID: msg.id, method: 'DELETE', dmsgID: message.id });
+        if (!isProcessing) {
+            isProcessing = true;
+            requestOnce();
+        }
+    });
+}
 
 /* A brief explanation of the queueing system:
 * All requests are put into a queue such that everything executes in the order the hooks are detected in-game.
@@ -341,7 +365,7 @@ function tryRequest(msg, method, hookOverride = "") {
             waitHook = requestParams.hook + "?wait=true";
         }
         formData.append('payload_json', JSON.stringify(requestParams.params));
-        requestQueue.push({ hook: hookOverride === "" ? waitHook : hookOverride, formData: formData, msgID: msg.id, method: method });
+        requestQueue.push({ hook: hookOverride === "" ? waitHook : hookOverride, formData: formData, msgID: msg.id, method: method, dmsgID: null });
         if (!isProcessing) {
             isProcessing = true;
             requestOnce();
@@ -350,7 +374,7 @@ function tryRequest(msg, method, hookOverride = "") {
 }
 
 async function requestOnce(retry = 0) {
-    const { hook, formData, msgID, method } = requestQueue[0];
+    const { hook, formData, msgID, method, dmsgID } = requestQueue[0];
     if (method === 'PATCH') {
         console.log("foundrytodiscord | Attempting to edit message...");
     }
@@ -378,6 +402,11 @@ async function requestOnce(retry = 0) {
             if (method === 'POST') {
                 addSentMessage(msgID, { url: response.url, message: await response.json() });
             }
+            if (method === 'DELETE') {
+                if (dmsgID) {
+                    deleteSentMessage(msgID, dmsgID);
+                }
+            }
             requestQueue.shift();
             console.log("foundrytodiscord | " + method + " request succeeded.");
             progressQueue();
@@ -393,7 +422,10 @@ async function requestOnce(retry = 0) {
     } catch (error) {
         console.error('foundrytodiscord | Fetch error:', error);
         if (retry >= 2) {
-            console.log("foundrytodiscord | Message discarded from the queue after retrying 2 times.");
+            console.log("foundrytodiscord | Request discarded from the queue after retrying 2 times.");
+            if (method == "DELETE" && error.message === "404") {
+                deleteSentMessage(msgID, dmsgID);
+            }
             requestQueue.shift();
             retry = 0;
         }
@@ -551,6 +583,31 @@ function addSentMessage(msgID, params) {
     }
 }
 
+function deleteSentMessage(msgID, dmsgID) {
+    let messageList;
+    if (game.users.filter(user => user.active && user.isGM).length > 0) {
+        messageList = game.settings.get('foundrytodiscord', 'messageList');
+    }
+    else {
+        messageList = game.settings.get('foundrytodiscord', 'clientMessageList');
+    }
+    if (messageList.hasOwnProperty(msgID)) {
+        let index = -1;
+        for (let i = 0; i < messageList[msgID].length; i++) {
+            if (messageList[msgID][i].message.id === dmsgID) {
+                index = i;
+                break;
+            }
+        }
+        messageList[msgID].splice(index, 1);
+    }
+    if (game.user.isGM) {
+        game.settings.set('foundrytodiscord', 'messageList', messageList);
+    }
+    else {
+        game.settings.set('foundrytodiscord', 'clientMessageList', messageList);
+    }
+}
 function wait(milliseconds) {
     return new Promise(resolve => {
         setTimeout(resolve, milliseconds);
