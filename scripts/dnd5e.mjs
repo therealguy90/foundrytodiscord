@@ -41,7 +41,7 @@ export function messageParserDnD5e(msg) {
         * for PF2e and DnD5e, this would be actor.system.traits.languages.value
         * polyglotize() can be edited for other systems.
         */
-        if (game.modules.get("polyglot")?.active && generic.propertyExists(msg, "flags.polyglot.language")) {
+        if (game.modules.get("polyglot")?.active && msg.flags?.polyglot?.language) {
             if (!getThisModuleSetting("commonLanguages").toLowerCase().includes(msg.flags.polyglot.language)) {
                 if (getThisModuleSetting('includeOnly') == "") {
                     constructedMessage = generic.polyglotize(msg);
@@ -101,7 +101,7 @@ function DnD5e_createCardEmbed(message) {
     }
     let desc = "";
     let speakerActor = undefined;
-    if (generic.propertyExists(message, "speaker.actor")) {
+    if (message.speaker?.actor) {
         speakerActor = game.actors.get(message.speaker.actor);
     }
 

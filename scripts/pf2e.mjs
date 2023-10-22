@@ -52,7 +52,7 @@ export function messageParserPF2e(msg) {
         /*Attempt polyglot support. This will ONLY work if the structure is similar:
         * for PF2e and DnD5e, this would be actor.system.traits.languages.value
         */
-        if (game.modules.get("polyglot")?.active && generic.propertyExists(msg, "flags.polyglot.language")) {
+        if (game.modules.get("polyglot")?.active && msg.flags?.polyglot?.language) {
             if (!getThisModuleSetting("commonLanguages").toLowerCase().includes(msg.flags.polyglot.language)) {
                 if (getThisModuleSetting('includeOnly') == "") {
                     constructedMessage = generic.polyglotize(msg);
@@ -121,7 +121,7 @@ function PF2e_createCardEmbed(message, cardType) {
         desc = PF2e_parseTraits(message.flavor);
     }
     let speakerActor = undefined;
-    if (generic.propertyExists(message, "speaker.actor")) {
+    if (message.speaker?.actor) {
         speakerActor = game.actors.get(message.speaker.actor);
     }
 
@@ -215,7 +215,7 @@ function PF2e_createRollEmbed(message) {
         });
     }
     else {
-        if (generic.propertyExists(message, "flags.pf2e.context.target.token")) {
+        if (message.flags?.pf2e?.context?.target?.token) {
             desc = desc + "**:dart:Target: **";
             const targetTokenId = message.flags.pf2e.context.target.token.split(".")[3];
             const targetToken = game.scenes.get(message.speaker.scene).tokens.get(targetTokenId);
@@ -249,7 +249,7 @@ function PF2e_createRollEmbed(message) {
                 }
                 desc += "||(" + message.rolls[i].result + ")||";
             }
-            if (generic.propertyExists(message, "flags.pf2e.context.type") && message.flags.pf2e.context.type == "damage-roll") {
+            if (message.flags?.pf2e?.context?.type && message.flags.pf2e.context.type == "damage-roll") {
                 if (title === "") {
                     title = "Damage Roll";
                 }
@@ -293,7 +293,7 @@ function PF2e_parseDamageTypes(baserolls) {
                 let precision = false;
                 let splash = false;
                 roll.terms.forEach((typeterm, k) => {
-                    if (generic.propertyExists(typeterm, "term.options.flavor")) {
+                    if (typeterm.term?.options?.flavor) {
                         precision = typeterm.term.options.flavor == "precision";
                         splash = typeterm.term.options.flavor == "splash";
                     }
@@ -434,8 +434,7 @@ function PF2e_parseTraits(text) {
             catch (error) {
             }
         }
-        if (generic.propertyExists(tags, "length")) {
-
+        if (tags?.length) {
             for (let i = 0; i < tags.length; i++) {
                 traits = traits + "[" + tags[i] + "] ";
             }

@@ -31,7 +31,7 @@ export function messageParserGeneric(msg) {
         * for PF2e and DnD5e, this would be actor.system.traits.languages.value
         * the polyglotize() function should be edited for other systems
         */
-        if (game.modules.get("polyglot")?.active && propertyExists(msg, "flags.polyglot.language")) {
+        if (game.modules.get("polyglot")?.active && msg.flags?.polyglot?.language) {
             if (!getThisModuleSetting("commonLanguages").toLowerCase().includes(msg.flags.polyglot.language)) {
                 if (getThisModuleSetting("includeOnly") == "") {
                     constructedMessage = polyglotize(msg);
@@ -124,16 +124,12 @@ function generateRequestParams(message, msgText, hookEmbed, imgurl) {
     if (anonEnabled()) {
         let anon = game.modules.get('anonymous').api;
         //First priority: Use speaker token name and check if actor's name is visible through anonymous
-        if (propertyExists(message, "speaker.token")) {
-            if (message.speaker.token !== "") {
-                const scene = game.scenes.get(message.speaker.scene);
-                if (scene) {
-                    const speakerToken = scene.tokens.get(message.speaker.token);
-                    if (speakerToken) {
-                        if (propertyExists(speakerToken, "actor")) {
-                            speakerActor = speakerToken.actor
-                        }
-                    }
+        if (message?.speaker?.token && message.speaker.token !== "") {
+            const scene = game.scenes.get(message.speaker.scene);
+            if (scene) {
+                const speakerToken = scene.tokens.get(message.speaker.token);
+                if (speakerToken?.actor) {
+                    speakerActor = speakerToken.actor
                 }
             }
         }
@@ -283,7 +279,7 @@ export function createCardEmbed(message) {
     }
     let desc = "";
     let speakerActor = undefined;
-    if (propertyExists(message, "speaker.actor")) {
+    if (message.speaker?.actor) {
         speakerActor = game.actors.get(message.speaker.actor);
     }
 
@@ -549,15 +545,13 @@ export function tokenBar_isTokenBarCard(htmlString) {
 
 export function isOwnedByPlayer(actor) {
     let isOwned = false;
-    let playerIDs = game.users.filter((user) => user.isGM === false).map((player => player.id));
+    let playerIDs = game.users.filter((user) => !user.isGM).map((player => player.id));
     if (actor.ownership.default === 3) {
         isOwned = true;
     }
     playerIDs.forEach(id => {
-        if (propertyExists(actor, "ownership." + id)) {
-            if (actor.ownership[id] === 3) {
-                isOwned = true;
-            }
+        if (actor.ownership[id] && actor.ownership[id] === 3) {
+            isOwned = true;
         }
     });
     return isOwned;
@@ -754,32 +748,26 @@ function replaceGenericAtTags(text) {
 }
 
 function generateDiscordAvatar(message) {
-    if (propertyExists(message, "speaker.scene") && message.speaker.scene !== null) {
-        if (message.speaker.token) {
-            const speakerToken = game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token);
-            if (propertyExists(speakerToken, "texture.src")) {
-                if (speakerToken.texture.src != "") {
-                    return generateimglink(speakerToken.texture.src);
-                }
-            }
+    if (message.speaker?.scene && message.speaker.scene !== null && message.speaker.token) {
+        const speakerToken = game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token);
+        if (speakerToken.texture?.src && speakerToken.texture.src != "") {
+            return generateimglink(speakerToken.texture.src);
         }
     }
 
-    if (propertyExists(message, "speaker.actor") && message.speaker.actor !== null) {
+    if (message.speaker?.actor && message.speaker.actor !== null) {
         const speakerActor = game.actors.get(message.speaker.actor);
-        if (speakerActor) {
-            if (propertyExists(speakerActor, "prototypeToken.texture.src")) {
-                return generateimglink(speakerActor.prototypeToken.texture.src);
-            }
+        if (speakerActor?.prototypeToken?.texture?.src) {
+            return generateimglink(speakerActor.prototypeToken.texture.src);
         }
     }
 
     const aliasMatchedActor = game.actors.find(actor => actor.name === message.alias);
-    if (propertyExists(aliasMatchedActor, "prototypeToken.texture.src")) {
+    if (aliasMatchedActor?.prototypeToken?.texture?.src) {
         return generateimglink(aliasMatchedActor.prototypeToken.texture.src);
     }
 
-    return generateimglink(message.user.avatar);
+    return generateimglink(message.user?.avatar);
 }
 
 export function generateimglink(img) {
@@ -809,23 +797,6 @@ export function generateimglink(img) {
     else {
         return getDefaultAvatarLink();
     }
-}
-
-//function to crawl through several objects and check if the last one exists or until one is undefined
-//example usage: propertyExists(msg, "speaker.token");
-export function propertyExists(jsonObj, propertyPath) {
-    const properties = propertyPath.split('.');
-    let currentObj = jsonObj;
-
-    for (const property of properties) {
-        if (currentObj && typeof currentObj === 'object' && property in currentObj) {
-            currentObj = currentObj[property];
-        } else {
-            return false;
-        }
-    }
-
-    return true;
 }
 
 export function getDefaultAvatarLink() {
