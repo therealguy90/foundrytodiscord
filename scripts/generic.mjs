@@ -215,10 +215,6 @@ export function createHTMLDiceRollEmbed(message) {
     return [{ title: title, description: desc }];
 }
 
-export function getLocalizedText(localizationKey) {
-    return game.i18n.localize(localizationKey);
-}
-
 //Separates @Check arguments into individual objects, might be used in some systems
 export function parseCheckString(checkString) {
     let check = {};
@@ -651,44 +647,110 @@ export function htmlCodeCleanup(htmltext) {
 *  parseHTMLText is generally universal.
 */
 export function reformatMessage(text) {
-    let reformattedText = ""
-    //First check if the text is formatted in HTML to use a different function
-    //parse Localize first, since it will have html elements
-    let regex = /@Localize\[(.*?)\]/g;
-    reformattedText = text.replace(regex, (_, text) => getLocalizedText(text));
+    let reformattedText = replaceGenericAtTags(text);
     const isHtmlFormatted = /<[a-z][\s\S]*>/i.test(reformattedText);
     if (isHtmlFormatted) {
         reformattedText = parseHTMLText(reformattedText);
         reformattedText = reformatMessage(reformattedText); //call this function again as a failsafe for @ tags
     }
-    else {
-        //replace UUIDs to be consistent with Foundry
-        regex = /@UUID\[[^\]]+\]\{([^}]+)\}/g;
-        reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
+    return reformattedText;
+}
 
-        //replace Actor
-        regex = /@Actor\[[^\]]+\]\{([^}]+)\}/g;
-        reformattedText = reformattedText.replace(regex, ':bust_in_silhouette: `$1`');
+export function replaceGenericAtTags(text) {
+    const regexAtTags = /@([^]+?)\[([^]+?)\](?:\{([^]+?)\})?/g;
+    let reformattedText = text.replace(regexAtTags, (match, atTagType, identifier, customText) => {
+        let toReplace = "";
+        let document;
 
-        //replace compendium links
-        regex = /@Compendium\[[^\]]+\]\{([^}]+)\}/g;
-        reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
-
-        //replace UUID if custom name is not present (redundancy)
-        regex = /@UUID\[(.*?)\]/g;
-        reformattedText = reformattedText.replace(regex, (_, text) => ":baggage_claim: `" + fromUuidSync(text).name + "`");
-
-        //replace Actor if custom name is not present (redundancy)
-        regex = /@Actor\[(.*?)\]/g;
-        reformattedText = reformattedText.replace(regex, (_, text) => {
-            return ':bust_in_silhouette: `' + game.actors.get(text).name + '`';
-        });
-
-        //replace Checks
-        regex = /@Check\[[^\]]+\]{([^}]+)}/g;
-        reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
-    }
-
+        let isId = true;
+        if (identifier.length !== 16) {
+            isId = false;
+        }
+        let doctype = "";
+        switch (atTagType) {
+            case "Localize":
+                let replaced = true;
+                toReplace = replaceGenericAtTags(game.i18n.localize(identifier));
+                /*while (replaced) {
+                    replaced = false;
+                    const temp = replaceGenericAtTags(toReplace);
+                    if (temp !== toReplace) {
+                        toReplace = temp;
+                        replaced = true;
+                    }
+                }*/
+                break;
+            case "UUID":
+                document = fromUuidSync(identifier);
+                break;
+            case "Compendium":
+                document = fromUuidSync("Compendium." + identifier);
+                break;
+            case "Actor":
+                doctype = "actors";
+                break;
+            case "Item":
+                doctype = "items";
+                break;
+            case "Scene":
+                doctype = "scenes";
+                break;
+            case "Macro":
+                doctype = "macros";
+                break;
+            case "JournalEntry":
+                doctype = "journals";
+                break;
+            case "RollTable":
+                doctype = "tables";
+                break;
+            default:
+                document = undefined;
+                break;
+        }
+        if (doctype !== "") {
+            if (isId) {
+                document = game[doctype].get(identifier);
+            }
+            else {
+                document = game[doctype].find(document => document.name === identifier);
+            }
+        }
+        if (document) {
+            switch (true) {
+                case document instanceof Actor:
+                    toReplace += ":bust_in_silhouette: ";
+                    break;
+                case document instanceof Scene:
+                    toReplace += ":map: ";
+                    break;
+                case document instanceof Macro:
+                    toReplace += ":link: ";
+                    break;
+                case document instanceof JournalEntry:
+                    toReplace += ":book: ";
+                    break;
+                case document instanceof RollTable:
+                    toReplace += ":page_facing_up: ";
+                    break;
+                default:
+                    toReplace += ":baggage_claim: ";
+                    break;
+            }
+        }
+        if (toReplace !== "") {
+            if (customText && customText !== "") {
+                toReplace += "`" + customText + "`";
+            }
+            else if (document) {
+                toReplace += "`" + document.name + "`";
+            }
+        }
+        else {
+            toReplace = match;
+        }
+        return toReplace;
+    });
     return reformattedText;
 }
 

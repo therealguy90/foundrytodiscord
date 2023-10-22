@@ -125,49 +125,17 @@ function DnD5e_createCardEmbed(message) {
 }
 
 export function DnD5e_reformatMessage(text) {
-    let reformattedText = ""
-    //First check if the text is formatted in HTML to use a different function
-    //parse Localize first, since it will have html elements
-    let regex = /@Localize\[(.*?)\]/g;
-    reformattedText = text.replace(regex, (_, text) => generic.getLocalizedText(text));
+    let reformattedText = generic.replaceGenericAtTags(text);
     const isHtmlFormatted = /<[a-z][\s\S]*>/i.test(reformattedText);
     if (isHtmlFormatted) {
         reformattedText = generic.parseHTMLText(reformattedText);
-        reformattedText = DnD5e_reformatMessage(reformattedText); //call this function again as a failsafe for @ tags
+        reformattedText = DnD5e_reformatMessage(reformattedText);
     }
-    else {
-        //replace UUIDs to be consistent with Foundry
-        regex = /@UUID\[[^\]]+\]\{([^}]+)\}/g;
-        reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
-
-        //replace Actor
-        regex = /@Actor\[[^\]]+\]\{([^}]+)\}/g;
-        reformattedText = reformattedText.replace(regex, ':bust_in_silhouette: `$1`');
-
-        //replace compendium links
-        regex = /@Compendium\[[^\]]+\]\{([^}]+)\}/g;
-        reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
-
-        //replace UUID if custom name "{}" is not present (redundancy)
-        regex = /@UUID\[(.*?)\]/g;
-        reformattedText = reformattedText.replace(regex, (_, text) => ":baggage_claim: `" + fromUuidSync(text).name + "`");
-
-        //replace Actor if custom name "{}" is not present (redundancy)
-        regex = /@Actor\[(.*?)\]/g;
-        reformattedText = reformattedText.replace(regex, (_, text) => {
-            return ':bust_in_silhouette: `' + game.actors.get(text).name + '`';
-        });
-
-        //replace Inline Roll Commands
-        regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
-        reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
-        regex = /\[\[\/(.*?) (.*?)\]\]/g;
-        reformattedText = reformattedText.replace(regex, ':game_die: `$2`');
-        /*  FOR DND: USE SAME METHOD AS ABOVE FOR REPLACING @ TAGS, such as @Actor[]{}, etc.
-        *   Not sure what 5e uses.
-        */
-    }
-
+    //replace Inline Roll Commands
+    let regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
+    reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
+    regex = /\[\[\/(.*?) (.*?)\]\]/g;
+    reformattedText = reformattedText.replace(regex, ':game_die: `$2`');
     return reformattedText;
 }
 
@@ -377,10 +345,10 @@ function midiqol_createSavesDisplayCard(message) {
     let desc = "";
     if (element.textContent !== "" && game.settings.get('midi-qol', 'ConfigSettings').displaySaveDC) {
         title = element.querySelector(".midi-qol-nobox.midi-qol-bigger-text");
-        if((!title || title === "" || !title.innerHTML) && message.flavor !== ""){
+        if ((!title || title === "" || !title.innerHTML) && message.flavor !== "") {
             title = message.flavor;
         }
-        else{
+        else {
             title = title.innerHTML;
         }
     }

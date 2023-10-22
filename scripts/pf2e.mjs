@@ -240,11 +240,11 @@ function PF2e_createRollEmbed(message) {
         //Add roll information to embed:
         for (let i = 0; i < message.rolls.length; i++) {
             desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
-            if(generic.isOwnedByPlayer(game.actors.get(message.speaker?.actor)) && message.rolls[i].dice[0].faces === 20){
-                if(message.rolls[i].result.startsWith('20 ')){
+            if (generic.isOwnedByPlayer(game.actors.get(message.speaker?.actor)) && message.rolls[i].dice[0].faces === 20) {
+                if (message.rolls[i].result.startsWith('20 ')) {
                     desc += " __(Nat 20!)__";
                 }
-                else if(message.rolls[i].result.startsWith('1 ')){
+                else if (message.rolls[i].result.startsWith('1 ')) {
                     desc += " __(Nat 1)__";
                 }
                 desc += "||(" + message.rolls[i].result + ")||";
@@ -267,11 +267,11 @@ function PF2e_createRollEmbed(message) {
     else {
         desc = desc + "~~:game_die:Result: " + "__" + PF2e_getDiscardedRoll(message) + "__~~\n";
         desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[0].total + "**__";
-        if(generic.isOwnedByPlayer(game.actors.get(message.speaker?.actor)) && message.rolls[i].dice[0].faces === 20){
-            if(message.rolls[i].result.startsWith('20 ')){
+        if (generic.isOwnedByPlayer(game.actors.get(message.speaker?.actor)) && message.rolls[i].dice[0].faces === 20) {
+            if (message.rolls[i].result.startsWith('20 ')) {
                 desc += " __(Nat 20!)__";
             }
-            else if(message.rolls[i].result.startsWith('1 ')){
+            else if (message.rolls[i].result.startsWith('1 ')) {
                 desc += " __(Nat 1)__";
             }
             desc += "||(" + message.rolls[i].result + ")||";
@@ -450,46 +450,18 @@ function PF2e_parseTraits(text) {
 }
 
 export function PF2e_reformatMessage(text) {
-    let reformattedText = ""
-    //First check if the text is formatted in HTML to use a different function
-    //parse Localize first, since it will have html elements
-    let regex = /@Localize\[(.*?)\]/g;
-    reformattedText = text.replace(regex, (_, text) => generic.getLocalizedText(text));
+    let reformattedText = generic.replaceGenericAtTags(text);
     const isHtmlFormatted = /<[a-z][\s\S]*>/i.test(reformattedText);
     if (isHtmlFormatted) {
         reformattedText = PF2e_parseHTMLText(reformattedText);
         reformattedText = PF2e_reformatMessage(reformattedText); //call this function again as a failsafe for @ tags
     }
     else {
-        //replace UUIDs to be consistent with Foundry
-        regex = /@UUID\[[^\]]+\]\{([^}]+)\}/g;
-        reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
-
-        //replace Actor
-        regex = /@Actor\[[^\]]+\]\{([^}]+)\}/g;
-        reformattedText = reformattedText.replace(regex, ':bust_in_silhouette: `$1`');
-
-        //replace compendium links
-        regex = /@Compendium\[[^\]]+\]\{([^}]+)\}/g;
-        reformattedText = reformattedText.replace(regex, ':baggage_claim: `$1`');
-
         //replace @Damage appropriately (for PF2e)
         reformattedText = PF2e_replaceDamageFormat(reformattedText);
-
-        //replace UUID if custom name is not present (redundancy)
-        regex = /@UUID\[(.*?)\]/g;
-        reformattedText = reformattedText.replace(regex, (_, text) => ":baggage_claim: `" + fromUuidSync(text).name + "`");
-
-        //replace Actor if custom name is not present (redundancy)
-        regex = /@Actor\[(.*?)\]/g;
-        reformattedText = reformattedText.replace(regex, (_, text) => {
-            return ':bust_in_silhouette: `' + game.actors.get(text).name + '`';
-        });
-
         //replace Checks
-        regex = /@Check\[[^\]]+\]{([^}]+)}/g;
+        let regex = /@Check\[[^\]]+\]{([^}]+)}/g;
         reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
-
         //replace checks without name labels, different arguments on every system for @Check(if it exists), so pf2e gets a different one
         regex = /@Check\[(.*?)\]/g;
         reformattedText = reformattedText.replace(regex, (_, text) => PF2e_getNameFromCheck(text));
@@ -497,7 +469,7 @@ export function PF2e_reformatMessage(text) {
         regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
         reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
         regex = /\[\[\/(.*?) (.*?)\]\]/g;
-        reformattedText = reformattedText.replace(regex, ':game_die: `$2`');    
+        reformattedText = reformattedText.replace(regex, ':game_die: `$2`');
     }
 
     return reformattedText.trim();
