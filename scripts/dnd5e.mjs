@@ -125,12 +125,8 @@ function DnD5e_createCardEmbed(message) {
 }
 
 export function DnD5e_reformatMessage(text) {
-    let reformattedText = generic.replaceGenericAtTags(text);
-    const isHtmlFormatted = /<[a-z][\s\S]*>/i.test(reformattedText);
-    if (isHtmlFormatted) {
-        reformattedText = generic.parseHTMLText(reformattedText);
-        reformattedText = DnD5e_reformatMessage(reformattedText);
-    }
+    let reformattedText = generic.reformatMessage(text);
+
     //replace Inline Roll Commands
     let regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
     reformattedText = reformattedText.replace(regex, ':game_die: `$1`');

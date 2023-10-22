@@ -651,7 +651,6 @@ export function reformatMessage(text) {
     const isHtmlFormatted = /<[a-z][\s\S]*>/i.test(reformattedText);
     if (isHtmlFormatted) {
         reformattedText = parseHTMLText(reformattedText);
-        reformattedText = reformatMessage(reformattedText); //call this function again as a failsafe for @ tags
     }
     return reformattedText;
 }

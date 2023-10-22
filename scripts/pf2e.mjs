@@ -450,27 +450,20 @@ function PF2e_parseTraits(text) {
 }
 
 export function PF2e_reformatMessage(text) {
-    let reformattedText = generic.replaceGenericAtTags(text);
-    const isHtmlFormatted = /<[a-z][\s\S]*>/i.test(reformattedText);
-    if (isHtmlFormatted) {
-        reformattedText = PF2e_parseHTMLText(reformattedText);
-        reformattedText = PF2e_reformatMessage(reformattedText); //call this function again as a failsafe for @ tags
-    }
-    else {
-        //replace @Damage appropriately (for PF2e)
-        reformattedText = PF2e_replaceDamageFormat(reformattedText);
-        //replace Checks
-        let regex = /@Check\[[^\]]+\]{([^}]+)}/g;
-        reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
-        //replace checks without name labels, different arguments on every system for @Check(if it exists), so pf2e gets a different one
-        regex = /@Check\[(.*?)\]/g;
-        reformattedText = reformattedText.replace(regex, (_, text) => PF2e_getNameFromCheck(text));
+    let reformattedText = generic.reformatMessage(text);
+    //replace @Damage appropriately (for PF2e)
+    reformattedText = PF2e_replaceDamageFormat(reformattedText);
+    //replace Checks
+    let regex = /@Check\[[^\]]+\]{([^}]+)}/g;
+    reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
+    //replace checks without name labels, different arguments on every system for @Check(if it exists), so pf2e gets a different one
+    regex = /@Check\[(.*?)\]/g;
+    reformattedText = reformattedText.replace(regex, (_, text) => PF2e_getNameFromCheck(text));
 
-        regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
-        reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
-        regex = /\[\[\/(.*?) (.*?)\]\]/g;
-        reformattedText = reformattedText.replace(regex, ':game_die: `$2`');
-    }
+    regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
+    reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
+    regex = /\[\[\/(.*?) (.*?)\]\]/g;
+    reformattedText = reformattedText.replace(regex, ':game_die: `$2`');
 
     return reformattedText.trim();
 }
