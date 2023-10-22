@@ -655,7 +655,7 @@ export function reformatMessage(text) {
     return reformattedText;
 }
 
-export function replaceGenericAtTags(text) {
+function replaceGenericAtTags(text) {
     const regexAtTags = /@([^]+?)\[([^]+?)\](?:\{([^]+?)\})?/g;
     let reformattedText = text.replace(regexAtTags, (match, atTagType, identifier, customText) => {
         let toReplace = "";

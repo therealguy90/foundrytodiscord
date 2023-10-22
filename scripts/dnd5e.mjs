@@ -126,7 +126,6 @@ function DnD5e_createCardEmbed(message) {
 
 export function DnD5e_reformatMessage(text) {
     let reformattedText = generic.reformatMessage(text);
-
     //replace Inline Roll Commands
     let regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
     reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
