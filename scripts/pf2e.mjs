@@ -143,7 +143,15 @@ function PF2e_createCardEmbed(message, cardType) {
             });
         }
         else if (cardType === 2) {
-            desc += game.actors.get(message.speaker.actor).items.get(message.flags.pf2e.context.item).system.description.value
+            if (message.flags?.pf2e?.context?.item) {
+                desc += game.actors.get(message.speaker.actor).items.get(message.flags.pf2e.context.item).system.description.value;
+            }
+            else {
+                const actionContent = doc.querySelector(".action-content");
+                if (actionContent) {
+                    desc += actionContent.innerHTML;
+                }
+            }
         }
     }
 
@@ -449,7 +457,7 @@ function PF2e_parseTraits(text) {
 }
 
 export function PF2e_reformatMessage(text) {
-    let reformattedText = generic.reformatMessage(text);
+    let reformattedText = generic.reformatMessage(text, PF2e_parseHTMLText);
     //replace @Damage appropriately (for PF2e)
     reformattedText = PF2e_replaceDamageFormat(reformattedText);
     //replace Checks
@@ -458,7 +466,6 @@ export function PF2e_reformatMessage(text) {
     //replace checks without name labels, different arguments on every system for @Check(if it exists), so pf2e gets a different one
     regex = /@Check\[(.*?)\]/g;
     reformattedText = reformattedText.replace(regex, (_, text) => PF2e_getNameFromCheck(text));
-
     regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
     reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
     regex = /\[\[\/(.*?) (.*?)\]\]/g;
@@ -472,7 +479,7 @@ function PF2e_isActionCard(message) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(flavor, "text/html");
     const action = doc.querySelectorAll("h4.action");
-    if (action.length > 0 && message.flags?.pf2e?.context?.item) {
+    if (action.length > 0 /*&& message.flags?.pf2e?.context?.item*/) {
         return true;
     }
     else {
@@ -482,22 +489,10 @@ function PF2e_isActionCard(message) {
 
 function PF2e_parseHTMLText(htmlString) {
     let reformattedText = htmlString;
-
-    // Cleanup newlines in raw text before parsing
-    reformattedText = reformattedText.replace(/<[^>]*>[^<]*\n[^<]*<\/[^>]*>/g, match => match.replace(/\n/g, ''));
-
     const htmldoc = document.createElement('div');
     htmldoc.innerHTML = reformattedText;
-
-    // Remove elements with data-visibility attribute and hidden styles
-    ['[data-visibility="gm"]', '[data-visibility="owner"]', '[style*="display:none"]'].forEach(selector => {
-        const elements = htmldoc.querySelectorAll(selector);
-        elements.forEach(element => element.parentNode.removeChild(element));
-    });
-    // Remove <img> tags
-    generic.removeElementsBySelector('img', htmldoc);
     // Format various elements
-    generic.formatTextBySelector('.inline-roll, .inline-check, span[data-pf2-check]', text => `:game_die:\`${text}\``, htmldoc);
+    generic.formatTextBySelector('.inline-check, span[data-pf2-check]', text => `:game_die:\`${text}\``, htmldoc);
     reformattedText = htmldoc.innerHTML;
     // Status effect cards
     const statuseffectlist = htmldoc.querySelectorAll('.statuseffect-rules');
@@ -515,9 +510,6 @@ function PF2e_parseHTMLText(htmlString) {
         generic.removeElementsBySelector('.dice-total.statuseffect-message ul', tempdivs);
         reformattedText = tempdivs.innerHTML;
     }
-
-    // Format header, strong, and em tags
-    reformattedText = generic.htmlCodeCleanup(reformattedText);
 
     return reformattedText;
 }

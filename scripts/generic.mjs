@@ -68,22 +68,8 @@ export function messageParserGeneric(msg) {
         //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
         if (anonEnabled()) {
-            let anon = game.modules.get("anonymous").api;
-            let curScene = game.scenes.get(msg.speaker.scene);
-            if (curScene) {
-                let speakerToken = curScene.tokens.get(msg.speaker.token);
-                if (speakerToken) {
-                    if (!anon.playersSeeName(speakerToken.actor)) {
-                        hookEmbed[0].title = hookEmbed[0].title.replaceAll(speakerToken.name, anon.getName(speakerToken.actor))
-                            .replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase())
-                            .replaceAll(speakerToken.actor.name, anon.getName(speakerToken.actor))
-                            .replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase());
-                        hookEmbed[0].description = hookEmbed[0].description.replaceAll(speakerToken.name, anon.getName(speakerToken.actor))
-                            .replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase())
-                            .replaceAll(speakerToken.actor.name, anon.getName(speakerToken.actor))
-                            .replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase());
-                    }
-                }
+            for (let i = 0; i < hookEmbed.length; i++) {
+                hookEmbed[i] = anonymizeEmbed(msg, hookEmbed[i]);
             }
         }
     }
@@ -171,10 +157,6 @@ function generateRequestParams(message, msgText, hookEmbed, imgurl) {
 export function createGenericRollEmbed(message) {
     let desc = ""
     let title = ""
-    let anon;
-    if (anonEnabled()) {
-        anon = game.modules.get("anonymous").api;
-    }
     if (message.flavor && message.flavor.length > 0) {
         title = message.flavor;
         if (desc !== "") {
@@ -228,7 +210,6 @@ export function parseCheckString(checkString) {
 }
 
 export function isCard(htmlString) {
-
     const htmldocElement = document.createElement('div');
     htmldocElement.innerHTML = htmlString;
 
@@ -372,28 +353,29 @@ export function polyglotize(message, playerlanguages = []) {
 }
 
 export function anonymizeEmbed(message, embed) {
-    let anon = game.modules.get("anonymous").api;
-    let curScene = game.scenes.get(message.speaker.scene);
+    const anon = game.modules.get("anonymous").api;
+    const curScene = game.scenes.get(message.speaker.scene);
+
     if (curScene) {
-        let speakerToken = curScene.tokens.get(message.speaker.token);
-        if (speakerToken) {
-            if (!anon.playersSeeName(speakerToken.actor)) {
-                if (embed.title) {
-                    embed.title = embed.title !== "" ? embed.title.replaceAll(speakerToken.name, anon.getName(speakerToken.actor))
-                        .replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase())
-                        .replaceAll(speakerToken.actor.name, anon.getName(speakerToken.actor))
-                        .replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase()) : "";
-                }
-                if (embed.description) {
-                    embed.description = embed.description !== "" ? embed.description.replaceAll(speakerToken.name, anon.getName(speakerToken.actor))
-                        .replaceAll(speakerToken.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase())
-                        .replaceAll(speakerToken.actor.name, anon.getName(speakerToken.actor))
-                        .replaceAll(speakerToken.actor.name.toLowerCase(), anon.getName(speakerToken.actor).toLowerCase()) : "";
-                }
-            }
+        const speakerToken = curScene.tokens.get(message.speaker.token);
+
+        if (speakerToken && !anon.playersSeeName(speakerToken.actor)) {
+            embed.title = anonymizeText(embed.title, speakerToken);
+            embed.description = anonymizeText(embed.description, speakerToken);
         }
     }
+
     return embed;
+}
+
+function anonymizeText(text, speakerToken) {
+    const anon = game.modules.get("anonymous").api;
+    if (text) {
+        return text
+            .replace(new RegExp(speakerToken.name, 'gi'), anon.getName(speakerToken.actor))
+            .replace(new RegExp(speakerToken.actor.name, 'gi'), anon.getName(speakerToken.actor));
+    }
+    return text;
 }
 
 export function tokenBar_createTokenBarCard(message) {
@@ -570,7 +552,7 @@ export function formatTextBySelector(selector, formatter, root) {
     });
 }
 
-export function parseHTMLText(htmlString) {
+export function parseHTMLText(htmlString, customHTMLParser = undefined) {
     let reformattedText = htmlString;
 
     // Cleanup newlines in raw text before parsing
@@ -594,10 +576,15 @@ export function parseHTMLText(htmlString) {
 
     // Remove <img> tags
     removeElementsBySelector('img', htmldoc);
-
     // Format various elements
-    formatTextBySelector('.inline-roll, .inline-check', text => `:game_die:\`${text}\``, htmldoc);
+    formatTextBySelector('.inline-roll', text => `:game_die:\`${text}\``, htmldoc);
     reformattedText = htmldoc.innerHTML;
+
+    if (customHTMLParser) {
+        console.log(reformattedText);
+        reformattedText = customHTMLParser(reformattedText);
+        console.log(reformattedText);
+    }
 
     // Format everything else
     reformattedText = htmlCodeCleanup(reformattedText);
@@ -640,11 +627,11 @@ export function htmlCodeCleanup(htmltext) {
 *  more complex reformatting, such as @Check, @Damage for PF2e. This is to place all the HTML parsing in one place.
 *  parseHTMLText is generally universal.
 */
-export function reformatMessage(text) {
+export function reformatMessage(text, customHTMLParser = undefined) {
     let reformattedText = replaceGenericAtTags(text);
     const isHtmlFormatted = /<[a-z][\s\S]*>/i.test(reformattedText);
     if (isHtmlFormatted) {
-        reformattedText = parseHTMLText(reformattedText);
+        reformattedText = parseHTMLText(reformattedText, customHTMLParser);
     }
     return reformattedText;
 }
