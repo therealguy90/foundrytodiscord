@@ -6,7 +6,7 @@ A lightweight FoundryVTT module that sends all FoundryVTT messages to a Discord 
 
 **System Support:**
 - Pathfinder Second Edition
-- DnD 5e (partial)
+- DnD 5e (almost complete?)
 
 While it will work with other systems, the extent of compatibility may vary. Regular chat, chat cards, and rolls seem to work just fine on most other systems.
 
