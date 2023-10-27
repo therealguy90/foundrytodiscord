@@ -1,5 +1,6 @@
-import * as generic from './generic.mjs';
-import { anonEnabled } from './helpers/modulesettings.mjs';
+/*import * as generic from './generic.mjs';
+import { anonEnabled } from './helpers/modulesettings.mjs';*/
+//MOVE YOUR PARSER TO THE SCRIPTS FOLDER
 
 /*  CUSTOM SYSTEM PARSER CREATION GUIDE:
 *   Please hide metadata that should be hidden to players.
