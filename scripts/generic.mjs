@@ -622,11 +622,7 @@ export function htmlCodeCleanup(htmltext) {
 }
 
 
-/* reformatMessage does all the HTML parsing and etc, and should only be called before
-*  the message is sent to the webhook. Copy this function to your parser to allow for
-*  more complex reformatting, such as @Check, @Damage for PF2e. This is to place all the HTML parsing in one place.
-*  parseHTMLText is generally universal.
-*/
+//reformatMessage makes text readable.
 export function reformatMessage(text, customHTMLParser = undefined) {
     let reformattedText = replaceGenericAtTags(text);
     const isHtmlFormatted = /<[a-z][\s\S]*>/i.test(reformattedText);
@@ -649,16 +645,7 @@ function replaceGenericAtTags(text) {
         let doctype = "";
         switch (atTagType) {
             case "Localize":
-                let replaced = true;
                 toReplace = replaceGenericAtTags(game.i18n.localize(identifier));
-                /*while (replaced) {
-                    replaced = false;
-                    const temp = replaceGenericAtTags(toReplace);
-                    if (temp !== toReplace) {
-                        toReplace = temp;
-                        replaced = true;
-                    }
-                }*/
                 break;
             case "UUID":
                 document = fromUuidSync(identifier);

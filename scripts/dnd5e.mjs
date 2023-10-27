@@ -77,6 +77,7 @@ export function messageParserDnD5e(msg) {
     constructedMessage = DnD5e_reformatMessage(constructedMessage);
     return generic.getRequestParams(msg, constructedMessage, hookEmbed);
 }
+
 function DnD5e_createCardEmbed(message) {
     let card = message.content;
     const parser = new DOMParser();
