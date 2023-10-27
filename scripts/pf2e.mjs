@@ -1,5 +1,5 @@
 import * as generic from './generic.mjs';
-import { anonEnabled } from './helpers/modulesettings.mjs';
+import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
 
 const damageEmoji = {
     "bludgeoning": ':hammer:',
@@ -519,8 +519,4 @@ function PF2e_getDiscardedRoll(message) {
     const doc = parser.parseFromString(message.content, "text/html");
     const rerollDiscardDiv = doc.querySelector(".pf2e-reroll-discard .dice-total");
     return rerollDiscardDiv.textContent;
-}
-
-function getThisModuleSetting(settingName) {
-    return game.settings.get('foundrytodiscord', settingName);
 }

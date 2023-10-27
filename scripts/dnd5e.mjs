@@ -135,6 +135,7 @@ export function DnD5e_reformatMessage(text) {
     return reformattedText;
 }
 
+// midi might as well be part of the system at this point.
 function midiqol_createMergeCard(message) {
     let embeds = DnD5e_createCardEmbed(message);
     const divs = document.createElement('div');

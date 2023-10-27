@@ -1,5 +1,5 @@
 /*import * as generic from './generic.mjs';
-import { anonEnabled } from './helpers/modulesettings.mjs';*/
+import { anonEnabled, getThisModuleSetting }  from './helpers/modulesettings.mjs';*/
 //MOVE YOUR PARSER TO THE SCRIPTS FOLDER
 
 /*  CUSTOM SYSTEM PARSER CREATION GUIDE:
@@ -42,7 +42,7 @@ export function messageParserSystem(msg){
     else if (isCard(msg.content) && msg.rolls?.length < 1) {
         constructedMessage = "";
         if (getThisModuleSetting('sendEmbeds')) {
-            embeds = createCardEmbed(msg);
+            embeds = generic.createCardEmbed(msg); //Replace this with your own custom card parser if you like
         }
     }
     else if (!msg.isRoll) {
