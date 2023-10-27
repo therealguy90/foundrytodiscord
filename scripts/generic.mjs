@@ -6,19 +6,19 @@ import { hexToColor } from './helpers/embeds.mjs';
 
 export function messageParserGeneric(msg) {
     let constructedMessage = '';
-    let hookEmbed = [];
+    let embeds = [];
     if (game.modules.get('monks-tokenbar')?.active && tokenBar_isTokenBarCard(msg.content)) {
-        hookEmbed = tokenBar_createTokenBarCard(msg);
+        embeds = tokenBar_createTokenBarCard(msg);
     }
     else if (isCard(msg.content) && msg.rolls?.length < 1) {
         constructedMessage = "";
         if (getThisModuleSetting('sendEmbeds')) {
-            hookEmbed = createCardEmbed(msg);
+            embeds = createCardEmbed(msg);
         }
     }
     else if (!msg.isRoll) {
         if (hasDiceRolls(msg.content)) {
-            hookEmbed = createHTMLDiceRollEmbed(msg);
+            embeds = createHTMLDiceRollEmbed(msg);
             const elements = document.createElement('div');
             elements.innerHTML = msg.content;
             const diceRolls = elements.querySelectorAll('.dice-roll');
@@ -57,32 +57,32 @@ export function messageParserGeneric(msg) {
     }
     else {
         console.log("foundrytodiscord | System \"" + game.system.id + "\" is not supported for special roll embeds.")
-        hookEmbed = createGenericRollEmbed(msg);
+        embeds = createGenericRollEmbed(msg);
 
     }
 
     //Fix formatting before sending
-    if (hookEmbed != [] && hookEmbed.length > 0) {
-        hookEmbed[0].description = reformatMessage(hookEmbed[0].description);
-        constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === hookEmbed[0].title) ? "" : msg.flavor;
+    if (embeds != [] && embeds.length > 0) {
+        embeds[0].description = reformatMessage(embeds[0].description);
+        constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === embeds[0].title) ? "" : msg.flavor;
         //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
         if (anonEnabled()) {
-            for (let i = 0; i < hookEmbed.length; i++) {
-                hookEmbed[i] = anonymizeEmbed(msg, hookEmbed[i]);
+            for (let i = 0; i < embeds.length; i++) {
+                embeds[i] = anonymizeEmbed(msg, embeds[i]);
             }
         }
     }
     constructedMessage = reformatMessage(constructedMessage);
-    if (constructedMessage !== "" || hookEmbed.length > 0) { //avoid sending empty messages
-        return getRequestParams(msg, constructedMessage, hookEmbed);
+    if (constructedMessage !== "" || embeds.length > 0) { //avoid sending empty messages
+        return getRequestParams(msg, constructedMessage, embeds);
     }
     else {
         return false;
     }
 }
 
-export function getRequestParams(message, msgText, hookEmbed) {
+export function getRequestParams(message, msgText, embeds) {
     let imgurl = generateDiscordAvatar(message);
     let hook = "";
     if (message.isRoll && (!isCard(message.content) && message.rolls.length > 0)) {
@@ -101,10 +101,10 @@ export function getRequestParams(message, msgText, hookEmbed) {
         }
     }
 
-    return { hook: hook, params: generateRequestParams(message, msgText, hookEmbed, imgurl) };
+    return { hook: hook, params: generateRequestParams(message, msgText, embeds, imgurl) };
 }
 
-function generateRequestParams(message, msgText, hookEmbed, imgurl) {
+function generateRequestParams(message, msgText, embeds, imgurl) {
     let alias = message.alias;
     let speakerActor;
     if (anonEnabled()) {
@@ -128,17 +128,17 @@ function generateRequestParams(message, msgText, hookEmbed, imgurl) {
             }
         }
     }
-    if (hookEmbed[0]?.description?.length > 4000) {
-        hookEmbed = splitEmbed(hookEmbed[0]);
+    if (embeds[0]?.description?.length > 4000) {
+        embeds = splitEmbed(embeds[0]);
     }
     // Add username to embed
-    if (hookEmbed[0] && message.user && message.alias !== message.user && getThisModuleSetting('showAuthor')) {
-        hookEmbed[0].author = {
+    if (embeds[0] && message.user && message.alias !== message.user && getThisModuleSetting('showAuthor')) {
+        embeds[0].author = {
             name: message.user.name,
             icon_url: generateimglink(message.user.avatar)
         }
     }
-    hookEmbed.forEach((embed) => {
+    embeds.forEach((embed) => {
         // Add color to all embeds
         if (message.user?.color) {
             embed.color = hexToColor(message.user.color);
@@ -149,7 +149,7 @@ function generateRequestParams(message, msgText, hookEmbed, imgurl) {
         username: alias,
         avatar_url: imgurl,
         content: msgText,
-        embeds: hookEmbed
+        embeds: embeds
     };
     return params;
 }

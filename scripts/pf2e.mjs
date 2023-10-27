@@ -30,7 +30,7 @@ const damageEmoji = {
 
 export function messageParserPF2e(msg) {
     let constructedMessage = '';
-    let hookEmbed = [];
+    let embeds = [];
     let cardType = 0;
     if ((generic.isCard(msg.content) && msg.rolls?.length < 1)) {
         cardType = 1;
@@ -40,12 +40,12 @@ export function messageParserPF2e(msg) {
     }
     if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)) {
         cardType = 0;
-        hookEmbed = generic.tokenBar_createTokenBarCard(msg);
+        embeds = generic.tokenBar_createTokenBarCard(msg);
     }
     else if (cardType !== 0) {
         constructedMessage = "";
         if (getThisModuleSetting('sendEmbeds')) {
-            hookEmbed = PF2e_createCardEmbed(msg, cardType);
+            embeds = PF2e_createCardEmbed(msg, cardType);
         }
     }
     else if (!msg.isRoll || (msg.isRoll && msg.rolls.length < 1)) {
@@ -72,29 +72,29 @@ export function messageParserPF2e(msg) {
     }
     else {
         if (msg.flavor != null && msg.flavor.length > 0) {
-            hookEmbed = PF2e_createRollEmbed(msg);
+            embeds = PF2e_createRollEmbed(msg);
         }
         else {
-            hookEmbed = generic.createGenericRollEmbed(msg);
+            embeds = generic.createGenericRollEmbed(msg);
         }
     }
 
-    if (hookEmbed != [] && hookEmbed.length > 0) {
-        if (/<[a-z][\s\S]*>/i.test(hookEmbed[0].title)) {
-            hookEmbed[0].title = PF2e_reformatMessage(hookEmbed[0].title);
+    if (embeds != [] && embeds.length > 0) {
+        if (/<[a-z][\s\S]*>/i.test(embeds[0].title)) {
+            embeds[0].title = PF2e_reformatMessage(embeds[0].title);
         }
-        hookEmbed[0].description = PF2e_reformatMessage(hookEmbed[0].description);
-        constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === hookEmbed[0].title) ? "" : msg.flavor;
+        embeds[0].description = PF2e_reformatMessage(embeds[0].description);
+        constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === embeds[0].title) ? "" : msg.flavor;
         //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
         if (anonEnabled()) {
-            for (let i = 0; i < hookEmbed.length; i++) {
-                hookEmbed[i] = generic.anonymizeEmbed(msg, hookEmbed[i]);
+            for (let i = 0; i < embeds.length; i++) {
+                embeds[i] = generic.anonymizeEmbed(msg, embeds[i]);
             }
         }
     }
     constructedMessage = PF2e_reformatMessage(constructedMessage);
-    return generic.getRequestParams(msg, constructedMessage, hookEmbed);
+    return generic.getRequestParams(msg, constructedMessage, embeds);
 }
 
 function PF2e_createCardEmbed(message, cardType) {

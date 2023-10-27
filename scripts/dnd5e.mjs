@@ -4,31 +4,31 @@ import { parse2DTable } from './helpers/tables.mjs';
 
 export function messageParserDnD5e(msg) {
     let constructedMessage = '';
-    let hookEmbed = [];
+    let embeds = [];
     if (game.modules.get('midi-qol')?.active && midiqol_isMergeCard(msg.content)) {
-        hookEmbed = midiqol_createMergeCard(msg);
+        embeds = midiqol_createMergeCard(msg);
     }
     else if (game.modules.get('midi-qol')?.active && msg.flags?.midiqol?.undoDamage && midiqol_isDamageTable(msg.content)) {
-        hookEmbed = midiqol_createDamageTable(msg);
+        embeds = midiqol_createDamageTable(msg);
     }
     else if (game.modules.get('midi-qol')?.active && midiqol_isSingleHitCard(msg.content)) {
-        hookEmbed = midiqol_createSingleHitCard(msg);
+        embeds = midiqol_createSingleHitCard(msg);
     }
     else if (game.modules.get('midi-qol')?.active && midiqol_isSavesDisplayCard(msg.content)) {
-        hookEmbed = midiqol_createSavesDisplayCard(msg);
+        embeds = midiqol_createSavesDisplayCard(msg);
     }
     else if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)) {
-        hookEmbed = generic.tokenBar_createTokenBarCard(msg);
+        embeds = generic.tokenBar_createTokenBarCard(msg);
     }
     else if (generic.isCard(msg.content) && msg.rolls?.length < 1) {
         constructedMessage = "";
         if (getThisModuleSetting('sendEmbeds')) {
-            hookEmbed = DnD5e_createCardEmbed(msg);
+            embeds = DnD5e_createCardEmbed(msg);
         }
     }
     else if (!msg.isRoll) {
         if (generic.hasDiceRolls(msg.content)) {
-            hookEmbed = generic.createHTMLDiceRollEmbed(msg);
+            embeds = generic.createHTMLDiceRollEmbed(msg);
             const elements = document.createElement('div');
             elements.innerHTML = msg.content;
             const diceRolls = elements.querySelectorAll('.dice-roll');
@@ -60,22 +60,22 @@ export function messageParserDnD5e(msg) {
         }
     }
     else {
-        hookEmbed = generic.createGenericRollEmbed(msg);
+        embeds = generic.createGenericRollEmbed(msg);
     }
 
-    if (hookEmbed != [] && hookEmbed.length > 0) {
-        hookEmbed[0].description = DnD5e_reformatMessage(hookEmbed[0].description);
-        constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === hookEmbed[0].title) ? "" : msg.flavor;
+    if (embeds != [] && embeds.length > 0) {
+        embeds[0].description = DnD5e_reformatMessage(embeds[0].description);
+        constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === embeds[0].title) ? "" : msg.flavor;
         //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
         if (anonEnabled()) {
-            for (let i = 0; i < hookEmbed.length; i++) {
-                hookEmbed[i] = generic.anonymizeEmbed(msg, hookEmbed[i]);
+            for (let i = 0; i < embeds.length; i++) {
+                embeds[i] = generic.anonymizeEmbed(msg, embeds[i]);
             }
         }
     }
     constructedMessage = DnD5e_reformatMessage(constructedMessage);
-    return generic.getRequestParams(msg, constructedMessage, hookEmbed);
+    return generic.getRequestParams(msg, constructedMessage, embeds);
 }
 
 function DnD5e_createCardEmbed(message) {
