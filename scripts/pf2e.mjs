@@ -38,7 +38,10 @@ export function messageParserPF2e(msg) {
     else if (PF2e_isActionCard(msg) && msg.rolls?.length < 1) {
         cardType = 2;
     }
-    if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)) {
+    if(PF2e_isConditionCard(msg)){
+        embeds = PF2e_createConditionCard(msg);
+    }
+    else if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)) {
         cardType = 0;
         embeds = generic.tokenBar_createTokenBarCard(msg);
     }
@@ -158,52 +161,35 @@ function PF2e_createCardEmbed(message, cardType) {
     return [{ title: title, description: desc, footer: { text: generic.getCardFooter(card) } }];
 }
 
-function PF2e_createRollEmbed(message) {
-    let embed = []
-    //Build Title
-    const str = message.flavor;
-    let regex = /<h4 class="action">(.*?)<\/h4>/g;
-    let m;
+
+function PF2e_createRollEmbed(message){
+    const parser = new DOMParser();
+    let doc = parser.parseFromString(message.flavor, "text/html");
     let title = "";
-    while ((m = regex.exec(str)) !== null) {
-        if (m.index === regex.lastIndex) {
-            regex.lastIndex++;
-        }
-        if (m[1] != null) {
-            title = m[1];
-        }
+    let desc = "";
+    //Build Title
+    const actionTitle = doc.querySelector("h4.action")
+    if(actionTitle){
+        title = actionTitle.querySelector("strong").textContent + 
+            " " + (actionTitle.querySelector(".subtitle") ? actionTitle.querySelector(".subtitle").textContent : "");
     }
-
-    if (title === "") {
-        regex = /<strong>(.*?)<\/strong>/g;
-        while ((m = regex.exec(str)) !== null) {
-            if (m.index === regex.lastIndex) {
-                regex.lastIndex++;
-            }
-            if (m[1] != null) {
-                title = m[1];
-            }
-        }
-    }
-
-    if (title === "" && message.flavor !== "") {
+    else{
         title = message.flavor;
     }
+    desc += PF2e_parseTraits(message.flavor);
 
+    //Build description
     if (anonEnabled()) {
         var anon = game.modules.get('anonymous').api; //optional implementation for "anonymous" module
     }
 
-    let desc = "";
-
-    //Build Description
     //Add targets to embed:
     if (game.modules.get("pf2e-target-damage")?.active) { //optional implementation for "pf2e-target-damage" module
         if (message.flags['pf2e-target-damage'].targets.length === 1) {
-            desc = desc + "**:dart:Target: **";
+            desc += "**:dart:Target: **";
         }
         else if (message.flags['pf2e-target-damage'].targets.length > 1) {
-            desc = desc + "**:dart:Targets: **";
+            desc += "**:dart:Targets: **";
         }
 
         message.flags['pf2e-target-damage'].targets.forEach(target => {
@@ -211,43 +197,43 @@ function PF2e_createRollEmbed(message) {
             const curToken = curScene.tokens.get(target.id);
             if (anonEnabled()) {
                 if (!anon.playersSeeName(curToken.actor)) {
-                    desc = desc + "`" + anon.getName(curToken.actor) + "` ";
+                    desc += "`" + anon.getName(curToken.actor) + "` ";
                 }
                 else {
-                    desc = desc + "`" + curToken.name + "` ";
+                    desc += "`" + curToken.name + "` ";
                 }
             }
             else {
-                desc = desc + "`" + curToken.name + "` ";
+                desc += "`" + curToken.name + "` ";
             }
         });
     }
     else {
         if (message.flags?.pf2e?.context?.target?.token) {
-            desc = desc + "**:dart:Target: **";
+            desc += "**:dart:Target: **";
             const targetTokenId = message.flags.pf2e.context.target.token.split(".")[3];
             const targetToken = game.scenes.get(message.speaker.scene).tokens.get(targetTokenId);
             if (targetToken) {
                 if (anonEnabled()) {
                     if (!anon.playersSeeName(targetToken.actor)) {
-                        desc = desc + "`" + anon.getName(targetToken.actor) + "` ";
+                        desc += "`" + anon.getName(targetToken.actor) + "` ";
                     }
                     else {
-                        desc = desc + "`" + targetToken.name + "` ";
+                        desc += "`" + targetToken.name + "` ";
                     }
                 }
                 else {
-                    desc = desc + "`" + targetToken.name + "` ";
+                    desc += "`" + targetToken.name + "` ";
                 }
             }
         }
     }
-    desc = desc + "\n";
+    desc += "\n";
 
     if (!message.flags.pf2e?.context?.isReroll) {
         //Add roll information to embed:
         for (let i = 0; i < message.rolls.length; i++) {
-            desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
+            desc += "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
             if (generic.isOwnedByPlayer(game.actors.get(message.speaker?.actor)) && message.rolls[i].dice[0].faces === 20) {
                 if (message.rolls[i].result.startsWith('20 ')) {
                     desc += " __(Nat 20!)__";
@@ -258,18 +244,15 @@ function PF2e_createRollEmbed(message) {
                 desc += "||(" + message.rolls[i].result + ")||";
             }
             if (message.flags?.pf2e?.context?.type && message.flags.pf2e.context.type == "damage-roll") {
-                if (title === "") {
-                    title = "Damage Roll";
-                }
-                desc = desc + PF2e_parseDamageTypes(message.rolls[i]);
+                desc += PF2e_parseDamageTypes(message.rolls[i]);
             }
             else if (PF2e_parseDegree(message.rolls[i].options?.degreeOfSuccess) != "Invalid") {
-                desc = desc + "`(" + PF2e_parseDegree(message.rolls[i].options.degreeOfSuccess) + ")`";
+                desc += "`(" + PF2e_parseDegree(message.rolls[i].options.degreeOfSuccess) + ")`";
             }
             else if (PF2e_parseDegree(message.flags.pf2e?.context?.outcome) != "Invalid") {
-                desc = desc + "`(" + PF2e_parseDegree(message.flags.pf2e.context.outcome) + ")`";
+                desc += "`(" + PF2e_parseDegree(message.flags.pf2e.context.outcome) + ")`";
             }
-            desc = desc + "\n";
+            desc += "\n";
         }
     }
     else {
@@ -285,12 +268,13 @@ function PF2e_createRollEmbed(message) {
             desc += "||(" + message.rolls[i].result + ")||";
         }
         if (PF2e_parseDegree(message.flags.pf2e.context.outcome) != "Invalid") {
-            desc = desc + "`(" + PF2e_parseDegree(message.flags.pf2e.context.outcome) + ")`";
+            desc += "`(" + PF2e_parseDegree(message.flags.pf2e.context.outcome) + ")`";
         }
-        desc = desc + "\n";
+        desc += "\n";
     }
 
     return [{ title: title, description: desc }];
+
 }
 
 function PF2e_parseDamageTypes(baserolls) {
@@ -430,13 +414,13 @@ function PF2e_parseTraits(text) {
         const parser = new DOMParser();
         let doc = parser.parseFromString(card, "text/html");
         let tags;
-        let tagsSection = doc.querySelector(".item-properties.tags");
+        let tagsSection = doc.querySelector(".item-properties.tags:not(.modifiers)");
         try {
             tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
         }
         catch (error) {
             try {
-                tagsSection = doc.querySelector('.tags');
+                tagsSection = doc.querySelector('.tags:not(.modifiers)');
                 tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
             }
             catch (error) {
@@ -474,6 +458,18 @@ export function PF2e_reformatMessage(text) {
     return reformattedText.trim();
 }
 
+function PF2e_parseHTMLText(htmlString) {
+    let reformattedText = htmlString;
+    console.log(reformattedText);
+    const htmldoc = document.createElement('div');
+    htmldoc.innerHTML = reformattedText;
+    // Format various elements
+    generic.formatTextBySelector('.inline-check, span[data-pf2-check]', text => `:game_die:\`${text}\``, htmldoc);
+    reformattedText = htmldoc.innerHTML;
+
+    return reformattedText;
+}
+
 function PF2e_isActionCard(message) {
     const flavor = message.flavor;
     const parser = new DOMParser();
@@ -487,31 +483,28 @@ function PF2e_isActionCard(message) {
     }
 }
 
-function PF2e_parseHTMLText(htmlString) {
-    let reformattedText = htmlString;
-    const htmldoc = document.createElement('div');
-    htmldoc.innerHTML = reformattedText;
-    // Format various elements
-    generic.formatTextBySelector('.inline-check, span[data-pf2-check]', text => `:game_die:\`${text}\``, htmldoc);
-    reformattedText = htmldoc.innerHTML;
-    // Status effect cards
-    const statuseffectlist = htmldoc.querySelectorAll('.statuseffect-rules');
-    if (statuseffectlist.length !== 0) {
-        let statfx = '';
-        statuseffectlist.forEach(effect => {
-            statfx += effect.innerHTML.replace(/<p>.*?<\/p>/g, '') + '\n';
-        });
-        const tempdivs = document.createElement('div');
-        tempdivs.innerHTML = reformattedText;
-        const targetdiv = tempdivs.querySelector('.dice-total.statuseffect-message');
-        if (targetdiv) {
-            targetdiv.innerHTML = statfx;
-        }
-        generic.removeElementsBySelector('.dice-total.statuseffect-message ul', tempdivs);
-        reformattedText = tempdivs.innerHTML;
+function PF2e_isConditionCard(message){
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(message.content, "text/html");
+    const conditionCard = doc.querySelectorAll(".participant-conditions");
+    if(conditionCard.length > 0){
+        return true;
     }
+    else{
+        return false;
+    }
+}
 
-    return reformattedText;
+function PF2e_createConditionCard(message){
+    let desc = ""
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(message.content, "text/html");
+    const participantConditions = doc.querySelector(".participant-conditions");
+    const conditions = participantConditions.querySelectorAll("span");
+    conditions.forEach(condition => {
+        desc += "**" + condition.textContent + "**\n";
+    });
+    return [{description: desc.trim()}];
 }
 
 function PF2e_getDiscardedRoll(message) {
