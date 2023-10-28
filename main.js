@@ -509,7 +509,6 @@ function addMediaLinks(message) {
     const doc = parser.parseFromString(message.content, "text/html");
     const images = doc.querySelectorAll('img');
     let links = "";
-    console.log(images);
     images.forEach(imgElement => {
         const src = imgElement.getAttribute('src');
         if (src.includes('http')) {

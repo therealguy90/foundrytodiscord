@@ -302,7 +302,6 @@ function midiqol_createDamageTable(message) {
         damageRow.push(newHP);
         damageArray.push(damageRow);
     });
-    console.log(damageArray);
     if (damageArray.length > 1) {
         return [{ title: "HP Updates", description: parse2DTable(damageArray) }];
     }
@@ -349,8 +348,6 @@ function midiqol_createSavesDisplayCard(message) {
             title = title.innerHTML;
         }
     }
-    console.log(typeof title);
-    console.log(title);
     if (game.settings.get('midi-qol', 'ConfigSettings').autoCheckSaves !== 'whisper') {
         element.querySelectorAll('.midi-qol-flex-container').forEach(container => {
             let parsedTarget = "";

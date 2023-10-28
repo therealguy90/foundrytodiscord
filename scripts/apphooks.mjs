@@ -15,7 +15,6 @@ export function initMenuHooks() {
             class: 'send-to-discord',
             icon: 'fa-brands fa-discord',
             onclick: () => {
-                console.log(sheet);
                 const pageIndex = sheet.pageIndex;
                 const pageData = sheet._pages[pageIndex];
                 let formData = new FormData();
@@ -103,7 +102,6 @@ export function initMenuHooks() {
                 let imgblob;
                 if (sheet.object.startsWith("data")) {
                     imgblob = dataToBlob(sheet.object);
-                    console.log(sheet.object);
                     const parts = sheet.object.split(';');
                     if (parts.length < 2) {
                         return 'jpg';
@@ -173,7 +171,6 @@ export function initMenuHooks() {
                 class: 'send-to-discord',
                 icon: 'fa-brands fa-discord',
                 onclick: () => {
-                    console.log(app);
                     const questData = app._quest;
                     let embeds = [];
                     //Build author object
@@ -264,7 +261,6 @@ export function initMenuHooks() {
                     formData.append('payload_json', JSON.stringify(params));
                     api.sendMessage(formData, false, game.user.viewedScene)
                         .then(({ response, message }) => {
-                            console.log(response)
                             if (response.ok) {
                                 ui.notifications.info("Successfully sent to Discord.");
                             }

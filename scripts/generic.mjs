@@ -581,9 +581,7 @@ export function parseHTMLText(htmlString, customHTMLParser = undefined) {
     reformattedText = htmldoc.innerHTML;
 
     if (customHTMLParser) {
-        console.log(reformattedText);
         reformattedText = customHTMLParser(reformattedText);
-        console.log(reformattedText);
     }
 
     // Format everything else
