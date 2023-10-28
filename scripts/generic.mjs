@@ -596,6 +596,7 @@ export function htmlCodeCleanup(htmltext) {
         '&lt;': '<',
         '&gt;': '>',
         '&nbsp;': ' ',
+        '&quot;': '"'
     };
     for (const entity in entities) {
         const character = entities[entity];
