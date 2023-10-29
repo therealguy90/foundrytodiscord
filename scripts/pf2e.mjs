@@ -38,6 +38,7 @@ export function messageParserPF2e(msg) {
     else if (PF2e_isActionCard(msg) && msg.rolls?.length < 1) {
         cardType = 2;
     }
+    
     if(PF2e_isConditionCard(msg)){
         embeds = PF2e_createConditionCard(msg);
     }
@@ -129,7 +130,7 @@ function PF2e_createCardEmbed(message, cardType) {
     }
 
     //parse card description if source is from a character or actor is owned by a player
-    //this is to limit metagame information and is recommended for most systems.
+    //this is to limit metagame information
     let descVisible = getThisModuleSetting('showDescription');
 
     if (speakerActor) {
@@ -176,7 +177,7 @@ function PF2e_createRollEmbed(message){
     else{
         title = message.flavor;
     }
-    desc += PF2e_parseTraits(message.flavor);
+    desc += PF2e_parseTraits(message.flavor, true);
 
     //Build description
     if (anonEnabled()) {
@@ -398,12 +399,15 @@ function PF2e_replaceDamageFormat(damagestring) {
     });
 }
 
-function PF2e_parseTraits(text) {
+function PF2e_parseTraits(text, isRoll = false) {
     let displayTraits = true;
     //check if anonymous allows traits to be displayed
     if (anonEnabled()) {
         if (game.settings.get("anonymous", "pf2e.traits")) {
-            if (game.settings.get("anonymous", "pf2e.traits") !== "never") {
+            if (isRoll && game.settings.get("anonymous", "pf2e.traits") === "rolls"){
+                displayTraits = false;
+            }
+            else if (game.settings.get("anonymous", "pf2e.traits") === "always") {
                 displayTraits = false;
             }
         }
@@ -460,7 +464,6 @@ export function PF2e_reformatMessage(text) {
 
 function PF2e_parseHTMLText(htmlString) {
     let reformattedText = htmlString;
-    console.log(reformattedText);
     const htmldoc = document.createElement('div');
     htmldoc.innerHTML = reformattedText;
     // Format various elements
