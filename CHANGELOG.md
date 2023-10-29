@@ -4,6 +4,7 @@
 - Fixes message editing.
 - (pf2e) Traits are now shown in rolls unless hidden via the Anonymous module.
 - (pf2e) Conditions(when being shown in combat) are now shown in an embed instead of regular text. Some formatting changes were made in recent versions on the pf2e system. Running older versions will result in conditions being displayed as plaintext as per usual.
+- (midi-qol) Fixes "hits, misses" card display
 - Added new emojis to some inline links.
 - A lot of code refactoring
 
