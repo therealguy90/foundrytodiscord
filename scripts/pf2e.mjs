@@ -466,6 +466,23 @@ function PF2e_parseHTMLText(htmlString) {
     // Format various elements
     generic.formatTextBySelector('.inline-check, span[data-pf2-check]', text => `:game_die:\`${text}\``, htmldoc);
     reformattedText = htmldoc.innerHTML;
+    
+    //Old format for status effects. Kept this in for now, but will be removed later on.
+    const statuseffectlist = htmldoc.querySelectorAll('.statuseffect-rules');
+    if (statuseffectlist.length !== 0) {
+        let statfx = '';
+        statuseffectlist.forEach(effect => {
+            statfx += effect.innerHTML.replace(/<p>.*?<\/p>/g, '') + '\n';
+        });
+        const tempdivs = document.createElement('div');
+        tempdivs.innerHTML = reformattedText;
+        const targetdiv = tempdivs.querySelector('.dice-total.statuseffect-message');
+        if (targetdiv) {
+            targetdiv.innerHTML = statfx;
+        }
+        generic.removeElementsBySelector('.dice-total.statuseffect-message ul', tempdivs);
+        reformattedText = tempdivs.innerHTML;
+    }
 
     return reformattedText;
 }
