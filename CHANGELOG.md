@@ -1,4 +1,13 @@
-# 1.6.1
+# 1.6.2
+
+- Revealing whispers now sends them to Discord, and hiding a message now deletes it from the channel.
+- Fixes message editing.
+- (pf2e) Traits are now shown in rolls unless hidden via the Anonymous module.
+- (pf2e) Conditions(when being shown in combat) are now shown in an embed instead of regular text. Some formatting changes were made in recent versions on the pf2e system. Running older versions will result in conditions being displayed as plaintext as per usual.
+- Added new emojis to some inline links.
+- A lot of code refactoring
+
+## 1.6.1
 
 - Added support for Forien's Quest Log. A "Send Quest Details to Discord" button is now present on the Quest Preview window.
 - Added notifications for all window header buttons on successful send.
