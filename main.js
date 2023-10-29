@@ -228,7 +228,7 @@ Hooks.on('updateChatMessage', async (msg, change, options) => {
             if (tries > 0) {
                 tries--;
                 await wait(500);
-                await checkExist(); // Recursively retry
+                await checkExist(msgChange); // Recursively retry
             } else {
                 console.log(`foundrytodiscord | Attempt to ${msgChange} message was unsuccessful due to the message not existing on Discord.`);
             }
