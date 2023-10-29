@@ -699,6 +699,9 @@ function replaceGenericAtTags(text) {
                 case document instanceof RollTable:
                     toReplace += ":page_facing_up: ";
                     break;
+                case document instanceof Folder:
+                    toReplace += ":file_folder: ";
+                    break;
                 default:
                     toReplace += ":baggage_claim: ";
                     break;
