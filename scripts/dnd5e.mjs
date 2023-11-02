@@ -219,7 +219,6 @@ function midiqol_createMergeCard(message) {
     element = divs.querySelector('.midi-qol-saves-display');
     let title = "";
     let desc = "";
-    console.log(element.textContent);
     if (element && element.textContent) {
         embeds = embeds.concat(midiqol_createSavesDisplayCard(message));
         return embeds;
@@ -330,13 +329,10 @@ function midiqol_createSingleHitCard(message) {
         parsedTarget = parsedTarget.replace(/\s+/g, ' ').trim();
         desc += parsedTarget + "\n";
     });
-    console.log(title);
-    console.log(desc);
     return [{ title: title, description: desc }];
 }
 
 function midiqol_createSavesDisplayCard(message) {
-    let embeds = [];
     const divs = document.createElement('div');
     divs.innerHTML = message.content;
     let element = divs.querySelector('.midi-qol-saves-display');
