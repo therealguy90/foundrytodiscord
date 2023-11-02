@@ -36,10 +36,9 @@ export function messageParserSystem(msg){
     let embeds = [];
     //make detectors for custom system chatcards here, or embeds in general. See the other parsers to know how to do it.
     if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)) {
-        cardType = 0;
         embeds = generic.tokenBar_createTokenBarCard(msg);
     }
-    else if (isCard(msg.content) && msg.rolls?.length < 1) {
+    else if (generic.isCard(msg.content) && msg.rolls?.length < 1) {
         constructedMessage = "";
         if (getThisModuleSetting('sendEmbeds')) {
             embeds = generic.createCardEmbed(msg); //Replace this with your own custom card parser if you like
@@ -56,13 +55,15 @@ export function messageParserSystem(msg){
             }
             msg.content = elements.innerHTML;
         }
+        //Above snippet can be removed safely.
+
         /*Attempt polyglot support. This will ONLY work if the structure is similar:
         * for PF2e and DnD5e, this would be actor.system.traits.languages.value
         * polyglotize() can be edited for other systems. Make a new function in this file, copying polyglotize() from generic.mjs.
         */
         if (game.modules.get("polyglot")?.active && msg.flags?.polyglot?.language) {
             if (!getThisModuleSetting("commonLanguages").toLowerCase().includes(msg.flags.polyglot.language)) {
-                if (getThisModuleSetting('includeOnly') == "") {
+                if (getThisModuleSetting('includeOnly') === "") {
                     constructedMessage = generic.polyglotize(msg);
                 }
                 else {
@@ -79,14 +80,15 @@ export function messageParserSystem(msg){
         }
     }
     else {
-        embeds = generic.createGenericRollEmbed(msg); //foundry /r command.
+        // Custom roll parsers go here, just assign them to the embeds variable and/or constructedMessage.
+        embeds = generic.createGenericRollEmbed(msg); // foundry /r command or other rolls not covered by your parser.
     }
 
     if (embeds != [] && embeds.length > 0) {
         embeds[0].description = System_reformatMessage(embeds[0].description);
         constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === embeds[0].title) ? "" : msg.flavor;
-        //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
-        //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
+        // use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
+        // sadly, the anonymous module doesn't do this as css styling, so this needs to be done here.
         if (anonEnabled()) {
             for (let i = 0; i < embeds.length; i++) {
                 embeds[i] = generic.anonymizeEmbed(msg, embeds[i]);
@@ -94,7 +96,7 @@ export function messageParserSystem(msg){
         }
     }
     constructedMessage = System_reformatMessage(constructedMessage);
-    return generic.getRequestParams(msg, constructedMessage, embeds);
+    return generic.getRequestParams(msg, constructedMessage, embeds); //ALWAYS keep this as the return.
 }
 
 
@@ -114,7 +116,9 @@ function System_parseHTMLText(htmlString){
     let reformattedText = htmlString;
     const htmldoc = document.createElement('div');
     htmldoc.innerHTML = reformattedText;
-    // Do edits to innerHTML here
+    // Do edits to innerHTML here. Good luck with HTML parsing.
+
+
     reformattedText = htmldoc.innerHTML;
     // Note that this is merely an example. You can do whatever you want as long as you think it works.
     return reformattedText;
