@@ -55,6 +55,14 @@ export function messageParserGeneric(msg) {
             constructedMessage = msg.content;
         }
     }
+    else if (msg.rolls.length === 0) {
+        if (msg.flavor) {
+            embeds = [{ title: msg.flavor, description: msg.content }];
+        }
+        else {
+            constructedMessage = msg.content;
+        }
+    }
     else {
         console.log("foundrytodiscord | System \"" + game.system.id + "\" is not supported for special roll embeds.")
         embeds = createGenericRollEmbed(msg);
