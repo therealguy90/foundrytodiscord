@@ -51,41 +51,53 @@ export function parse2DTable(tableData) {
             columnWidths[i] = 6;
         }
     }
-    let widthTotal = 0;
+    let columnWidthTotal = 0;
     for (let i = 0; i < columnWidths.length; i++) {
         if (i < columnWidths.length - 1) {
-            columnWidths[i] += 2;
+            columnWidths[i]++;
         }
-        widthTotal += columnWidths[i];
+        columnWidthTotal += columnWidths[i];
     }
     const MAX_EMBED_CHARACTER_WIDTH = 74;
-    if (widthTotal <= MAX_EMBED_CHARACTER_WIDTH) {
+    if (columnWidthTotal <= MAX_EMBED_CHARACTER_WIDTH) {
         let headerWidths = [];
         let totalHeaderWidths = 0;
         for (let i = 0; i < tableData[0].length; i++) {
-            headerWidths.push(tableData[0].length + (i < tableData[0].length - 1) ? 2 : 0);
+            headerWidths.push(tableData[0][i].length + ((i < tableData[0].length - 1) ? 1 : 0));
         }
         for (let i = 0; i < headerWidths.length; i++) {
-            totalHeaderWidths += headerWidths[i].length;
+            totalHeaderWidths += headerWidths[i];
         }
         if (totalHeaderWidths > MAX_EMBED_CHARACTER_WIDTH) {
             return fitTable(tableData, headerWidths, totalHeaderWidths, MAX_EMBED_CHARACTER_WIDTH)
         }
         else {
+            console.log(columnWidths);
+            console.log(columnWidthTotal);
+            columnWidthTotal = 0
+            for (let i = 0; i < columnWidths.length; i++) {
+                if (columnWidths[i] < headerWidths[i]) {
+                    columnWidths[i] = headerWidths[i];
+                }
+                columnWidthTotal += columnWidths[i];
+            }
             let i = 0;
-            while (widthTotal + 1 < MAX_EMBED_CHARACTER_WIDTH) {
+            console.log(columnWidths);
+            console.log(columnWidthTotal);
+            while (columnWidthTotal + 1 < MAX_EMBED_CHARACTER_WIDTH) {
                 columnWidths[i]++;
-                widthTotal++;
+                columnWidthTotal++;
                 i++;
                 if (i >= columnWidths.length) {
                     i = 0;
                 }
             }
-            return fitTable(tableData, columnWidths, widthTotal, MAX_EMBED_CHARACTER_WIDTH);
+            console.log(columnWidths);
+            return fitTable(tableData, columnWidths, columnWidthTotal, MAX_EMBED_CHARACTER_WIDTH);
         }
     }
     else {
-        return fitTable(tableData, columnWidths, widthTotal, MAX_EMBED_CHARACTER_WIDTH);
+        return fitTable(tableData, columnWidths, columnWidthTotal, MAX_EMBED_CHARACTER_WIDTH);
     }
 }
 
