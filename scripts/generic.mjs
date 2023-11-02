@@ -178,7 +178,7 @@ export function createGenericRollEmbed(message) {
     else {
         title = message.alias + '\'s Rolls';
         message.rolls.forEach(roll => {
-            desc = desc + 'Rolled ' + roll.formula + ', and got a ' + roll.result + " = **" + roll.total + "**\n";
+            desc = desc + 'Rolled ' + roll.formula + ', and got a ' + roll.result.replaceAll("+ 0", "") + " = **" + roll.total + "**\n";
         })
     }
     return [{ title: title, description: desc }];
