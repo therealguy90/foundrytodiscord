@@ -533,12 +533,14 @@ export function tokenBar_isTokenBarCard(htmlString) {
 }
 
 export function isOwnedByPlayer(actor) {
+    let isOwned = false;
     game.users.filter(user => !user.isGM).forEach(player => {
         if(actor.testUserPermission(player, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)){
-            return true;
+            isOwned = true;
+            return;
         }
     });
-    return false;
+    return isOwned;
 }
 
 export function removeElementsBySelector(selector, root) {
