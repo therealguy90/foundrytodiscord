@@ -572,10 +572,9 @@ export function parseHTMLText(htmlString, customHTMLParser = undefined) {
     });
     htmldoc.innerHTML = htmldoc.innerHTML.replace(/<table/g, '\n<table')
     const tables = htmldoc.querySelectorAll('table');
-
     tables.forEach((table) => {
         const newTable2D = htmlTo2DTable(table);
-        table.innerHTML = parse2DTable(newTable2D);
+        table.outerHTML = parse2DTable(newTable2D);
     });
 
     // Remove <img> tags
