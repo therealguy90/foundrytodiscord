@@ -195,9 +195,6 @@ export function initModuleSettings() {
         default: false,
         type: Boolean
     });
-    /*all message parsers MUST return a set of request params. The module queues each request param to be sent
-    *one by one to Discord to avoid rate limits.
-    */
 }
 
 export function initMainGM() {
@@ -216,6 +213,9 @@ export function getThisModuleSetting(settingName) {
 }
 
 export function initParser() {
+    /* all message parsers MUST return a set of request params. The module queues each request param to be sent
+    *  one by one to Discord to avoid rate limits.
+    */
     switch (SYSTEM_ID) {
         case "pf2e":
             console.log("foundrytodiscord | Game system detected as 'pf2e'.");
