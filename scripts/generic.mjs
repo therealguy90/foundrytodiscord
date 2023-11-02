@@ -66,7 +66,6 @@ export function messageParserGeneric(msg) {
     else {
         console.log("foundrytodiscord | System \"" + game.system.id + "\" is not supported for special roll embeds.")
         embeds = createGenericRollEmbed(msg);
-
     }
 
     //Fix formatting before sending
@@ -534,17 +533,12 @@ export function tokenBar_isTokenBarCard(htmlString) {
 }
 
 export function isOwnedByPlayer(actor) {
-    let isOwned = false;
-    let playerIDs = game.users.filter((user) => !user.isGM).map((player => player.id));
-    if (actor.ownership.default === 3) {
-        isOwned = true;
-    }
-    playerIDs.forEach(id => {
-        if (actor.ownership[id] && actor.ownership[id] === 3) {
-            isOwned = true;
+    game.users.filter(user => !user.isGM).forEach(player => {
+        if(actor.testUserPermission(player, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)){
+            return true;
         }
     });
-    return isOwned;
+    return false;
 }
 
 export function removeElementsBySelector(selector, root) {
