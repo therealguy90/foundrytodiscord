@@ -86,7 +86,7 @@ Hooks.on('getChatLogEntryContext', (html, options) => {
     options.unshift({
         name: "Send to Discord",
         icon: '<i class="fa-brands fa-discord"></i>',
-        condition: game.user.isGM, // optional condition
+        condition: game.user.isGM,
         callback: li => {
             let message = game.messages.get(li.attr("data-message-id"));
             tryRequest(message, 'POST');
@@ -326,9 +326,10 @@ function deleteAll(msgObjects, msg) {
 /* A brief explanation of the queueing system:
 * All requests are put into a queue such that everything executes in the order the hooks are detected in-game.
 * This also allows any and all requests to stop if a rate limit is reached.
-* The queue consists of a hook string, a FormData object, the message id, and the request method.
-* The client will attempt to send a message thrice, and if it fails every time, the message gets discarded from the queue.
-* A successfully sent message is added to the object stored in a hidden module setting. This allows all clients to access
+* A single object inqueue consists of a hook string, a FormData object, the message id, the request method, 
+* and (for deletions) the discord message ID.
+* The client will attempt to send/edit/delete a message thrice, and if it fails every time, the request gets discarded from the queue.
+* A successfully sent message is added to the object stored in a hidden module setting (max 100). This allows all clients to access
 * previously-sent messages, and for the messages to not be erased after the client reloads their browser.
 */
 function tryRequest(msg, method, hookOverride = "") {
