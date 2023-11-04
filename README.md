@@ -6,7 +6,7 @@ A lightweight FoundryVTT module that sends all FoundryVTT messages to a Discord 
 
 **System Support:**
 - Pathfinder Second Edition
-- DnD 5e (almost complete?)
+- DnD 5e
 
 While it will work with other systems, the extent of compatibility may vary. Regular chat, chat cards, and rolls seem to work just fine on most other systems.
 
@@ -73,7 +73,7 @@ On DnD5e, roll cards from midi-qol are also supported.
 
 Do note that this follows message deletions as well. If a message is deleted in Foundry, it will also be deleted in the channel. Although this can be disabled in the config, it is recommended to keep it on for any "oopsie" moments. When clicking on Reveal Message or Hide Message, it will also mirror it onto Discord, unless you have Ignore Whispers turned off, in which case whispers will always be displayed.
 
-There is currently no config to disable the hiding of metagame information, and it is currently not in consideration. 
+There is currently no config to disable the hiding of metagame information (except for Anonymous), and it is currently not in consideration. 
 
 ![Chat Mirroring Example](https://github.com/therealguy90/foundrytodiscord/assets/100253440/b7eb9ebd-e64d-4f1e-9ffc-5fd85f025a99)
 ![Chat Mirroring Example](https://github.com/therealguy90/foundrytodiscord/assets/100253440/caaa5350-fdf2-4aeb-a697-41f59551b506)
