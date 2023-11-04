@@ -200,22 +200,6 @@ export function createHTMLDiceRollEmbed(message) {
     return [{ title: title, description: desc }];
 }
 
-//Separates @Check arguments into individual objects, might be used in some systems
-export function parseCheckString(checkString) {
-    let check = {};
-
-    // Split the string into an array of key-value pairs
-    let pairs = checkString.split("|");
-
-    // Loop through the pairs and add them to the check object
-    for (let i = 0; i < pairs.length; i++) {
-        let [key, value] = pairs[i].split(":");
-        check[key] = value === "true" ? true : value === "false" ? false : value;
-    }
-
-    return check;
-}
-
 export function isCard(htmlString) {
     const htmldocElement = document.createElement('div');
     htmldocElement.innerHTML = htmlString;

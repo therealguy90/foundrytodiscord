@@ -365,7 +365,7 @@ function PF2e_parseDegree(degree) {
 
 function PF2e_getNameFromCheck(checkString) {
     return ":game_die:" + (function () {
-        const check = generic.parseCheckString(checkString);
+        const check = PF2e_parseCheckString(checkString);
         let tempcheck = "`";
         if (check.showDC) {
             if (check.showDC === "all" || check.showdc === "all") {
@@ -387,6 +387,8 @@ function PF2e_getNameFromCheck(checkString) {
     })();
 }
 
+
+// TODO: Make this better.
 function PF2e_replaceDamageFormat(damagestring) {
     const regex = /@Damage\[(\d+d\d+\[[^\]]+\](?:, ?)?)+\]/g;
     return damagestring.replace(regex, (match) => {
@@ -443,6 +445,22 @@ function PF2e_parseTraits(text, isRoll = false) {
         return "";
     }
 }
+
+
+// Specifically for @Check
+function PF2e_parseCheckString(checkString) {
+    let check = {};
+
+    // Split the string into an array of key-value pairs
+    let pairs = checkString.split("|");
+    for (let i = 0; i < pairs.length; i++) {
+        let [key, value] = pairs[i].split(":");
+        check[key] = value === "true" ? true : value === "false" ? false : value;
+    }
+
+    return check;
+}
+
 
 export function PF2e_reformatMessage(text) {
     let reformattedText = generic.reformatMessage(text, PF2e_parseHTMLText);
