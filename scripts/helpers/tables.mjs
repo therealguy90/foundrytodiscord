@@ -72,8 +72,6 @@ export function parse2DTable(tableData) {
             return fitTable(tableData, headerWidths, totalHeaderWidths, MAX_EMBED_CHARACTER_WIDTH)
         }
         else {
-            console.log(columnWidths);
-            console.log(columnWidthTotal);
             columnWidthTotal = 0
             for (let i = 0; i < columnWidths.length; i++) {
                 if (columnWidths[i] < headerWidths[i]) {
@@ -82,8 +80,6 @@ export function parse2DTable(tableData) {
                 columnWidthTotal += columnWidths[i];
             }
             let i = 0;
-            console.log(columnWidths);
-            console.log(columnWidthTotal);
             while (columnWidthTotal + 1 < MAX_EMBED_CHARACTER_WIDTH) {
                 columnWidths[i]++;
                 columnWidthTotal++;
@@ -92,7 +88,6 @@ export function parse2DTable(tableData) {
                     i = 0;
                 }
             }
-            console.log(columnWidths);
             return fitTable(tableData, columnWidths, columnWidthTotal, MAX_EMBED_CHARACTER_WIDTH);
         }
     }
