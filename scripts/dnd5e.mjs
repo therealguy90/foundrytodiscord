@@ -81,8 +81,6 @@ export function messageParserDnD5e(msg) {
 function DnD5e_createCardEmbed(message) {
     let card = message.content;
     const parser = new DOMParser();
-    //replace horizontal line tags with paragraphs so they can be parsed later when DnD5e_reformatMessage is called
-    card = card.replace(/<hr[^>]*>/g, "<p>-----------------------</p>");
     let regex = /<[^>]*>[^<]*\n[^<]*<\/[^>]*>/g; //html cleanup, removing unnecessary blank spaces and newlines
     card = card.replace(regex, (match) => match.replace(/\n/g, ''));
     let doc = parser.parseFromString(card, "text/html");

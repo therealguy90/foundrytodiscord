@@ -227,8 +227,6 @@ export function hasDiceRolls(htmlString) {
 export function createCardEmbed(message) {
     let card = message.content;
     const parser = new DOMParser();
-    //replace horizontal line tags with paragraphs so they can be parsed later
-    card = card.replace(/<hr[^>]*>/g, "<p>-----------------------</p>");
     let regex = /<[^>]*>[^<]*\n[^<]*<\/[^>]*>/g;
     card = card.replace(regex, (match) => match.replace(/\n/g, ''));
     card = card.replace(regex, "");

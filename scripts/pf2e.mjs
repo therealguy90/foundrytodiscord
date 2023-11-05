@@ -104,8 +104,6 @@ export function messageParserPF2e(msg) {
 function PF2e_createCardEmbed(message, cardType) {
     let card = message.content;
     const parser = new DOMParser();
-    //replace horizontal line tags with paragraphs so they can be parsed later
-    card = card.replace(/<hr[^>]*>/g, "<p>-----------------------</p>");
     let doc = parser.parseFromString(card, "text/html");
     let desc = "";
     let title;
