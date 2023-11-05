@@ -1,5 +1,5 @@
 import { isCard } from './scripts/generic.mjs';
-import { getDefaultAvatarLink } from './scripts/generic.mjs';
+import { getDefaultAvatarLink } from './scripts/helpers/images.mjs';
 import { initModuleSettings } from './scripts/helpers/modulesettings.mjs';
 import { initMainGM } from './scripts/helpers/modulesettings.mjs';
 import { getThisModuleSetting } from './scripts/helpers/modulesettings.mjs';

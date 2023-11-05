@@ -1,3 +1,5 @@
+import { getThisModuleSetting } from "./modulesettings.mjs";
+
 //Convert base64 to a blob
 export function dataToBlob(base64String) {
     const byteCharacters = atob(base64String.split(',')[1]);
@@ -20,4 +22,43 @@ export function dataToBlob(base64String) {
         mimeType = mimeTypeSegment.split(':')[1];
     }
     return new Blob(byteArrays, { type: mimeType });
+}
+
+// Image links from server
+export function generateimglink(img) {
+    const supportedFormats = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    let imgUrl;
+    if (!img || (img && img === "")) {
+        return getDefaultAvatarLink()
+    }
+    if (img.includes("http")) {
+        imgUrl = img;
+    } else {
+        if (getThisModuleSetting('inviteURL') !== "http://") {
+            imgUrl = (getThisModuleSetting('inviteURL') + img);
+        }
+        else {
+            return "";
+        }
+    }
+    const urlParts = imgUrl.split('.');
+    let fileExtension = urlParts[urlParts.length - 1].toLowerCase();
+    if (fileExtension.split('?').length > 1) {
+        fileExtension = fileExtension.split('?')[0];
+    }
+    if (supportedFormats.includes(fileExtension)) {
+        return imgUrl;
+    }
+    else {
+        return getDefaultAvatarLink();
+    }
+}
+
+export function getDefaultAvatarLink() {
+    if (getThisModuleSetting('inviteURL') !== "http://") {
+        return getThisModuleSetting('inviteURL') + "modules/foundrytodiscord/src/images/defaultavatar.png";
+    }
+    else {
+        return "";
+    }
 }

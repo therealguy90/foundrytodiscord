@@ -1,5 +1,5 @@
 import { getThisModuleSetting } from "./scripts/helpers/modulesettings.mjs";
-import { getDefaultAvatarLink } from "./scripts/generic.mjs";
+import { getDefaultAvatarLink } from "./scripts/helpers/images.mjs";
 
 Hooks.once("init", function () {
     game.modules.get('foundrytodiscord').api = {

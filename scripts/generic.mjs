@@ -3,6 +3,7 @@ import { parse2DTable } from './helpers/tables.mjs';
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
 import { splitEmbed } from './helpers/embeds.mjs';
 import { hexToColor } from './helpers/embeds.mjs';
+import { generateimglink} from './helpers/images.mjs';
 
 export function messageParserGeneric(msg) {
     let constructedMessage = '';
@@ -743,42 +744,3 @@ function generateDiscordAvatar(message) {
 
     return generateimglink(message.user?.avatar);
 }
-
-export function generateimglink(img) {
-    const supportedFormats = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-    let imgUrl;
-    if (!img || (img && img === "")) {
-        return getDefaultAvatarLink()
-    }
-    if (img.includes("http")) {
-        imgUrl = img;
-    } else {
-        if (getThisModuleSetting('inviteURL') !== "http://") {
-            imgUrl = (getThisModuleSetting('inviteURL') + img);
-        }
-        else {
-            return "";
-        }
-    }
-    const urlParts = imgUrl.split('.');
-    let fileExtension = urlParts[urlParts.length - 1].toLowerCase();
-    if (fileExtension.split('?').length > 1) {
-        fileExtension = fileExtension.split('?')[0];
-    }
-    if (supportedFormats.includes(fileExtension)) {
-        return imgUrl;
-    }
-    else {
-        return getDefaultAvatarLink();
-    }
-}
-
-export function getDefaultAvatarLink() {
-    if (getThisModuleSetting('inviteURL') !== "http://") {
-        return getThisModuleSetting('inviteURL') + "modules/foundrytodiscord/src/images/defaultavatar.png";
-    }
-    else {
-        return "";
-    }
-}
-

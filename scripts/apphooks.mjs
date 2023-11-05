@@ -1,4 +1,4 @@
-import { generateimglink } from "./generic.mjs";
+import { generateimglink } from "./helpers/images.mjs";
 import { splitEmbed } from "./helpers/embeds.mjs";
 import { hexToColor } from "./helpers/embeds.mjs";
 import { reformatMessage } from "./generic.mjs";
