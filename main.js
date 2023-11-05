@@ -15,7 +15,7 @@ Hooks.once("init", function () {
 });
 
 Hooks.on('userConnected', async (user, connected) => {
-    if (game.user.isGM && game.user.id === game.users.filter(user => user.active && user.isGM)[0]) {
+    if (game.user === game.users.activeGM) {
         if (connected) {
             //Search for main GM
             const mainUser = game.users.get(getThisModuleSetting('mainUserId'));
@@ -32,11 +32,10 @@ Hooks.on('userConnected', async (user, connected) => {
         }
         else {
             // If the main GM disconnects, reassign a new GM from the list
-            if (user.isGM && user.id === getThisModuleSetting('mainUserId')) {
-                // Get a list of all GMs currently active
-                const gmList = game.users.filter(user => user.isGM && user.active)
-                if (gmList.length > 0) {
-                    game.settings.set('foundrytodiscord', 'mainUserId', gmList[0].id);
+            if (user.id === getThisModuleSetting('mainUserId')) {
+                if (game.users.activeGM) {
+                    game.settings.set('foundrytodiscord', 'mainUserId', game.users.activeGM.id);
+                    console.log("foundrytodiscord | Old main GM has logged out. Main GM set to this client's user.");
                 }
                 else {
                     game.settings.set('foundrytodiscord', 'mainUserId', "");
