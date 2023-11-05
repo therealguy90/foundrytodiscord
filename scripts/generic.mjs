@@ -563,6 +563,17 @@ export function parseHTMLText(htmlString, customHTMLParser = undefined) {
     removeElementsBySelector('img', htmldoc);
     // Format various elements
     formatTextBySelector('.inline-roll', text => `:game_die:\`${text}\``, htmldoc);
+    
+    const dataLinks = htmldoc.querySelectorAll('a[data-uuid]');
+    if(dataLinks.length > 0){
+        dataLinks.forEach(link => {
+            const newLink = link.cloneNode(true);
+            const uuid = newLink.getAttribute('data-uuid');
+            newLink.textContent = "@UUID[" + uuid + "]";
+            link.parentNode.replaceChild(newLink, link);
+        });
+    }
+    
     reformattedText = htmldoc.innerHTML;
 
     if (customHTMLParser) {
@@ -600,7 +611,7 @@ export function htmlCodeCleanup(htmltext) {
         .replace(/<p>|<\/p>/g, '\n\n') // Remove <p> tags and format line breaks
         .replace(/<[^>]*>?/gm, '') // Remove all remaining tags
         .replace(/\n\s+/g, '\n\n') // Clean up line breaks and whitespace
-        .replace(/\n-+\n/g, '-----------------------') // Redo horizontal lines after cleaning up line breaks
+        .replace(/\n-+\n/g, '-----------------------') // Cleanup additional line breaks after horizontal lines
         .replace(/ {2,}/g, ' ') // Clean up excess whitespace
         .replaceAll(" ", ' '); //Cleanup table filler with real spaces
 }
@@ -612,6 +623,7 @@ export function reformatMessage(text, customHTMLParser = undefined) {
     const isHtmlFormatted = /<[a-z][\s\S]*>/i.test(reformattedText);
     if (isHtmlFormatted) {
         reformattedText = parseHTMLText(reformattedText, customHTMLParser);
+        reformattedText = replaceGenericAtTags(reformattedText); // call again, since <a> links are replaced with uuids
     }
     return reformattedText;
 }
