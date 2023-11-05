@@ -1,9 +1,7 @@
-import { htmlTo2DTable } from './helpers/tables.mjs';
-import { parse2DTable } from './helpers/tables.mjs';
+import { htmlTo2DTable, parse2DTable } from './helpers/tables.mjs';
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
-import { splitEmbed } from './helpers/embeds.mjs';
-import { hexToColor } from './helpers/embeds.mjs';
-import { generateimglink} from './helpers/images.mjs';
+import { splitEmbed, hexToColor } from './helpers/embeds.mjs';
+import { generateimglink } from './helpers/images.mjs';
 
 export function messageParserGeneric(msg) {
     let constructedMessage = '';

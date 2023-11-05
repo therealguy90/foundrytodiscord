@@ -1,10 +1,8 @@
-import { generateimglink } from "./helpers/images.mjs";
-import { splitEmbed } from "./helpers/embeds.mjs";
-import { hexToColor } from "./helpers/embeds.mjs";
 import { reformatMessage } from "./generic.mjs";
 import { PF2e_reformatMessage } from "./pf2e.mjs";
 import { DnD5e_reformatMessage } from "./dnd5e.mjs";
-import { dataToBlob } from "./helpers/images.mjs";
+import { dataToBlob, generateimglink } from "./helpers/images.mjs";
+import { splitEmbed, hexToColor } from "./helpers/embeds.mjs";
 import * as api from '../api.js';
 
 

@@ -1,7 +1,7 @@
 import { messageParserGeneric } from '../generic.mjs';
-import { ThreadedChatConfig } from '../../src/forms/threadedchatconfig.mjs'
 import { messageParserPF2e } from '../pf2e.mjs';
 import { messageParserDnD5e } from '../dnd5e.mjs';
+import { ThreadedChatConfig } from '../../src/forms/threadedchatconfig.mjs'
 let SYSTEM_ID;
 
 export function initModuleSettings() {

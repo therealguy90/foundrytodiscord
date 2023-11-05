@@ -1,6 +1,6 @@
-import * as generic from './generic.mjs';
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
 import { parse2DTable } from './helpers/tables.mjs';
+import * as generic from './generic.mjs';
 
 export function messageParserDnD5e(msg) {
     let constructedMessage = '';

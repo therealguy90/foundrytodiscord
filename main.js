@@ -1,11 +1,7 @@
 import { isCard } from './scripts/generic.mjs';
-import { getDefaultAvatarLink } from './scripts/helpers/images.mjs';
-import { initModuleSettings } from './scripts/helpers/modulesettings.mjs';
-import { initMainGM } from './scripts/helpers/modulesettings.mjs';
-import { getThisModuleSetting } from './scripts/helpers/modulesettings.mjs';
-import { initParser } from './scripts/helpers/modulesettings.mjs';
+import { dataToBlob, getDefaultAvatarLink } from './scripts/helpers/images.mjs';
+import { initModuleSettings, initMainGM, getThisModuleSetting, initParser } from './scripts/helpers/modulesettings.mjs';
 import { initMenuHooks } from './scripts/apphooks.mjs';
-import { dataToBlob } from './scripts/helpers/images.mjs';
 import * as api from './api.js';
 
 let messageParse;
@@ -585,6 +581,7 @@ function deleteSentMessage(msgID, dmsgID) {
         game.settings.set('foundrytodiscord', 'clientMessageList', messageList);
     }
 }
+
 function wait(milliseconds) {
     return new Promise(resolve => {
         setTimeout(resolve, milliseconds);
