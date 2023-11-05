@@ -576,7 +576,7 @@ export function parseHTMLText(htmlString, customHTMLParser = undefined) {
         dataLinks.forEach(link => {
             const newLink = link.cloneNode(true);
             const uuid = newLink.getAttribute('data-uuid');
-            newLink.textContent = "@UUID[" + uuid + "]"; // Can be formatted later
+            newLink.textContent = "@UUID[" + uuid + "]" + "{" + newLink.textContent + "}"; // Can be formatted later
             link.parentNode.replaceChild(newLink, link);
         });
     }
