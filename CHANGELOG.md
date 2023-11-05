@@ -1,4 +1,17 @@
-# 1.6.2
+# 1.6.3
+
+- Fixes "Send Image to Discord" on ImagePopouts when said image is raw base64 data.
+- Parse isRoll messages that contain no rolls as regular messages instead
+- Rolls no longer have "+ 0" added to them when there's nothing to add from the roll argument.
+- Improvements to the table parser, where the table will attempt to utilize the full width of the embed instead of padding spaces to the right.
+- Slight change to item links, where an additional space after the emoji is removed.
+- UUID links formatted in html are now parsed, i.e. `<a data-uuid=...>`
+- Change parsing order. HTML is now parsed first before @ tags.
+- Checking ownership of actors for hiding metagame info now uses testUserPermission instead.
+- Change handover of main GM role to use activeGM instead.
+- Lots of refactoring.
+
+## 1.6.2
 
 - Revealing whispers now sends them to Discord, and hiding a message now deletes it from the channel.
 - Fixes message editing.
