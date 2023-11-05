@@ -682,25 +682,25 @@ function replaceGenericAtTags(text) {
         if (document) {
             switch (true) {
                 case document instanceof Actor:
-                    toReplace += ":bust_in_silhouette: ";
+                    toReplace += ":bust_in_silhouette:";
                     break;
                 case document instanceof Scene:
-                    toReplace += ":map: ";
+                    toReplace += ":map:";
                     break;
                 case document instanceof Macro:
-                    toReplace += ":link: ";
+                    toReplace += ":link:";
                     break;
                 case document instanceof JournalEntry:
-                    toReplace += ":book: ";
+                    toReplace += ":book:";
                     break;
                 case document instanceof RollTable:
-                    toReplace += ":page_facing_up: ";
+                    toReplace += ":page_facing_up:";
                     break;
                 case document instanceof Folder:
-                    toReplace += ":file_folder: ";
+                    toReplace += ":file_folder:";
                     break;
                 default:
-                    toReplace += ":baggage_claim: ";
+                    toReplace += ":baggage_claim:";
                     break;
             }
         }

@@ -395,7 +395,7 @@ function PF2e_replaceDamageFormat(damagestring) {
             const [dice, desc] = part.match(/(\d+d\d+)\[([^\]]+)\]/).slice(1);
             return `${dice} ${desc}`;
         }).join(' + ');
-        return `\:game_die: \`${formattedDice}\` `;
+        return `\:game_die:\`${formattedDice}\` `;
     });
 }
 
@@ -466,14 +466,14 @@ export function PF2e_reformatMessage(text) {
     reformattedText = PF2e_replaceDamageFormat(reformattedText);
     //replace Checks
     let regex = /@Check\[[^\]]+\]{([^}]+)}/g;
-    reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
+    reformattedText = reformattedText.replace(regex, ':game_die:`$1`');
     //replace checks without name labels, different arguments on every system for @Check(if it exists), so pf2e gets a different one
     regex = /@Check\[(.*?)\]/g;
     reformattedText = reformattedText.replace(regex, (_, text) => PF2e_getNameFromCheck(text));
     regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
-    reformattedText = reformattedText.replace(regex, ':game_die: `$1`');
+    reformattedText = reformattedText.replace(regex, ':game_die:`$1`');
     regex = /\[\[\/(.*?) (.*?)\]\]/g;
-    reformattedText = reformattedText.replace(regex, ':game_die: `$2`');
+    reformattedText = reformattedText.replace(regex, ':game_die:`$2`');
 
     return reformattedText.trim();
 }
