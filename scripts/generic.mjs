@@ -563,22 +563,23 @@ export function parseHTMLText(htmlString, customHTMLParser = undefined) {
     removeElementsBySelector('img', htmldoc);
     // Format various elements
     formatTextBySelector('.inline-roll', text => `:game_die:\`${text}\``, htmldoc);
-    
-    const dataLinks = htmldoc.querySelectorAll('a[data-uuid]');
-    if(dataLinks.length > 0){
-        dataLinks.forEach(link => {
-            const newLink = link.cloneNode(true);
-            const uuid = newLink.getAttribute('data-uuid');
-            newLink.textContent = "@UUID[" + uuid + "]";
-            link.parentNode.replaceChild(newLink, link);
-        });
-    }
-    
+
     reformattedText = htmldoc.innerHTML;
 
     if (customHTMLParser) {
         reformattedText = customHTMLParser(reformattedText);
     }
+
+    const dataLinks = htmldoc.querySelectorAll('a[data-uuid]');
+    if(dataLinks.length > 0){
+        dataLinks.forEach(link => {
+            const newLink = link.cloneNode(true);
+            const uuid = newLink.getAttribute('data-uuid');
+            newLink.textContent = "@UUID[" + uuid + "]"; // Can be formatted later
+            link.parentNode.replaceChild(newLink, link);
+        });
+    }
+    reformattedText = htmldoc.innerHTML;
 
     // Format everything else
     reformattedText = htmlCodeCleanup(reformattedText);
@@ -619,12 +620,12 @@ export function htmlCodeCleanup(htmltext) {
 
 //reformatMessage makes text readable.
 export function reformatMessage(text, customHTMLParser = undefined) {
-    let reformattedText = replaceGenericAtTags(text);
+    let reformattedText = text;
     const isHtmlFormatted = /<[a-z][\s\S]*>/i.test(reformattedText);
     if (isHtmlFormatted) {
         reformattedText = parseHTMLText(reformattedText, customHTMLParser);
-        reformattedText = replaceGenericAtTags(reformattedText); // call again, since <a> links are replaced with uuids
     }
+    reformattedText = replaceGenericAtTags(reformattedText);
     return reformattedText;
 }
 
