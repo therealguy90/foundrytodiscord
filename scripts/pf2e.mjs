@@ -38,8 +38,8 @@ export function messageParserPF2e(msg) {
     else if (PF2e_isActionCard(msg) && msg.rolls?.length < 1) {
         cardType = 2;
     }
-    
-    if(PF2e_isConditionCard(msg)){
+
+    if (PF2e_isConditionCard(msg)) {
         embeds = PF2e_createConditionCard(msg);
     }
     else if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)) {
@@ -161,18 +161,18 @@ function PF2e_createCardEmbed(message, cardType) {
 }
 
 
-function PF2e_createRollEmbed(message){
+function PF2e_createRollEmbed(message) {
     const parser = new DOMParser();
     let doc = parser.parseFromString(message.flavor, "text/html");
     let title = "";
     let desc = "";
     //Build Title
     const actionTitle = doc.querySelector("h4.action")
-    if(actionTitle){
-        title = actionTitle.querySelector("strong").textContent + 
+    if (actionTitle) {
+        title = actionTitle.querySelector("strong").textContent +
             " " + (actionTitle.querySelector(".subtitle") ? actionTitle.querySelector(".subtitle").textContent : "");
     }
-    else{
+    else {
         title = message.flavor;
     }
     desc += PF2e_parseTraits(message.flavor, true);
@@ -233,7 +233,8 @@ function PF2e_createRollEmbed(message){
         //Add roll information to embed:
         for (let i = 0; i < message.rolls.length; i++) {
             desc += "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
-            if (generic.isOwnedByPlayer(game.actors.get(message.speaker?.actor)) && message.rolls[i].dice[0].faces === 20) {
+            const speakerActor = game.actors.get(message.speaker.actor);
+            if ((!speakerActor || generic.isOwnedByPlayer(speakerActor)) && message.rolls[i].dice[0].faces === 20) {
                 if (message.rolls[i].result.startsWith('20 ')) {
                     desc += " __(Nat 20!)__";
                 }
@@ -257,7 +258,8 @@ function PF2e_createRollEmbed(message){
     else {
         desc = desc + "~~:game_die:Result: " + "__" + PF2e_getDiscardedRoll(message) + "__~~\n";
         desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[0].total + "**__";
-        if (generic.isOwnedByPlayer(game.actors.get(message.speaker?.actor)) && message.rolls[i].dice[0].faces === 20) {
+        const speakerActor = game.actors.get(message.speaker.actor);
+        if ((!speakerActor || generic.isOwnedByPlayer(speakerActor)) && message.rolls[i].dice[0].faces === 20) {
             if (message.rolls[i].result.startsWith('20 ')) {
                 desc += " __(Nat 20!)__";
             }
@@ -363,7 +365,7 @@ function PF2e_parseDegree(degree) {
 
 function PF2e_getNameFromCheck(checkString) {
     return ":game_die:" + (function () {
-        const check = PF2e_parseCheckString(checkString);
+        const check = PF2e_parseInlineString(checkString);
         let tempcheck = "`";
         if (check.showDC) {
             if (check.showDC === "all" || check.showdc === "all") {
@@ -385,18 +387,95 @@ function PF2e_getNameFromCheck(checkString) {
     })();
 }
 
+function PF2e_getNameFromTemplate(templateString) {
+    return ":radio_button:" + (function () {
+        const template = PF2e_parseInlineString(templateString);
+        let tempcheck = "`";
+        tempcheck += template.distance + "-Foot " + template.type[0].toUpperCase() + template.type.substr(1) + "`";
+        return tempcheck;
+    })();
+}
 
-// TODO: Make this better.
 function PF2e_replaceDamageFormat(damagestring) {
-    const regex = /@Damage\[(\d+d\d+\[[^\]]+\](?:, ?)?)+\]/g;
-    return damagestring.replace(regex, (match) => {
-        const diceParts = match.match(/\d+d\d+\[[^\]]+\]/g);
-        const formattedDice = diceParts.map(part => {
-            const [dice, desc] = part.match(/(\d+d\d+)\[([^\]]+)\]/).slice(1);
-            return `${dice} ${desc}`;
-        }).join(' + ');
-        return `\:game_die:\`${formattedDice}\` `;
+    const damageIndexes = [];
+    const regex = /@Damage/g;
+
+    let match;
+    while ((match = regex.exec(damagestring)) !== null) {
+        damageIndexes.push(match.index);
+    }
+    const extractedDamageStrings = [];
+
+    for (let i = 0; i < damageIndexes.length; i++) {
+        const startIndex = damageIndexes[i];
+        let bracketCount = 0;
+
+        // Search for the matching closing bracket
+        for (let j = startIndex + 7; j < damagestring.length; j++) {
+            if (damagestring[j] === '[') {
+                bracketCount++;
+            } else if (damagestring[j] === ']') {
+                if (bracketCount === 1) {
+                    if (j < damagestring.length - 1) {
+                        if (damagestring[j + 1] == "{") {
+                            const tempJ = j;
+                            for (j; j < damagestring.length; j++) {
+                                if (j === damagestring.length - 1 && damagestring[j] !== "}") {
+                                    j = tempJ;
+                                    break;
+                                }
+                                if (damagestring[j] === "}") {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    extractedDamageStrings.push(damagestring.substring(startIndex, j + 1));
+                    break;
+                }
+                bracketCount--;
+            }
+        }
+    }
+    let tempdamage = ":game_die:`";
+    extractedDamageStrings.forEach(inlinedamage => {
+        damagestring = damagestring.replace(inlinedamage, () => {
+            const regex = /\{([^}]+)\}/;
+            const match = inlinedamage.match(regex);
+            if (match) {
+                return tempdamage += match[1].trim() + "`";
+            }
+            else {
+                const damageArgs = inlinedamage.trim().substr(8, inlinedamage.length - 9).split(/,(?![^[]*])/);
+                damageArgs.forEach(damageArg => {
+                    let [damageAmt, damageType] = damageArg.split(/\[([^\]]+)\]$/);
+                    if (tempdamage !== ":game_die:`") {
+                        tempdamage += "+ ";
+                    }
+                    tempdamage += damageAmt + " ";
+                    if (damageType) {
+                        tempdamage += (() => {
+                            const damageProperties = damageType.split(",");
+                            if (damageProperties.length > 1) {
+                                let combinedDamage = "";
+                                damageProperties.forEach(property => {
+                                    combinedDamage += property + " ";
+                                });
+                                return combinedDamage.trim();
+                            }
+                            else return damageType;
+                        })();
+                    }
+                });
+                return tempdamage.trim() + "`";
+            }
+        })
     });
+    return damagestring;
+}
+
+function PF2e_recursiveParseDamage(damagestring) {
+
 }
 
 function PF2e_parseTraits(text, isRoll = false) {
@@ -404,7 +483,7 @@ function PF2e_parseTraits(text, isRoll = false) {
     //check if anonymous allows traits to be displayed
     if (anonEnabled()) {
         if (game.settings.get("anonymous", "pf2e.traits")) {
-            if (isRoll && game.settings.get("anonymous", "pf2e.traits") === "rolls"){
+            if (isRoll && game.settings.get("anonymous", "pf2e.traits") === "rolls") {
                 displayTraits = false;
             }
             else if (game.settings.get("anonymous", "pf2e.traits") === "always") {
@@ -445,8 +524,7 @@ function PF2e_parseTraits(text, isRoll = false) {
 }
 
 
-// Specifically for @Check
-function PF2e_parseCheckString(checkString) {
+function PF2e_parseInlineString(checkString) {
     let check = {};
 
     // Split the string into an array of key-value pairs
@@ -455,7 +533,7 @@ function PF2e_parseCheckString(checkString) {
         let [key, value] = pairs[i].split(":");
         check[key] = value === "true" ? true : value === "false" ? false : value;
     }
-
+    console.log(check);
     return check;
 }
 
@@ -470,6 +548,12 @@ export function PF2e_reformatMessage(text) {
     //replace checks without name labels, different arguments on every system for @Check(if it exists), so pf2e gets a different one
     regex = /@Check\[(.*?)\]/g;
     reformattedText = reformattedText.replace(regex, (_, text) => PF2e_getNameFromCheck(text));
+
+    regex = /@Template\[[^\]]+\]{([^}]+)}/g;
+    reformattedText = reformattedText.replace(regex, ':radio_button:`$1`');
+    regex = /@Template\[(.*?)\]/g;
+    reformattedText = reformattedText.replace(regex, (_, text) => PF2e_getNameFromTemplate(text));
+
     regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
     reformattedText = reformattedText.replace(regex, ':game_die:`$1`');
     regex = /\[\[\/(.*?) (.*?)\]\]/g;
@@ -485,7 +569,7 @@ function PF2e_parseHTMLText(htmlString) {
     // Format various elements
     generic.formatTextBySelector('.inline-check, span[data-pf2-check]', text => `:game_die:\`${text}\``, htmldoc);
     reformattedText = htmldoc.innerHTML;
-    
+
     //Old format for status effects. Kept this in for now, but will be removed later on.
     const statuseffectlist = htmldoc.querySelectorAll('.statuseffect-rules');
     if (statuseffectlist.length !== 0) {
@@ -519,19 +603,19 @@ function PF2e_isActionCard(message) {
     }
 }
 
-function PF2e_isConditionCard(message){
+function PF2e_isConditionCard(message) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(message.content, "text/html");
     const conditionCard = doc.querySelectorAll(".participant-conditions");
-    if(conditionCard.length > 0){
+    if (conditionCard.length > 0) {
         return true;
     }
-    else{
+    else {
         return false;
     }
 }
 
-function PF2e_createConditionCard(message){
+function PF2e_createConditionCard(message) {
     let desc = ""
     const parser = new DOMParser();
     const doc = parser.parseFromString(message.content, "text/html");
@@ -540,7 +624,7 @@ function PF2e_createConditionCard(message){
     conditions.forEach(condition => {
         desc += "**" + condition.textContent + "**\n";
     });
-    return [{description: desc.trim()}];
+    return [{ description: desc.trim() }];
 }
 
 function PF2e_getDiscardedRoll(message) {
