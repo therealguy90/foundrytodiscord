@@ -349,7 +349,7 @@ function PF2e_parseDamageTypes(baserolls) {
 }
 
 function PF2e_parseDegree(degree) {
-    let convertedDegree
+    let convertedDegree;
     switch (degree) {
         case "criticalFailure":
             convertedDegree = 0;
