@@ -111,6 +111,10 @@ function PF2e_createCardEmbed(message, cardType) {
     //generic card
     if (cardType === 1) {
         const h3Element = doc.querySelector("h3");
+        const actionGlyphElement = h3Element.querySelector(".action-glyph");
+        if (actionGlyphElement) {
+            actionGlyphElement.remove();
+        }
         title = h3Element.textContent.trim();
         desc = PF2e_parseTraits(message.content);
     }
