@@ -96,11 +96,10 @@ export function messageParserPF2e(msg) {
             }
         }
     }
-    else{
-        if(msg.speaker?.actor){
-            actor = game.actors.get(msg.speaker.actor);
-        }
+    else if(msg.speaker?.actor){
+        actor = game.actors.get(msg.speaker.actor);
     }
+    
     if (embeds != [] && embeds.length > 0) {
         if (/<[a-z][\s\S]*>/i.test(embeds[0].title)) {
             embeds[0].title = PF2e_reformatMessage(embeds[0].title);
