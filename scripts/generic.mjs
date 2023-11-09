@@ -611,7 +611,7 @@ export function htmlCodeCleanup(htmltext) {
         .replace(/<p>|<\/p>/g, '\n\n') // Remove <p> tags and format line breaks
         .replace(/<[^>]*>?/gm, '') // Remove all remaining tags
         .replace(/\n\s+/g, '\n\n') // Clean up line breaks and whitespace
-        .replace(/\n-+\n/g, '-----------------------') // Cleanup additional line breaks after horizontal lines
+        .replace(/\n*----+\n*/g, '\n-----------------------\n') // Cleanup line breaks before and after horizontal lines
         .replace(/ {2,}/g, ' ') // Clean up excess whitespace
         .replaceAll(" ", ' '); //Cleanup table filler with real spaces
 }
