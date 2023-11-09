@@ -66,6 +66,8 @@ const SKILL_EXPANDED = {
     thievery: { shortForm: "thi" },
 };
 
+const SAVE_TYPES = ["fortitude", "reflex", "will"]
+
 export function messageParserPF2e(msg) {
     let constructedMessage = '';
     let embeds = [];
@@ -406,7 +408,6 @@ function PF2e_parseDegree(degree) {
 }
 
 function PF2e_getNameFromCheck(match, checkString, customText) {
-    const SAVE_TYPES = ["fortitude", "reflex", "will"]
     console.log(match);
     if (customText) {
         return ":game_die:`" + customText + "`";
