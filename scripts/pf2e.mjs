@@ -28,6 +28,44 @@ const damageEmoji = {
     "splash": ':boom:'
 }
 
+const SKILL_DICTIONARY = {
+    acr: "acrobatics",
+    arc: "arcana",
+    ath: "athletics",
+    cra: "crafting",
+    dec: "deception",
+    dip: "diplomacy",
+    itm: "intimidation",
+    med: "medicine",
+    nat: "nature",
+    occ: "occultism",
+    prf: "performance",
+    rel: "religion",
+    soc: "society",
+    ste: "stealth",
+    sur: "survival",
+    thi: "thievery",
+};
+
+const SKILL_EXPANDED = {
+    acrobatics: { shortForm: "acr" },
+    arcana: { shortForm: "arc" },
+    athletics: { shortForm: "ath" },
+    crafting: { shortForm: "cra" },
+    deception: { shortForm: "dec" },
+    diplomacy: { shortForm: "dip" },
+    intimidation: { shortForm: "itm" },
+    medicine: { shortForm: "med" },
+    nature: { shortForm: "nat" },
+    occultism: { shortForm: "occ" },
+    performance: { shortForm: "prf" },
+    religion: { shortForm: "rel" },
+    society: { shortForm: "soc" },
+    stealth: { shortForm: "ste" },
+    survival: { shortForm: "sur" },
+    thievery: { shortForm: "thi" },
+};
+
 export function messageParserPF2e(msg) {
     let constructedMessage = '';
     let embeds = [];
@@ -367,36 +405,84 @@ function PF2e_parseDegree(degree) {
     }
 }
 
-function PF2e_getNameFromCheck(checkString) {
-    return ":game_die:" + (function () {
-        const check = PF2e_parseInlineString(checkString);
-        let tempcheck = "`";
-        if (check.showDC) {
-            if (check.showDC === "all" || check.showdc === "all") {
-                tempcheck = tempcheck + "DC " + check.dc + " ";
+function PF2e_getNameFromCheck(match, checkString, customText) {
+    const SAVE_TYPES = ["fortitude", "reflex", "will"]
+    console.log(match);
+    if (customText) {
+        return ":game_die:`" + customText + "`";
+    }
+    else {
+        return ":game_die:" + (function () {
+            const check = PF2e_parseInlineString(checkString);
+            let tempcheck = "`";
+            if (check.showDC) {
+                if (check.showDC === "all" || check.showdc === "all") {
+                    tempcheck = tempcheck + "DC " + check.dc + " ";
+                }
             }
-        }
-        if (check.type) {
-            if (check.type === "flat") {
-                return tempcheck + "Flat Check`";
+            if (check.type) {
+                if (check.type === "flat") {
+                    return tempcheck + game.i18n.localize("PF2E.FlatCheck") + "`";
+                }
+                let skillcheck = check.type;
+                if (SAVE_TYPES.includes(check.type)) {
+                    skillcheck = game.i18n.localize(CONFIG.PF2E.saves[skillcheck]);
+                    return tempcheck + (check.basic ? game.i18n.format("PF2E.InlineCheck.BasicWithSave", { save: skillcheck }) : skillcheck) + "`";
+                }
+                const shortForm = (() => {
+                    if (SKILL_EXPANDED.hasOwnProperty(skillcheck)) {
+                        return SKILL_EXPANDED.shortForm;
+                    }
+                    else if(SKILL_DICTIONARY.hasOwnProperty(skillcheck)){
+                        return skillcheck;
+                    }
+                })();
+                return tempcheck + (shortForm 
+                    ? game.i18n.localize(CONFIG.PF2E.skills[shortForm])
+                    : skillcheck
+                        .split("-")
+                        .map((word) => {
+                            return word.slice(0, 1).toUpperCase() + word.slice(1);
+                        })
+                        .join(" ")) + "`";
             }
-            let skillcheck = check.type.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
-            if (check.basic) {
-                return tempcheck + "Basic " + skillcheck + "`";
-            }
-            else {
-                return tempcheck + skillcheck + "`";
-            }
-        }
-    })();
+        })();
+    }
 }
 
-function PF2e_getNameFromTemplate(templateString) {
-    return ":radio_button:" + (function () {
+function PF2e_getNameFromTemplate(match, templateString, label) {
+    console.log(match);
+    return (function () {
         const template = PF2e_parseInlineString(templateString);
-        let tempcheck = "`";
-        tempcheck += template.distance + "-Foot " + template.type[0].toUpperCase() + template.type.substr(1) + "`";
-        return tempcheck;
+        let templateLabel = "";
+        switch (template.type) {
+            case "emanation":
+                templateLabel += ":radio_button:";
+                break;
+            case "burst":
+                templateLabel += ":blue_circle:";
+                break;
+            case "cone":
+                templateLabel += ":mega:";
+                break;
+            case "line":
+                templateLabel += ":straight_ruler:";
+                break;
+            default:
+                templateLabel += ":radio_button:";
+                break;
+        }
+        if (label) {
+            templateLabel += "`" + label + "`";
+        }
+        else {
+            templateLabel += "`" + game.i18n.format("PF2E.TemplateLabel", {
+                size: template.distance,
+                unit: game.i18n.localize("PF2E.Foot"),
+                shape: game.i18n.localize(CONFIG.PF2E.areaTypes[template.type])
+            }) + "`";
+        }
+        return templateLabel;
     })();
 }
 
@@ -537,26 +623,24 @@ function PF2e_parseInlineString(checkString) {
         let [key, value] = pairs[i].split(":");
         check[key] = value === "true" ? true : value === "false" ? false : value;
     }
-    console.log(check);
     return check;
 }
 
 
 export function PF2e_reformatMessage(text) {
     let reformattedText = generic.reformatMessage(text, PF2e_parseHTMLText);
-    //replace @Damage appropriately (for PF2e)
+    //replace @Damage appropriately
     reformattedText = PF2e_replaceDamageFormat(reformattedText);
     //replace Checks
-    let regex = /@Check\[[^\]]+\]{([^}]+)}/g;
+    /*let regex = /@Check\[[^\]]+\]{([^}]+)}/g;
     reformattedText = reformattedText.replace(regex, ':game_die:`$1`');
     //replace checks without name labels, different arguments on every system for @Check(if it exists), so pf2e gets a different one
     regex = /@Check\[(.*?)\]/g;
-    reformattedText = reformattedText.replace(regex, (_, text) => PF2e_getNameFromCheck(text));
-
-    regex = /@Template\[[^\]]+\]{([^}]+)}/g;
-    reformattedText = reformattedText.replace(regex, ':radio_button:`$1`');
-    regex = /@Template\[(.*?)\]/g;
-    reformattedText = reformattedText.replace(regex, (_, text) => PF2e_getNameFromTemplate(text));
+    reformattedText = reformattedText.replace(regex, (_, text) => PF2e_getNameFromCheck(text));*/
+    let regex = /@Check\[(.*?)](?:{([^}]+)})?/g;
+    reformattedText = reformattedText.replace(regex, (match, checkString, label) => PF2e_getNameFromCheck(match, checkString, label));
+    regex = /@Template\[(.*?)](?:{([^}]+)})?/g;
+    reformattedText = reformattedText.replace(regex, (match, checkString, label) => PF2e_getNameFromTemplate(match, checkString, label));
 
     regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
     reformattedText = reformattedText.replace(regex, ':game_die:`$1`');
