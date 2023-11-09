@@ -122,12 +122,23 @@ export function messageParserPF2e(msg) {
             embeds = generic.createGenericRollEmbed(msg);
         }
     }
-
+    let actor;
+    if(msg.flags?.pf2e?.origin?.uuid){
+        const item = fromUuidSync(msg.flags?.pf2e?.origin?.uuid)
+        if(item instanceof ActorPF2e){
+            actor = item;
+        }
+        else{
+            if(item.parent && item.parent instanceof ActorPF2e){
+                actor = item.parent;
+            }
+        }
+    }
     if (embeds != [] && embeds.length > 0) {
         if (/<[a-z][\s\S]*>/i.test(embeds[0].title)) {
             embeds[0].title = PF2e_reformatMessage(embeds[0].title);
         }
-        embeds[0].description = PF2e_reformatMessage(embeds[0].description);
+        embeds[0].description = PF2e_reformatMessage(embeds[0].description, actor);
         constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === embeds[0].title) ? "" : msg.flavor;
         //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
@@ -137,7 +148,7 @@ export function messageParserPF2e(msg) {
             }
         }
     }
-    constructedMessage = PF2e_reformatMessage(constructedMessage);
+    constructedMessage = PF2e_reformatMessage(constructedMessage, actor);
     return generic.getRequestParams(msg, constructedMessage, embeds);
 }
 
@@ -487,7 +498,8 @@ function PF2e_getNameFromTemplate(match, templateString, label) {
     })();
 }
 
-function PF2e_replaceDamageFormat(damagestring) {
+function PF2e_replaceDamageFormat(damagestring, actor) {
+    const DamageRoll = CONFIG.Dice.rolls.find( r => r.name === "DamageRoll" );
     const damageIndexes = [];
     const regex = /@Damage/g;
 
@@ -529,6 +541,7 @@ function PF2e_replaceDamageFormat(damagestring) {
         }
     }
     let tempdamage = ":game_die:`";
+
     extractedDamageStrings.forEach(inlinedamage => {
         damagestring = damagestring.replace(inlinedamage, () => {
             const regex = /\{([^}]+)\}/;
@@ -539,34 +552,16 @@ function PF2e_replaceDamageFormat(damagestring) {
             else {
                 const damageArgs = inlinedamage.trim().substr(8, inlinedamage.length - 9).split(/,(?![^[]*])/);
                 damageArgs.forEach(damageArg => {
-                    let [damageAmt, damageType] = damageArg.split(/\[([^\]]+)\]$/);
-                    if (tempdamage !== ":game_die:`") {
-                        tempdamage += "+ ";
-                    }
-                    tempdamage += damageAmt + " ";
-                    if (damageType) {
-                        tempdamage += (() => {
-                            const damageProperties = damageType.split(",");
-                            if (damageProperties.length > 1) {
-                                let combinedDamage = "";
-                                damageProperties.forEach(property => {
-                                    combinedDamage += property + " ";
-                                });
-                                return combinedDamage.trim();
-                            }
-                            else return damageType;
-                        })();
-                    }
+                    const droll = new DamageRoll(damageArg, {actor: actor}, {});
+                    console.log(droll);
+                    const formula = droll.formula;
+                    tempdamage += formula;
                 });
                 return tempdamage.trim() + "`";
             }
         })
     });
     return damagestring;
-}
-
-function PF2e_recursiveParseDamage(damagestring) {
-
 }
 
 function PF2e_parseTraits(text, isRoll = false) {
@@ -628,16 +623,11 @@ function PF2e_parseInlineString(checkString) {
 }
 
 
-export function PF2e_reformatMessage(text) {
+export function PF2e_reformatMessage(text, actor) {
     let reformattedText = generic.reformatMessage(text, PF2e_parseHTMLText);
     //replace @Damage appropriately
-    reformattedText = PF2e_replaceDamageFormat(reformattedText);
+    reformattedText = PF2e_replaceDamageFormat(reformattedText, actor);
     //replace Checks
-    /*let regex = /@Check\[[^\]]+\]{([^}]+)}/g;
-    reformattedText = reformattedText.replace(regex, ':game_die:`$1`');
-    //replace checks without name labels, different arguments on every system for @Check(if it exists), so pf2e gets a different one
-    regex = /@Check\[(.*?)\]/g;
-    reformattedText = reformattedText.replace(regex, (_, text) => PF2e_getNameFromCheck(text));*/
     let regex = /@Check\[(.*?)](?:{([^}]+)})?/g;
     reformattedText = reformattedText.replace(regex, (match, checkString, label) => PF2e_getNameFromCheck(match, checkString, label));
     regex = /@Template\[(.*?)](?:{([^}]+)})?/g;
