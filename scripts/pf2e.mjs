@@ -28,44 +28,6 @@ const damageEmoji = {
     "splash": ':boom:'
 }
 
-const SKILL_DICTIONARY = {
-    acr: "acrobatics",
-    arc: "arcana",
-    ath: "athletics",
-    cra: "crafting",
-    dec: "deception",
-    dip: "diplomacy",
-    itm: "intimidation",
-    med: "medicine",
-    nat: "nature",
-    occ: "occultism",
-    prf: "performance",
-    rel: "religion",
-    soc: "society",
-    ste: "stealth",
-    sur: "survival",
-    thi: "thievery",
-};
-
-const SKILL_EXPANDED = {
-    acrobatics: { shortForm: "acr" },
-    arcana: { shortForm: "arc" },
-    athletics: { shortForm: "ath" },
-    crafting: { shortForm: "cra" },
-    deception: { shortForm: "dec" },
-    diplomacy: { shortForm: "dip" },
-    intimidation: { shortForm: "itm" },
-    medicine: { shortForm: "med" },
-    nature: { shortForm: "nat" },
-    occultism: { shortForm: "occ" },
-    performance: { shortForm: "prf" },
-    religion: { shortForm: "rel" },
-    society: { shortForm: "soc" },
-    stealth: { shortForm: "ste" },
-    survival: { shortForm: "sur" },
-    thievery: { shortForm: "thi" },
-};
-
 const SAVE_TYPES = ["fortitude", "reflex", "will"]
 
 export function messageParserPF2e(msg) {
@@ -284,7 +246,7 @@ function PF2e_createRollEmbed(message) {
     }
     desc += "\n";
 
-    if (!message.flags.pf2e?.context?.isReroll) {
+    if (!message.isReroll) {
         //Add roll information to embed:
         for (let i = 0; i < message.rolls.length; i++) {
             desc += "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
@@ -298,7 +260,7 @@ function PF2e_createRollEmbed(message) {
                 }
                 desc += "||(" + message.rolls[i].result + ")||";
             }
-            if (message.flags?.pf2e?.context?.type && message.flags.pf2e.context.type == "damage-roll") {
+            if ((message.isDamageRoll)) {
                 desc += PF2e_parseDamageTypes(message.rolls[i]);
             }
             else if (PF2e_parseDegree(message.rolls[i].options?.degreeOfSuccess) != "Invalid") {
@@ -441,16 +403,16 @@ function PF2e_getNameFromCheck(match, checkString, customText) {
                     skillcheck = game.i18n.localize(CONFIG.PF2E.saves[skillcheck]);
                     return tempcheck + (check.basic ? game.i18n.format("PF2E.InlineCheck.BasicWithSave", { save: skillcheck }) : skillcheck) + "`";
                 }
-                const shortForm = (() => {
-                    if (SKILL_EXPANDED.hasOwnProperty(skillcheck)) {
-                        return SKILL_EXPANDED.shortForm;
+                const locStringForm = (() => {
+                    if (CONFIG.PF2E.skills.hasOwnProperty(skillcheck)) {
+                        return CONFIG.PF2E.skills[skillcheck];
                     }
-                    else if(SKILL_DICTIONARY.hasOwnProperty(skillcheck)){
-                        return skillcheck;
+                    else if(CONFIG.PF2E.skillList.hasOwnProperty(skillcheck)){
+                        return CONFIG.PF2E.skillList[skillcheck];
                     }
                 })();
-                return tempcheck + (shortForm 
-                    ? game.i18n.localize(CONFIG.PF2E.skills[shortForm])
+                return tempcheck + (locStringForm 
+                    ? game.i18n.localize(locStringForm)
                     : skillcheck
                         .split("-")
                         .map((word) => {
