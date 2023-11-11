@@ -564,10 +564,10 @@ export function parseHTMLText(htmlString, customHTMLParser = undefined) {
     formatTextBySelector('.inline-roll', text => `:game_die:\`${text}\``, htmldoc);
 
     reformattedText = htmldoc.innerHTML;
-
     if (customHTMLParser) {
         reformattedText = customHTMLParser(reformattedText);
     }
+    htmldoc.innerHTML = reformattedText;
 
     const dataLinks = htmldoc.querySelectorAll('a[data-uuid]');
     if(dataLinks.length > 0){
