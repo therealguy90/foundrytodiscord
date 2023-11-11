@@ -1,7 +1,7 @@
 import * as generic from './generic.mjs';
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
 
-const damageEmoji = {
+const DAMAGE_EMOJI = {
     "bludgeoning": ':hammer:',
     "slashing": ':axe:',
     "piercing": ':bow_and_arrow:',
@@ -26,6 +26,13 @@ const damageEmoji = {
     "precision": ':dart:',
     "persistent": ':hourglass:',
     "splash": ':boom:'
+}
+
+const TEMPLATE_EMOJI = {
+    "emanation": ":radio_button:",
+    "burst": ":blue_circle:",
+    "cone": ":mega:",
+    "line": ":straight_ruler:"
 }
 
 const SAVE_TYPES = ["fortitude", "reflex", "will"]
@@ -86,7 +93,7 @@ export function messageParserPF2e(msg) {
     }
     let actor;
     if(msg.flags?.pf2e?.origin?.uuid){
-        const item = fromUuidSync(msg.flags?.pf2e?.origin?.uuid)
+        const item = fromUuidSync(msg.flags.pf2e.origin.uuid)
         if(item instanceof Actor){
             actor = item;
         }
@@ -323,12 +330,12 @@ function PF2e_parseDamageTypes(baserolls) {
                     persFormula = persFormula.replace(regex, '');
                     damages = damages + persFormula.trim();
                 }
-                damages = damages + (roll.persistent ? damageEmoji["persistent"] : "") + (precision ? damageEmoji["precision"] : "") + (splash ? damageEmoji["splash"] : "");
-                if (!damageEmoji[roll.type]) {
+                damages = damages + (roll.persistent ? DAMAGE_EMOJI["persistent"] : "") + (precision ? DAMAGE_EMOJI["precision"] : "") + (splash ? DAMAGE_EMOJI["splash"] : "");
+                if (!DAMAGE_EMOJI[roll.type]) {
                     damages = damages + "[" + roll.type + "]";
                 }
                 else {
-                    damages = damages + damageEmoji[roll.type];
+                    damages = damages + DAMAGE_EMOJI[roll.type];
                 }
                 if (j != term.rolls.length - 1) {
                     damages = damages + " + ";
@@ -339,9 +346,9 @@ function PF2e_parseDamageTypes(baserolls) {
     else {
         baserolls.terms.forEach((term, i) => {
             term.rolls.forEach((roll, j) => {
-                damages = damages + roll.total + damageEmoji["splash"];
-                if (damageEmoji[roll.type]) {
-                    damages = damages + damageEmoji[roll.type];
+                damages = damages + roll.total + DAMAGE_EMOJI["splash"];
+                if (DAMAGE_EMOJI[roll.type]) {
+                    damages = damages + DAMAGE_EMOJI[roll.type];
                 }
                 else {
                     damages = damages + "[" + roll.type + "]";
@@ -385,7 +392,6 @@ function PF2e_parseDegree(degree) {
 }
 
 function PF2e_getNameFromCheck(match, checkString, customText) {
-    console.log(match);
     if (customText) {
         return ":game_die:`" + customText + "`";
     }
@@ -429,26 +435,11 @@ function PF2e_getNameFromCheck(match, checkString, customText) {
 }
 
 function PF2e_getNameFromTemplate(match, templateString, label) {
-    console.log(match);
     return (function () {
         const template = PF2e_parseInlineString(templateString);
         let templateLabel = "";
-        switch (template.type) {
-            case "emanation":
-                templateLabel += ":radio_button:";
-                break;
-            case "burst":
-                templateLabel += ":blue_circle:";
-                break;
-            case "cone":
-                templateLabel += ":mega:";
-                break;
-            case "line":
-                templateLabel += ":straight_ruler:";
-                break;
-            default:
-                templateLabel += ":radio_button:";
-                break;
+        if(TEMPLATE_EMOJI.hasOwnProperty(template.type)){
+            templateLabel += TEMPLATE_EMOJI[template.type];
         }
         if (label) {
             templateLabel += "`" + label + "`";
@@ -519,7 +510,6 @@ function PF2e_replaceDamageFormat(damagestring, actor) {
                 const damageArgs = inlinedamage.trim().substr(8, inlinedamage.length - 9).split(/,(?![^[]*])/);
                 damageArgs.forEach(damageArg => {
                     const droll = new DamageRoll(damageArg, {actor: actor}, {});
-                    console.log(droll);
                     const formula = droll.formula;
                     tempdamage += formula;
                 });
@@ -613,6 +603,20 @@ function PF2e_parseHTMLText(htmlString) {
     htmldoc.innerHTML = reformattedText;
     // Format various elements
     generic.formatTextBySelector('.inline-check, span[data-pf2-check]', text => `:game_die:\`${text}\``, htmldoc);
+    reformattedText = htmldoc.innerHTML;
+
+    const templateButtons = htmldoc.querySelectorAll('span[data-pf2-effect-area]');
+    if(templateButtons.length > 0){
+        templateButtons.forEach(template => {
+            const type = template.getAttribute('data-pf2-effect-area');
+            let tempTemplate = ""
+            if(TEMPLATE_EMOJI.hasOwnProperty(type)){
+                tempTemplate += TEMPLATE_EMOJI[type];
+            }
+            tempTemplate += "`" + template.textContent + "`";
+            template.outerHTML = tempTemplate;
+        })
+    }
     reformattedText = htmldoc.innerHTML;
 
     //Old format for status effects. Kept this in for now, but will be removed later on.
