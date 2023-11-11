@@ -87,11 +87,11 @@ export function messageParserPF2e(msg) {
     let actor;
     if(msg.flags?.pf2e?.origin?.uuid){
         const item = fromUuidSync(msg.flags?.pf2e?.origin?.uuid)
-        if(item instanceof ActorPF2e){
+        if(item instanceof Actor){
             actor = item;
         }
         else{
-            if(item.parent && item.parent instanceof ActorPF2e){
+            if(item.parent && item.parent instanceof Actor){
                 actor = item.parent;
             }
         }
@@ -99,7 +99,7 @@ export function messageParserPF2e(msg) {
     else if(msg.speaker?.actor){
         actor = game.actors.get(msg.speaker.actor);
     }
-    
+
     if (embeds != [] && embeds.length > 0) {
         if (/<[a-z][\s\S]*>/i.test(embeds[0].title)) {
             embeds[0].title = PF2e_reformatMessage(embeds[0].title);
@@ -467,7 +467,7 @@ function PF2e_getNameFromTemplate(match, templateString, label) {
 function PF2e_replaceDamageFormat(damagestring, actor) {
     const DamageRoll = CONFIG.Dice.rolls.find( r => r.name === "DamageRoll" );
     const damageIndexes = [];
-    const regex = /@Damage/g;
+    const regex = /@Damage\[/g;
 
     let match;
     while ((match = regex.exec(damagestring)) !== null) {
