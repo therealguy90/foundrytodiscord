@@ -497,9 +497,10 @@ function PF2e_replaceDamageFormat(damagestring, actor) {
             }
         }
     }
-    let tempdamage = ":game_die:`";
+    let tempdamage = ""
 
     extractedDamageStrings.forEach(inlinedamage => {
+        tempdamage = ":game_die:`";
         damagestring = damagestring.replace(inlinedamage, () => {
             const regex = /\{([^}]+)\}/;
             const match = inlinedamage.match(regex);
