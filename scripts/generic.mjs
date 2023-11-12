@@ -721,20 +721,26 @@ function replaceGenericAtTags(text) {
 }
 
 function generateDiscordAvatar(message) {
-    if (message.speaker?.scene && message.speaker.scene !== null && message.speaker.token) {
+    // Prioritize chat-portrait for parity
+    if(game.modules.get("chat-portrait")?.active && message.flags["chat-portrait"]?.src){
+        return generateimglink(message.flags["chat-portrait"].src);
+    }
+
+    if (message.speaker?.scene && message.speaker.token) {
         const speakerToken = game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token);
-        if (speakerToken.texture?.src && speakerToken.texture.src != "") {
+        if (speakerToken.texture?.src && speakerToken.texture.src !== "") {
             return generateimglink(speakerToken.texture.src);
         }
     }
 
-    if (message.speaker?.actor && message.speaker.actor !== null) {
+    if (message.speaker?.actor) {
         const speakerActor = game.actors.get(message.speaker.actor);
         if (speakerActor?.prototypeToken?.texture?.src) {
             return generateimglink(speakerActor.prototypeToken.texture.src);
         }
     }
 
+    // Probably need to remove this, honestly. Doesn't do anything in practice.
     const aliasMatchedActor = game.actors.find(actor => actor.name === message.alias);
     if (aliasMatchedActor?.prototypeToken?.texture?.src) {
         return generateimglink(aliasMatchedActor.prototypeToken.texture.src);
