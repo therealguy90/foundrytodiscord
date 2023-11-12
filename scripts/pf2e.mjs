@@ -91,27 +91,21 @@ export function messageParserPF2e(msg) {
             embeds = generic.createGenericRollEmbed(msg);
         }
     }
-    let actor;
+    // Document of origin is important in the PF2e parser, as some of the labels require it to be passed to scale correctly.
+    // Removing this would break parity between foundry and discord, as some damage roll values will not stay the same without
+    // an actor, especially scaling abilities and spells.
+    let originDoc;
     if(msg.flags?.pf2e?.origin?.uuid){
-        const item = fromUuidSync(msg.flags.pf2e.origin.uuid)
-        if(item instanceof Actor){
-            actor = item;
-        }
-        else{
-            if(item.parent && item.parent instanceof Actor){
-                actor = item.parent;
-            }
-        }
+        originDoc = fromUuidSync(msg.flags.pf2e.origin.uuid);
     }
     else if(msg.speaker?.actor){
-        actor = game.actors.get(msg.speaker.actor);
+        originDoc = game.actors.get(msg.speaker.actor); //Fallback to speaker in case it's needed.
     }
-
     if (embeds != [] && embeds.length > 0) {
         if (/<[a-z][\s\S]*>/i.test(embeds[0].title)) {
             embeds[0].title = PF2e_reformatMessage(embeds[0].title);
         }
-        embeds[0].description = PF2e_reformatMessage(embeds[0].description, actor);
+        embeds[0].description = PF2e_reformatMessage(embeds[0].description, originDoc);
         constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === embeds[0].title) ? "" : msg.flavor;
         //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
@@ -121,7 +115,7 @@ export function messageParserPF2e(msg) {
             }
         }
     }
-    constructedMessage = PF2e_reformatMessage(constructedMessage, actor);
+    constructedMessage = PF2e_reformatMessage(constructedMessage, originDoc);
     return generic.getRequestParams(msg, constructedMessage, embeds);
 }
 
@@ -435,7 +429,7 @@ function PF2e_getNameFromCheck(match, checkString, customText) {
 }
 
 function PF2e_getNameFromTemplate(match, templateString, label) {
-    return (function () {
+    return (() => {
         const template = PF2e_parseInlineString(templateString);
         let templateLabel = "";
         if(TEMPLATE_EMOJI.hasOwnProperty(template.type)){
@@ -455,7 +449,7 @@ function PF2e_getNameFromTemplate(match, templateString, label) {
     })();
 }
 
-function PF2e_replaceDamageFormat(damagestring, actor) {
+function PF2e_replaceDamageFormat(damagestring, originDoc) {
     const DamageRoll = CONFIG.Dice.rolls.find( r => r.name === "DamageRoll" );
     const damageIndexes = [];
     const regex = /@Damage\[/g;
@@ -508,8 +502,24 @@ function PF2e_replaceDamageFormat(damagestring, actor) {
             }
             else {
                 const damageArgs = inlinedamage.trim().substr(8, inlinedamage.length - 9).split(/,(?![^[]*])/);
+                const rollParams = (() => {
+                    switch(true){
+                        //Oddly enough, just putting the document in "actor" already works... but this is to really make sure.
+                        case originDoc instanceof Actor:
+                            console.log(originDoc);
+                            return {actor: originDoc};
+                            break;
+                        case originDoc instanceof Item:
+                            console.log(originDoc);
+                            return {item: originDoc};
+                            break;
+                        default:
+                            return {};
+                            break;
+                    }
+                })();
                 damageArgs.forEach(damageArg => {
-                    const droll = new DamageRoll(damageArg, {actor: actor}, {});
+                    const droll = new DamageRoll(damageArg, rollParams, {});
                     const formula = droll.formula;
                     tempdamage += formula;
                 });
