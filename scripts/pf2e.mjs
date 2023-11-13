@@ -278,8 +278,8 @@ function PF2e_createRollEmbed(message) {
         }
     }
     else {
-        desc = desc + "~~:game_die:Result: " + "__" + PF2e_getDiscardedRoll(message) + "__~~\n";
-        desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[0].total + "**__";
+        desc += "~~:game_die:Result: " + "__" + PF2e_getDiscardedRoll(message) + "__~~\n";
+        desc += "**:game_die:Result: **" + "__**" + message.rolls[0].total + "**__";
         const speakerActor = game.actors.get(message.speaker.actor);
         if ((!speakerActor || generic.isOwnedByPlayer(speakerActor)) && message.rolls[i].dice[0].faces === 20) {
             if (message.rolls[i].result.startsWith('20 ')) {
@@ -315,24 +315,24 @@ function PF2e_parseDamageTypes(baserolls) {
 
                 });
                 if (!roll.persistent) {
-                    damages = damages + roll._total.toString();
+                    damages += roll._total.toString();
 
                 }
                 else {
                     let persFormula = roll.formula;
                     const regex = /[^\d+d\d+\s*+-]/g;
                     persFormula = persFormula.replace(regex, '');
-                    damages = damages + persFormula.trim();
+                    damages += persFormula.trim();
                 }
-                damages = damages + (roll.persistent ? DAMAGE_EMOJI["persistent"] : "") + (precision ? DAMAGE_EMOJI["precision"] : "") + (splash ? DAMAGE_EMOJI["splash"] : "");
+                damages += (roll.persistent ? DAMAGE_EMOJI["persistent"] : "") + (precision ? DAMAGE_EMOJI["precision"] : "") + (splash ? DAMAGE_EMOJI["splash"] : "");
                 if (!DAMAGE_EMOJI[roll.type]) {
-                    damages = damages + "[" + roll.type + "]";
+                    damages += "[" + roll.type + "]";
                 }
                 else {
-                    damages = damages + DAMAGE_EMOJI[roll.type];
+                    damages += DAMAGE_EMOJI[roll.type];
                 }
                 if (j != term.rolls.length - 1) {
-                    damages = damages + " + ";
+                    damages += " + ";
                 }
             });
         });
@@ -340,12 +340,12 @@ function PF2e_parseDamageTypes(baserolls) {
     else {
         baserolls.terms.forEach((term, i) => {
             term.rolls.forEach((roll, j) => {
-                damages = damages + roll.total + DAMAGE_EMOJI["splash"];
+                damages += roll.total + DAMAGE_EMOJI["splash"];
                 if (DAMAGE_EMOJI[roll.type]) {
-                    damages = damages + DAMAGE_EMOJI[roll.type];
+                    damages += DAMAGE_EMOJI[roll.type];
                 }
                 else {
-                    damages = damages + "[" + roll.type + "]";
+                    damages += "[" + roll.type + "]";
                 }
             });
         });
@@ -395,7 +395,7 @@ function PF2e_getNameFromCheck(match, checkString, customText) {
             let tempcheck = "`";
             if (check.showDC) {
                 if (check.showDC === "all" || check.showdc === "all") {
-                    tempcheck = tempcheck + "DC " + check.dc + " ";
+                    tempcheck += "DC " + check.dc + " ";
                 }
             }
             if (check.type) {

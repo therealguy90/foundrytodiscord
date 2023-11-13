@@ -166,17 +166,17 @@ export function createGenericRollEmbed(message) {
     if (message.flavor && message.flavor.length > 0) {
         title = message.flavor;
         if (desc !== "") {
-            desc = desc + "\n";
+            desc += "\n";
         }
         for (let i = 0; i < message.rolls.length; i++) {
-            desc = desc + "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
-            desc = desc + "\n";
+            desc += "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
+            desc += "\n";
         }
     }
     else {
         title = message.alias + '\'s Rolls';
         message.rolls.forEach(roll => {
-            desc = desc + 'Rolled ' + roll.formula + ', and got a ' + roll.result.replaceAll("+ 0", "") + " = **" + roll.total + "**\n";
+            desc += 'Rolled ' + roll.formula + ', and got a ' + roll.result.replaceAll("+ 0", "") + " = **" + roll.total + "**\n";
         })
     }
     return [{ title: title, description: desc }];
