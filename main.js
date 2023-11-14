@@ -100,7 +100,6 @@ async function initSystemStatus() {
             });
             editedMessage.append('payload_json', body)
 
-            console.log('foundrytodiscord | Attempting to edit server status...');
             const response = await api.editMessage(editedMessage, getThisModuleSetting('webHookURL'), getThisModuleSetting('messageID'));
             if (response.ok) {
                 console.log('foundrytodiscord | Server state set to ONLINE');
