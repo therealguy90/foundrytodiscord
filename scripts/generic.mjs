@@ -758,9 +758,6 @@ function generateDiscordAvatar(message) {
 
 function censorId(docid) {
     // Censors IDs for anonymized names
-    if (docid.length !== 16) {
-      return "Invalid input";
-    }
     const firstPart = docid.substring(0, 4);
     const censoredId = `${firstPart}****`;
   
