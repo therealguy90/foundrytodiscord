@@ -112,26 +112,44 @@ export function getRequestParams(message, msgText, embeds) {
 
 function generateRequestParams(message, msgText, embeds, imgurl) {
     let alias = message.alias;
-    let speakerActor;
-    if (anonEnabled()) {
-        let anon = game.modules.get('anonymous').api;
-        //First priority: Use speaker token name and check if actor's name is visible through anonymous
-        if (message?.speaker?.token && message.speaker.token !== "") {
-            const scene = game.scenes.get(message.speaker.scene);
-            if (scene) {
-                const speakerToken = scene.tokens.get(message.speaker.token);
-                if (speakerToken?.actor) {
-                    speakerActor = speakerToken.actor
-                }
-            }
+    const speakerToken = (message.speaker?.token && message.speaker?.scene)
+        ? game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token)
+        : undefined;
+    let speakerActor = message.speaker?.actor
+        ? game.actors.get(message.speaker.actor)
+        : undefined;
+    // Get both speakerToken and speakerActor, since we want many fallbacks,
+    // in case a token is declared in the message but not its actor. Good for macros or other modules/systems that don't
+    // rely on a token being on the canvas to create a message.
+    if (anonEnabled() && (speakerToken.actor || speakerActor)) {
+        const anon = game.modules.get('anonymous').api
+        // First: Check if token has an actor and use Anonymous if it does. 
+        // This uses a fallback for the message actor in case it is needed.
+        if (speakerToken.actor && speakerActor !== speakerToken.actor) {
+            // Fallback possibly not needed? Will keep it in for redundancy.
+            speakerActor = speakerToken.actor;
         }
-        else {
+        if (!speakerActor) {
             speakerActor = game.actors.find(actor => actor.name === message.alias);
         }
-        if (speakerActor) {
-            if (!anon.playersSeeName(speakerActor) && speakerActor.type !== "character") {
-                alias = anon.getName(speakerActor) + " (" + speakerActor.id + ")";
-            }
+        if (speakerActor && !anon.playersSeeName(speakerActor)) {
+            alias = anon.getName(speakerActor) + " (" + censorId(speakerToken ? speakerToken.id : speakerActor.id) + ")";
+        }
+    }
+    else if (speakerToken) { 
+        // If user doesn't have anonymous, this defaults to the visibility of the token name on the board.
+        // This is similar to the PF2e implementation of token name visibility.
+        switch (speakerToken.displayName) {
+            case CONST.TOKEN_DISPLAY_MODES.NONE:
+            case CONST.TOKEN_DISPLAY_MODES.OWNER:
+            case CONST.TOKEN_DISPLAY_MODES.OWNER_HOVER:
+            case CONST.TOKEN_DISPLAY_MODES.CONTROL:
+                if(!speakerActor.hasPlayerOwner){
+                    alias = "Unknown" + " (" + censorId(speakerToken.id) + ")";
+                }
+                break;
+            default:
+                break;
         }
     }
     if (embeds[0]?.description?.length > 4000) {
@@ -737,3 +755,14 @@ function generateDiscordAvatar(message) {
 
     return generateimglink(message.user?.avatar);
 }
+
+function censorId(docid) {
+    // Censors IDs for anonymized names
+    if (docid.length !== 16) {
+      return "Invalid input";
+    }
+    const firstPart = docid.substring(0, 4);
+    const censoredId = `${firstPart}****`;
+  
+    return censoredId;
+  }
