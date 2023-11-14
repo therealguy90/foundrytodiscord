@@ -108,7 +108,7 @@ function DnD5e_createCardEmbed(message) {
     //this is to limit metagame information and is recommended for most systems.
     let descVisible = getThisModuleSetting('showDescription');
     if (speakerActor) {
-        if (anonEnabled() && !generic.isOwnedByPlayer(speakerActor)) {
+        if (anonEnabled() && !game.modules.get('anonymous').api.playersSeeName(speakerActor)) {
             descVisible = false;
         }
     }

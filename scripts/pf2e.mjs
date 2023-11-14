@@ -154,7 +154,7 @@ function PF2e_createCardEmbed(message, cardType) {
     let descVisible = getThisModuleSetting('showDescription');
 
     if (speakerActor) {
-        if (anonEnabled() && !generic.isOwnedByPlayer(speakerActor)) {
+        if (anonEnabled() && !game.modules.get('anonymous').api.playersSeeName(speakerActor)) {
             descVisible = false;
         }
     }
@@ -256,7 +256,7 @@ function PF2e_createRollEmbed(message) {
         for (let i = 0; i < message.rolls.length; i++) {
             desc += "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
             const speakerActor = game.actors.get(message.speaker.actor);
-            if ((!speakerActor || generic.isOwnedByPlayer(speakerActor)) && message.rolls[i].dice[0].faces === 20) {
+            if (speakerActor?.hasPlayerOwner && message.rolls[i].dice[0].faces === 20) {
                 if (message.rolls[i].result.startsWith('20 ')) {
                     desc += " __(Nat 20!)__";
                 }
@@ -281,7 +281,7 @@ function PF2e_createRollEmbed(message) {
         desc += "~~:game_die:Result: " + "__" + PF2e_getDiscardedRoll(message) + "__~~\n";
         desc += "**:game_die:Result: **" + "__**" + message.rolls[0].total + "**__";
         const speakerActor = game.actors.get(message.speaker.actor);
-        if ((!speakerActor || generic.isOwnedByPlayer(speakerActor)) && message.rolls[i].dice[0].faces === 20) {
+        if (speakerActor?.hasPlayerOwner && message.rolls[i].dice[0].faces === 20) {
             if (message.rolls[i].result.startsWith('20 ')) {
                 desc += " __(Nat 20!)__";
             }

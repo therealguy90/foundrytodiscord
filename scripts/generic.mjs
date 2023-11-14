@@ -258,7 +258,7 @@ export function createCardEmbed(message) {
     let descVisible = true;
 
     if (speakerActor) {
-        if (anonEnabled() && !isOwnedByPlayer(speakerActor)) {
+        if (anonEnabled() && !game.modules.get('anonymous').api.playersSeeName(speakerActor)) {
             descVisible = false;
         }
     }
@@ -419,7 +419,7 @@ export function tokenBar_createTokenBarCard(message) {
                         }
                         else {
                             let actor = game.actors.get(tokenData.actorid);
-                            if (isOwnedByPlayer(actor)) {
+                            if (actor.hasPlayerOwner) {
                                 desc += "(" + (tokenData.passed === 'won' ? "" : "__") + tokenData.total + "__)**";
                             }
                             else {
@@ -469,7 +469,7 @@ export function tokenBar_createTokenBarCard(message) {
                         }
                         else {
                             let actor = game.actors.get(tokenData.actorid);
-                            if (isOwnedByPlayer(actor)) {
+                            if (actor.hasPlayerOwner) {
                                 desc += "(__" + tokenData.total + "__)**";
                             }
                             else {
@@ -511,17 +511,6 @@ export function tokenBar_isTokenBarCard(htmlString) {
     } else {
         return false;
     }
-}
-
-export function isOwnedByPlayer(actor) {
-    let isOwned = false;
-    game.users.filter(user => !user.isGM).forEach(player => {
-        if(actor.testUserPermission(player, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)){
-            isOwned = true;
-            return;
-        }
-    });
-    return isOwned;
 }
 
 export function removeElementsBySelector(selector, root) {
@@ -570,7 +559,7 @@ export function parseHTMLText(htmlString, customHTMLParser = undefined) {
     htmldoc.innerHTML = reformattedText;
 
     const dataLinks = htmldoc.querySelectorAll('a[data-uuid]');
-    if(dataLinks.length > 0){
+    if (dataLinks.length > 0) {
         dataLinks.forEach(link => {
             const newLink = link.cloneNode(true);
             const uuid = newLink.getAttribute('data-uuid');
@@ -722,7 +711,7 @@ function replaceGenericAtTags(text) {
 
 function generateDiscordAvatar(message) {
     // Prioritize chat-portrait for parity
-    if(game.modules.get("chat-portrait")?.active && message.flags["chat-portrait"]?.src){
+    if (game.modules.get("chat-portrait")?.active && message.flags["chat-portrait"]?.src) {
         return generateimglink(message.flags["chat-portrait"].src);
     }
 
