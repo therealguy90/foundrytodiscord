@@ -1,13 +1,13 @@
 import { isCard } from './scripts/generic.mjs';
 import { dataToBlob, getDefaultAvatarLink } from './scripts/helpers/images.mjs';
-import { initModuleSettings, getThisModuleSetting, initParser } from './scripts/helpers/modulesettings.mjs';
+import { initModuleSettings, getThisModuleSetting, getSystemParser } from './scripts/helpers/modulesettings.mjs';
 import { initMenuHooks } from './scripts/apphooks.mjs';
 import * as api from './api.js';
 
 let messageParse;
 Hooks.once("init", function () {
     initModuleSettings();
-    messageParse = initParser();
+    messageParse = getSystemParser();
 });
 
 

@@ -195,7 +195,7 @@ export function getThisModuleSetting(settingName) {
     return game.settings.get('foundrytodiscord', settingName);
 }
 
-export function initParser() {
+export function getSystemParser() {
     /* all message parsers MUST return a set of request params. The module queues each request param to be sent
     *  one by one to Discord to avoid rate limits.
     */
