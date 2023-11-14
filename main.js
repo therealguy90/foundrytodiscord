@@ -1,6 +1,6 @@
 import { isCard } from './scripts/generic.mjs';
 import { dataToBlob, getDefaultAvatarLink } from './scripts/helpers/images.mjs';
-import { initModuleSettings, initMainGM, getThisModuleSetting, initParser } from './scripts/helpers/modulesettings.mjs';
+import { initModuleSettings, getThisModuleSetting, initParser } from './scripts/helpers/modulesettings.mjs';
 import { initMenuHooks } from './scripts/apphooks.mjs';
 import * as api from './api.js';
 
@@ -10,43 +10,15 @@ Hooks.once("init", function () {
     messageParse = initParser();
 });
 
-Hooks.on('userConnected', async (user, connected) => {
-    if (game.user === game.users.activeGM) {
-        if (connected) {
-            //Search for main GM
-            const mainUser = game.users.get(getThisModuleSetting('mainUserId'));
-            if (mainUser && mainUser.active) {
-                // If there is already an online main GM
-                return;
-            }
-            else {
-                // If the main GM doesn't exist, the connecting GM becomes the main GM
-                if (user.isGM) {
-                    game.settings.set('foundrytodiscord', 'mainUserId', user.id);
-                }
-            }
-        }
-        else {
-            // If the main GM disconnects, reassign a new GM from the list
-            if (user.id === getThisModuleSetting('mainUserId')) {
-                if (game.users.activeGM) {
-                    game.settings.set('foundrytodiscord', 'mainUserId', game.users.activeGM.id);
-                    console.log("foundrytodiscord | Old main GM has logged out. Main GM set to this client's user.");
-                }
-                else {
-                    game.settings.set('foundrytodiscord', 'mainUserId', "");
-                }
-            }
-        }
-    }
-});
 
 Hooks.on('deleteScene', async scene => {
-    // Used for Threaded Scenes to delete a thread map if a scene is deleted.
-    const setting = getThisModuleSetting('threadedChatMap');
-    if (setting.hasOwnProperty(scene.id)) {
-        delete setting[scene.id];
-        await game.settings.set('foundrytodiscord', 'threadedChatMap', setting);
+    if (isUserMainGM()) {
+        // Used for Threaded Scenes to delete a thread map if a scene is deleted.
+        const threadedChatMap = getThisModuleSetting('threadedChatMap');
+        if (threadedChatMap.hasOwnProperty(scene.id)) {
+            delete threadedChatMap[scene.id];
+            game.settings.set('foundrytodiscord', 'threadedChatMap', threadedChatMap);
+        }
     }
 });
 
@@ -95,15 +67,14 @@ let isProcessing = false;
 let flushLog = false;
 
 Hooks.once("ready", function () {
-    // Application and context menu buttons
+    // Application and context menu buttons for all users
     initMenuHooks();
-    // Search for main GM
-    initMainGM();
-    if (game.user.isGM) {
-        if (getThisModuleSetting('inviteURL') !== "" && !getThisModuleSetting('inviteURL').endsWith("/")) {
-            game.settings.set('foundrytodiscord', 'inviteURL', getThisModuleSetting('inviteURL') + "/");
+    if (isUserMainGM()) {
+        const curInviteURL = getThisModuleSetting('inviteURL');
+        if (curInviteURL !== "" && !curInviteURL.endsWith("/")) {
+            game.settings.set('foundrytodiscord', 'inviteURL', curInviteURL + "/");
         }
-        else if (getThisModuleSetting('inviteURL') === "") {
+        else if(curInviteURL === ""){
             game.settings.set('foundrytodiscord', 'inviteURL', "http://");
         }
         initSystemStatus();
@@ -122,7 +93,7 @@ async function initSystemStatus() {
                     title: 'Server Status: ' + game.world.id,
                     description: '**ONLINE**\n' + (getThisModuleSetting('showInvite') ? '**Invite Link: **' + getThisModuleSetting('inviteURL') : ''),
                     footer: {
-                        text: 'Type "ftd serveroff" in Foundry to set your server status to OFFLINE. This will persist until the next world restart.\n\n' + (game.modules.get('foundrytodiscord').id + ' v' + game.modules.get('foundrytodiscord').version)
+                        text: 'Have a GM type "ftd serveroff" in Foundry to set your server status to OFFLINE. This will persist until the next time a GM logs in.\n\n' + (game.modules.get('foundrytodiscord').id + ' v' + game.modules.get('foundrytodiscord').version)
                     },
                     color: 65280
                 }]
@@ -186,7 +157,7 @@ Hooks.on('createChatMessage', async (msg) => {
                 const response = await api.editMessage(editedMessage, getThisModuleSetting('webHookURL'), getThisModuleSetting('messageID'));
                 if (response.ok) {
                     console.log('foundrytodiscord | Server state set to OFFLINE');
-                    ChatMessage.create({ content: 'Foundry to Discord | Server state set to OFFLINE.', whisper: [game.user.id] });
+                    ChatMessage.create({ content: 'Server state set to OFFLINE.', speaker: {alias: "Foundry to Discord"}, whisper: [game.user.id] });
                     msg.delete();
                 }
                 else {
@@ -200,11 +171,8 @@ Hooks.on('createChatMessage', async (msg) => {
         if (getThisModuleSetting("ignoreWhispers") && msg.whisper.length > 0) {
             return;
         }
-        if (game.user.id !== getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") {
-            initMainGM();
-            if (game.users.filter(user => user.isGM && user.active).length > 0 || (!getThisModuleSetting("allowNoGM") && game.user.id !== getThisModuleSetting("mainUserId") && game.user.id !== game.users.filter(user => user.active).sort((a, b) => a.name.localeCompare(b.name))[0].id)) {
-                return;
-            }
+        if (!isUserMainGM() && (game.users.activeGM || !isUserMainNonGM())) {
+            return;
         }
         if (msg.isRoll && (!isCard(msg.content) && msg.rolls.length > 0) && getThisModuleSetting("rollWebHookURL") == "") {
             return;
@@ -218,6 +186,11 @@ Hooks.on('createChatMessage', async (msg) => {
 });
 
 Hooks.on('updateChatMessage', async (msg, change, options) => {
+    if (!isUserMainGM()) {
+        if (game.users.activeGM || (!getThisModuleSetting("allowNoGM") && game.user.id !== game.users.filter(user => user.active).sort((a, b) => a.name.localeCompare(b.name))[0].id)) {
+            return;
+        }
+    }
     let tries = 10; // Number of tries before giving up
     const checkExist = async (msgChange) => {
         if (!getThisModuleSetting('messageList')[msg.id] && !getThisModuleSetting('clientMessageList')[msg.id]) {
@@ -231,7 +204,7 @@ Hooks.on('updateChatMessage', async (msg, change, options) => {
         } else {
             let editHook;
             let msgObjects;
-            if (game.users.filter(user => user.isGM && user.active).length > 0) {
+            if (game.user.isGM) {
                 msgObjects = getThisModuleSetting('messageList')[msg.id];
             } else {
                 msgObjects = getThisModuleSetting('clientMessageList')[msg.id];
@@ -257,12 +230,6 @@ Hooks.on('updateChatMessage', async (msg, change, options) => {
         }
     };
     flushLog = false;
-    if (game.user.id !== getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") {
-        initMainGM();
-        if (game.users.filter(user => user.isGM && user.active).length > 0 || (!getThisModuleSetting("allowNoGM") && game.user.id !== getThisModuleSetting("mainUserId") && game.user.id !== game.users.filter(user => user.active).sort((a, b) => a.name.localeCompare(b.name))[0].id)) {
-            return;
-        }
-    }
     if (!getThisModuleSetting('disableMessages')) {
         if (getThisModuleSetting("ignoreWhispers")) {
             if (change.whisper?.length > 1) {
@@ -271,7 +238,7 @@ Hooks.on('updateChatMessage', async (msg, change, options) => {
             }
             else if (change.whisper?.length === 0) {
                 let msgObjects;
-                if (game.users.filter(user => user.isGM && user.active).length > 0) {
+                if (game.user.isGM) {
                     msgObjects = getThisModuleSetting('messageList')[msg.id];
                 } else {
                     msgObjects = getThisModuleSetting('clientMessageList')[msg.id];
@@ -287,10 +254,10 @@ Hooks.on('updateChatMessage', async (msg, change, options) => {
 });
 
 Hooks.on('deleteChatMessage', async (msg) => {
-    if ((!flushLog && !getThisModuleSetting('disableDeletions')) && ((game.userId === getThisModuleSetting("mainUserId") && getThisModuleSetting("mainUserId") !== "") || (getThisModuleSetting("allowNoGM") && game.users.filter(user => user.isGM && user.active).length === 0 && game.user.id === game.users.filter(user => user.active).sort((a, b) => a.name.localeCompare(b.name))[0].id))) {
+    if (!flushLog && !getThisModuleSetting('disableDeletions') && (isUserMainGM() || (getThisModuleSetting("allowNoGM") && !game.users.activeGM && isUserMainNonGM()))) {
         if (getThisModuleSetting('messageList').hasOwnProperty(msg.id) || getThisModuleSetting('clientMessageList').hasOwnProperty(msg.id)) {
             let msgObjects;
-            if (game.users.filter(user => user.isGM && user.active).length > 0) {
+            if (game.user.isGM) {
                 msgObjects = getThisModuleSetting('messageList')[msg.id];
             } else {
                 msgObjects = getThisModuleSetting('clientMessageList')[msg.id];
@@ -335,7 +302,6 @@ function tryRequest(msg, method, hookOverride = "") {
             console.warn("foundrytodiscord | Your Invite URL is not set! Avatar images cannot be displayed on Discord.")
         }
         let formData = new FormData()
-        let hasAttachments = false;
         if (game.modules.get("chat-media")?.active || game.modules.get("chatgifs")?.active) {
             const { formDataTemp, contentTemp } = getChatMediaAttachments(formData, requestParams.params.content, msg.content);
             if (formDataTemp !== formData) {
@@ -350,7 +316,7 @@ function tryRequest(msg, method, hookOverride = "") {
             else {
                 requestParams.params.content += addMediaLinks(msg);
             }
-            if (requestParams.params.content === "" && !hasAttachments) {
+            if (requestParams.params.content === "") {
                 return;
             }
         }
@@ -530,11 +496,11 @@ function addMediaLinks(message) {
 
 function addSentMessage(msgID, params) {
     let messageList;
-    if (game.users.filter(user => user.active && user.isGM).length > 0) {
-        messageList = game.settings.get('foundrytodiscord', 'messageList');
+    if (game.user.isGM) {
+        messageList = getThisModuleSetting('messageList');
     }
     else {
-        messageList = game.settings.get('foundrytodiscord', 'clientMessageList');
+        messageList = getThisModuleSetting('clientMessageList');
     }
     if (!messageList.hasOwnProperty(msgID)) {
         messageList[msgID] = [params];
@@ -558,11 +524,11 @@ function addSentMessage(msgID, params) {
 
 function deleteSentMessage(msgID, dmsgID) {
     let messageList;
-    if (game.users.filter(user => user.active && user.isGM).length > 0) {
-        messageList = game.settings.get('foundrytodiscord', 'messageList');
+    if (game.user.isGM) {
+        messageList = getThisModuleSetting('messageList');
     }
     else {
-        messageList = game.settings.get('foundrytodiscord', 'clientMessageList');
+        messageList = getThisModuleSetting('clientMessageList');
     }
     if (messageList.hasOwnProperty(msgID)) {
         let index = -1;
@@ -586,4 +552,12 @@ function wait(milliseconds) {
     return new Promise(resolve => {
         setTimeout(resolve, milliseconds);
     });
+}
+
+function isUserMainGM() {
+    return game.user === game.users.activeGM;
+}
+
+function isUserMainNonGM(){
+    return game.user === game.users.filter(user => user.active && !user.isGM).sort((a, b) => a.name.localeCompare(b.name))[0];
 }

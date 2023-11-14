@@ -6,12 +6,6 @@ let SYSTEM_ID;
 
 export function initModuleSettings() {
     SYSTEM_ID = game.system.id;
-    game.settings.register('foundrytodiscord', 'mainUserId', {
-        scope: "world",
-        config: false,
-        default: "",
-        type: String
-    });
     game.settings.register('foundrytodiscord', 'inviteURL', {
         name: "Game Invite URL",
         hint: "This should be the internet invite URL for your game session. Make sure the domain is public! To test if your URL works, go to\n<https://yourinviteurl.example>/modules/foundrytodiscord/src/images/defaultavatar.png\n(excluding <>, of course). If you visit the link where this image is hosted, it should appear as the default FoundryVTT icon!",
@@ -23,7 +17,7 @@ export function initModuleSettings() {
     });
     game.settings.register('foundrytodiscord', 'webHookURL', {
         name: "Web Hook URL",
-        hint: "This should be the Webhook's URL from the discord server you want to send chat messages to. Leave it blank to have foundrytodiscord ignore regular chat messages.",
+        hint: "This should be the Webhook's URL from the discord channel you want to send chat messages to. Leave it blank to have foundrytodiscord ignore regular chat messages.",
         scope: "world",
         config: true,
         default: "",
@@ -46,7 +40,7 @@ export function initModuleSettings() {
         type: Object
     });
     game.settings.register('foundrytodiscord', 'messageList', {
-        // messageList is a list of the past 100 messages that have been sent to discord.
+        // messageList is a list of the past 100 messages that have been sent to discord through Chat Mirroring.
         // It has a URL and a discord Message object for each entry with a key of the FoundryVTT message ID.
         // This allows for real-time tracking of messages.
         config: false,
@@ -195,17 +189,6 @@ export function initModuleSettings() {
         default: false,
         type: Boolean
     });
-}
-
-export function initMainGM() {
-    const mainGM = game.users.get(getThisModuleSetting('mainUserId'));
-    if (!mainGM || !mainGM.active) {
-        if (game.user.isGM) {
-            game.settings.set('foundrytodiscord', 'mainUserId', game.user.id);
-            console.log("foundrytodiscord | Main GM set to this client's user.");
-        }
-    }
-    return getThisModuleSetting('mainUserId');
 }
 
 export function getThisModuleSetting(settingName) {
