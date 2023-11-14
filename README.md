@@ -21,7 +21,7 @@ While it will work with other systems, the extent of compatibility may vary. Reg
 - Adds options for the GM to specify which languages the module will "understand" and sends the rest to Discord as "Unintelligible."
 - Allows overriding "common" languages in your world to ensure they pass the Polyglot check and are sent to Discord as plaintext.
 
-**Chat Media / Chat GIFs / Similar:**
+**Chat Media / Chat GIFs / Similar Modules:**
 - Sends image, video links, and uploaded images to Discord.
 
 **Monk's Token Bar:**
@@ -68,7 +68,7 @@ Follow the hints provided by the settings, and use the webhook link from your ch
 
 Publicly-seen messages are sent to Discord while **attempting to block as much metagame data as possible**, depending on your other modules that may change how ChatMessages display information. This works well with the "anonymous" module.
 
-Screenshots are from a Pathfinder Second Edition game. Compatibility with other systems may vary, but regular rolls, regular chat cards, and chat will work fine on ANY system.
+Screenshots are from a Pathfinder Second Edition game. Compatibility with other systems may vary, but regular rolls, regular chat cards (using foundry's native .chat-card CSS styling), and chat will work fine on ANY system.
 On DnD5e, roll cards from midi-qol are also supported.
 
 Do note that this follows message deletions as well. If a message is deleted in Foundry, it will also be deleted in the channel. Although this can be disabled in the config, it is recommended to keep it on for any "oopsie" moments. When clicking on Reveal Message or Hide Message, it will also mirror it onto Discord, unless you have Ignore Whispers turned off, in which case whispers will always be displayed.
