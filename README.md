@@ -21,7 +21,7 @@ While it will work with other systems, the extent of compatibility may vary. Reg
 - Adds options for the GM to specify which languages the module will "understand" and sends the rest to Discord as "Unintelligible."
 - Allows overriding "common" languages in your world to ensure they pass the Polyglot check and are sent to Discord as plaintext.
 
-**Chat Media / Chat GIFs / Similar:**
+**Chat Media / Chat GIFs / Similar Modules:**
 - Sends image, video links, and uploaded images to Discord.
 
 **Monk's Token Bar:**
