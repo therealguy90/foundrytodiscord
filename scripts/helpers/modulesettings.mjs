@@ -16,8 +16,8 @@ export function initModuleSettings() {
         type: String
     });
     game.settings.register('foundrytodiscord', 'webHookURL', {
-        name: "Web Hook URL",
-        hint: "This should be the Webhook's URL from the discord channel you want to send chat messages to. Leave it blank to have foundrytodiscord ignore regular chat messages.",
+        name: "Webhook URL",
+        hint: "This should be the Webhook's URL from the discord channel you want to send chat messages to. Leave it blank to have Foundry to Discord ignore regular chat messages.",
         scope: "world",
         config: true,
         default: "",
@@ -25,8 +25,8 @@ export function initModuleSettings() {
         type: String
     });
     game.settings.register('foundrytodiscord', 'rollWebHookURL', {
-        name: "Roll Web Hook URL",
-        hint: "This is the webhook for wherever you want rolls to appear in discord. Leave it blank to have foundrytodiscord ignore rolls.",
+        name: "Roll Webhook URL",
+        hint: "This is the webhook for wherever you want rolls to appear in discord. Leave it blank to have Foundry to Discord ignore rolls. You can set this as the same webhook URL as above.",
         scope: "world",
         config: true,
         default: "",
@@ -96,15 +96,15 @@ export function initModuleSettings() {
     }
     game.settings.register('foundrytodiscord', 'ignoreWhispers', {
         name: "Ignore Whispers & Private Rolls",
-        hint: "If this is on, then it will ignore whispers and private rolls. If this is off, it will send them to Discord just like any other message.",
+        hint: "Turning this off will allow Foundry to Discord to detect whispers and private rolls, and send them to your webhook like any other message.",
         scope: "world",
         config: true,
         default: true,
         type: Boolean
     });
     game.settings.register('foundrytodiscord', 'allowNoGM', {
-        name: "Allow chat mirroring without a GM",
-        hint: "Foundry to Discord will only function when a GM is in the world if you turn this off.",
+        name: "Allow Chat Mirroring without a GM",
+        hint: "Foundry to Discord will mirror messages when a GM is in the world if you turn this off.",
         scope: "world",
         config: true,
         default: true,
@@ -112,7 +112,7 @@ export function initModuleSettings() {
     });
     game.settings.register('foundrytodiscord', 'showDescription', {
         name: "Show chat card descriptions",
-        hint: "Disabling this means chat cards descriptions are no longer sent to discord.",
+        hint: "Disabling this means chat cards descriptions are no longer sent to discord. This can be useful if you don't want to log long spell descriptions.",
         scope: "world",
         config: true,
         default: true,
@@ -182,7 +182,7 @@ export function initModuleSettings() {
         type: Boolean
     });
     game.settings.register('foundrytodiscord', 'disableMessages', {
-        name: "Disable ALL messages",
+        name: "Disable Chat Mirroring",
         hint: "This disables the detection of new chat messages. If you want to use Foundry to Discord purely as an API or use the Server Status Message ONLY, you can toggle this on.",
         scope: "world",
         config: true,
