@@ -330,12 +330,12 @@ export function getCardFooter(card) {
 }
 
 export function polyglotize(message, playerlanguages = []) {
-    //get a list of all PCs
+    //get a list of all PCs and player-controlled 
     if (playerlanguages == [] || playerlanguages.length == 0) {
-        let characters = game.actors.filter(a => a.type === "character");
+        let playerActors = game.actors.filter(a => a.hasPlayerOwner);
         let languages = new Set();
-        for (let character of characters) {
-            let characterLanguages = character.system.traits.languages.value;
+        for (let actor of playerActors) {
+            let characterLanguages = actor.system.traits.languages.value;
             for (let language of characterLanguages) {
                 languages.add(language);
             }
