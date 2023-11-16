@@ -86,19 +86,20 @@ export function messageParserPF2e(msg) {
     else if(msg.speaker?.actor){
         originDoc = game.actors.get(msg.speaker.actor); //Fallback to speaker in case it's needed.
     }
-    if (embeds != [] && embeds.length > 0) {
-        if (/<[a-z][\s\S]*>/i.test(embeds[0].title)) {
-            embeds[0].title = PF2e_reformatMessage(embeds[0].title);
-        }
+    if (embeds && embeds.length > 0) {
         embeds[0].description = PF2e_reformatMessage(embeds[0].description, originDoc);
         constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === embeds[0].title) ? "" : msg.flavor;
         //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
         if (anonEnabled()) {
             for (let i = 0; i < embeds.length; i++) {
-                embeds[i] = generic.anonymizeEmbed(msg, embeds[i]);
+                embeds[i].title = generic.anonymizeText(embeds[i].title, msg);
+                embeds[i].description = generic.anonymizeText(embeds[i].description, msg);
             }
         }
+    }
+    if (anonEnabled()) {
+        constructedMessage = generic.anonymizeText(constructedMessage, msg);
     }
     constructedMessage = PF2e_reformatMessage(constructedMessage, originDoc);
     return generic.getRequestParams(msg, constructedMessage, embeds);

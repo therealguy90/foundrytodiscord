@@ -55,9 +55,13 @@ export function messageParserDnD5e(msg) {
         //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
         if (anonEnabled()) {
             for (let i = 0; i < embeds.length; i++) {
-                embeds[i] = generic.anonymizeEmbed(msg, embeds[i]);
+                embeds[i].title = generic.anonymizeText(embeds[i].title, msg);
+                embeds[i].description = generic.anonymizeText(embeds[i].description, msg);
             }
         }
+    }
+    if(anonEnabled()){
+        constructedMessage = generic.anonymizeText(constructedMessage, msg);
     }
     constructedMessage = DnD5e_reformatMessage(constructedMessage);
     return generic.getRequestParams(msg, constructedMessage, embeds);

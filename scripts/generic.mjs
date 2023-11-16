@@ -58,9 +58,13 @@ export function messageParserGeneric(msg) {
         //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
         if (anonEnabled()) {
             for (let i = 0; i < embeds.length; i++) {
-                embeds[i] = anonymizeEmbed(msg, embeds[i]);
+                embeds[i].title = anonymizeText(embeds[i].title);
+                embeds[i].description = anonymizeText(embeds[i].description);
             }
         }
+    }
+    if (anonEnabled()) {
+        constructedMessage = anonymizeText(constructedMessage, msg)
     }
     constructedMessage = reformatMessage(constructedMessage);
     if (constructedMessage !== "" || embeds.length > 0) { //avoid sending empty messages
@@ -356,27 +360,16 @@ export function polyglotize(message) {
     }
 }
 
+export function anonymizeText(text, message) {
     const anon = game.modules.get("anonymous").api;
     const curScene = game.scenes.get(message.speaker.scene);
-
     if (curScene) {
         const speakerToken = curScene.tokens.get(message.speaker.token);
-
-        if (speakerToken && !anon.playersSeeName(speakerToken.actor)) {
-            embed.title = anonymizeText(embed.title, speakerToken);
-            embed.description = anonymizeText(embed.description, speakerToken);
-        }
+        if (text && speakerToken && speakerToken.actor && !anon.playersSeeName(speakerToken.actor)) {
+            return text
+                .replace(new RegExp(`\\b${speakerToken.name}\\b`, 'gi'), anon.getName(speakerToken.actor))
+                .replace(new RegExp(`\\b${speakerToken.actor.name}\\b`, 'gi'), anon.getName(speakerToken.actor));
     }
-
-    return embed;
-}
-
-function anonymizeText(text, speakerToken) {
-    const anon = game.modules.get("anonymous").api;
-    if (text) {
-        return text
-            .replace(new RegExp(speakerToken.name, 'gi'), anon.getName(speakerToken.actor))
-            .replace(new RegExp(speakerToken.actor.name, 'gi'), anon.getName(speakerToken.actor));
     }
     return text;
 }
