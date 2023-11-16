@@ -63,23 +63,12 @@ export function messageParserPF2e(msg) {
     }
     else if (!msg.isRoll || (msg.isRoll && msg.rolls.length < 1)) {
         /*Attempt polyglot support. This will ONLY work if the structure is similar:
-        * for PF2e and DnD5e, this would be actor.system.traits.languages.value
+        * actor.system.traits.languages.value
         */
         if (game.modules.get("polyglot")?.active && msg.flags?.polyglot?.language) {
-            if (!getThisModuleSetting("commonLanguages").toLowerCase().includes(msg.flags.polyglot.language)) {
-                if (getThisModuleSetting('includeOnly') == "") {
                     constructedMessage = generic.polyglotize(msg);
-                }
-                else {
-                    listLanguages = getThisModuleSetting('includeOnly').split(",").map(item => item.trim().toLowerCase());
-                    if (!listLanguages === null) {
-                        listLanguages = [];
-                    }
-                    constructedMessage = generic.polyglotize(msg, listLanguages);
-                }
-            }
         }
-        if (constructedMessage == '') {
+        if (constructedMessage === '') {
             constructedMessage = msg.content;
         }
     }

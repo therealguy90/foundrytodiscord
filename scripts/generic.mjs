@@ -31,26 +31,9 @@ export function messageParserGeneric(msg) {
         * the polyglotize() function should be edited for other systems
         */
         if (game.modules.get("polyglot")?.active && msg.flags?.polyglot?.language) {
-            if (!getThisModuleSetting("commonLanguages").toLowerCase().includes(msg.flags.polyglot.language)) {
-                if (getThisModuleSetting("includeOnly") == "") {
                     constructedMessage = polyglotize(msg);
-                }
-                else {
-                    listLanguages = getThisModuleSetting("includeOnly").split(",").map(item => item.trim().toLowerCase());
-                    if (!listLanguages == null) {
-                        listLanguages = [];
-                    }
-                    try {
-                        constructedMessage = polyglotize(msg, listLanguages);
-                    }
-                    catch (e) {
-                        console.log(e);
-                        console.log("foundrytodiscord | Your system \"" + game.system.id + "\" does not support Polyglot integration with this module due to a different actor structure.")
-                    }
-                }
-            }
         }
-        if (constructedMessage == '') {
+        if (constructedMessage === '') {
             constructedMessage = msg.content;
         }
     }
@@ -329,9 +312,10 @@ export function getCardFooter(card) {
     }
 }
 
-export function polyglotize(message, playerlanguages = []) {
-    //get a list of all PCs and player-controlled 
-    if (playerlanguages == [] || playerlanguages.length == 0) {
+export function polyglotize(message) {
+    const getReplacementString = function (languages = []) {
+        if (languages.length === 0) {
+            //get a list of all PCs and player-controlled actors
         let playerActors = game.actors.filter(a => a.hasPlayerOwner);
         let languages = new Set();
         for (let actor of playerActors) {
@@ -340,25 +324,38 @@ export function polyglotize(message, playerlanguages = []) {
                 languages.add(language);
             }
         }
-
-        if (languages.has(message.flags.polyglot.language)) {
+        }
+        if (languages.includes(message.flags.polyglot.language)) {
             return message.content;
         }
         else {
             return "*Unintelligible*"
         }
+    };
+    let listLanguages = [];
+    if (!getThisModuleSetting("commonLanguages").toLowerCase().includes(message.flags.polyglot.language)) {
+        if (getThisModuleSetting("includeOnly") === "") {
+            return getReplacementString();
+        }
+        else {
+            listLanguages = getThisModuleSetting("includeOnly").split(",").map(item => item.trim().toLowerCase());
+            if (!listLanguages === null) {
+                listLanguages = [];
+            }
+            try {
+                return getReplacementString(listLanguages);
+            }
+            catch (e) {
+                console.log(e);
+                console.log("foundrytodiscord | Your system \"" + game.system.id + "\" does not support Polyglot integration with this module due to a different actor structure.")
+            }
     }
+}
     else {
-        if (playerlanguages.includes(message.flags.polyglot.language)) {
-            return message.content;
-        }
-        else {
-            return "*Unintelligible*"
-        }
+        return message.content;
     }
 }
 
-export function anonymizeEmbed(message, embed) {
     const anon = game.modules.get("anonymous").api;
     const curScene = game.scenes.get(message.speaker.scene);
 
