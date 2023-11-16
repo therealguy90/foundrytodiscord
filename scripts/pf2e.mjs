@@ -43,7 +43,7 @@ export function messageParserPF2e(msg) {
     if (PF2e_isActionCard(msg) && msg.rolls?.length < 1) {
         if (getThisModuleSetting('sendEmbeds')) {
             embeds = PF2e_createActionCardEmbed();
-    }
+        }
     }
     else if (PF2e_isConditionCard(msg)) {
         embeds = PF2e_createConditionCard(msg);
@@ -62,7 +62,7 @@ export function messageParserPF2e(msg) {
         * actor.system.traits.languages.value
         */
         if (game.modules.get("polyglot")?.active && msg.flags?.polyglot?.language) {
-                    constructedMessage = generic.polyglotize(msg);
+            constructedMessage = generic.polyglotize(msg);
         }
         if (constructedMessage === '') {
             constructedMessage = msg.content;
@@ -80,10 +80,10 @@ export function messageParserPF2e(msg) {
     // Removing this would break parity between foundry and discord, as some damage roll values will not stay the same without
     // an actor, especially scaling abilities and spells.
     let originDoc;
-    if(msg.flags?.pf2e?.origin?.uuid){
+    if (msg.flags?.pf2e?.origin?.uuid) {
         originDoc = fromUuidSync(msg.flags.pf2e.origin.uuid);
     }
-    else if(msg.speaker?.actor){
+    else if (msg.speaker?.actor) {
         originDoc = game.actors.get(msg.speaker.actor); //Fallback to speaker in case it's needed.
     }
     if (embeds && embeds.length > 0) {
@@ -114,12 +114,12 @@ function PF2e_createCardEmbed(message) {
     //generic card
 
     const h3Element = div.querySelector("h3");
-        const actionGlyphElement = h3Element.querySelector(".action-glyph");
-        if (actionGlyphElement) {
-            actionGlyphElement.remove();
-        }
-        title = h3Element.textContent.trim();
-        desc = PF2e_parseTraits(message.content);
+    const actionGlyphElement = h3Element.querySelector(".action-glyph");
+    if (actionGlyphElement) {
+        actionGlyphElement.remove();
+    }
+    title = h3Element.textContent.trim();
+    desc = PF2e_parseTraits(message.content);
     let speakerActor;
     if (message.speaker?.actor) {
         speakerActor = game.actors.get(message.speaker.actor);
@@ -136,11 +136,11 @@ function PF2e_createCardEmbed(message) {
     }
     if (descVisible) {
         let descList = div.querySelectorAll(".card-content");
-            descList.forEach(function (paragraph) {
-                let text = paragraph.innerHTML
-                desc += text + "\n\n";
-            });
-        }
+        descList.forEach(function (paragraph) {
+            let text = paragraph.innerHTML
+            desc += text + "\n\n";
+        });
+    }
 
     return [{ title: title, description: desc, footer: { text: generic.getCardFooter(div.innerHTML) } }];
 }
@@ -161,13 +161,13 @@ function PF2e_createActionCardEmbed(message) {
         }
     }
     if (descVisible) {
-            if (message.flags?.pf2e?.context?.item) {
-                desc += game.actors.get(message.speaker.actor).items.get(message.flags.pf2e.context.item).system.description.value;
-            }
-            else {
+        if (message.flags?.pf2e?.context?.item) {
+            desc += game.actors.get(message.speaker.actor).items.get(message.flags.pf2e.context.item).system.description.value;
+        }
+        else {
             const actionContent = div.querySelector(".action-content");
-                if (actionContent) {
-                    desc += actionContent.innerHTML;
+            if (actionContent) {
+                desc += actionContent.innerHTML;
             }
         }
     }
@@ -176,12 +176,12 @@ function PF2e_createActionCardEmbed(message) {
 
 
 function PF2e_createRollEmbed(message) {
-    const parser = new DOMParser();
-    let doc = parser.parseFromString(message.flavor, "text/html");
+    const div = document.createElement('div');
+    div.innerHTML = message.flavor;
     let title = "";
     let desc = "";
     //Build Title
-    const actionTitle = doc.querySelector("h4.action")
+    const actionTitle = div.querySelector("h4.action");
     if (actionTitle) {
         title = actionTitle.querySelector("strong").textContent +
             " " + (actionTitle.querySelector(".subtitle") ? actionTitle.querySelector(".subtitle").textContent : "");
@@ -301,8 +301,8 @@ function PF2e_parseDamageTypes(baserolls) {
                 let splash = false;
                 roll.terms.forEach((typeterm, k) => {
                     if (typeterm.term?.options?.flavor) {
-                        precision = typeterm.term.options.flavor == "precision";
-                        splash = typeterm.term.options.flavor == "splash";
+                        precision = typeterm.term.options.flavor === "precision";
+                        splash = typeterm.term.options.flavor === "splash";
                     }
 
                 });
@@ -403,11 +403,11 @@ function PF2e_getNameFromCheck(match, checkString, customText) {
                     if (CONFIG.PF2E.skills.hasOwnProperty(skillcheck)) {
                         return CONFIG.PF2E.skills[skillcheck];
                     }
-                    else if(CONFIG.PF2E.skillList.hasOwnProperty(skillcheck)){
+                    else if (CONFIG.PF2E.skillList.hasOwnProperty(skillcheck)) {
                         return CONFIG.PF2E.skillList[skillcheck];
                     }
                 })();
-                return tempcheck + (locStringForm 
+                return tempcheck + (locStringForm
                     ? game.i18n.localize(locStringForm)
                     : skillcheck
                         .split("-")
@@ -424,7 +424,7 @@ function PF2e_getNameFromTemplate(match, templateString, label) {
     return (() => {
         const template = PF2e_parseInlineString(templateString);
         let templateLabel = "";
-        if(TEMPLATE_EMOJI.hasOwnProperty(template.type)){
+        if (TEMPLATE_EMOJI.hasOwnProperty(template.type)) {
             templateLabel += TEMPLATE_EMOJI[template.type];
         }
         if (label) {
@@ -442,7 +442,7 @@ function PF2e_getNameFromTemplate(match, templateString, label) {
 }
 
 function PF2e_replaceDamageFormat(damagestring, originDoc) {
-    const DamageRoll = CONFIG.Dice.rolls.find( r => r.name === "DamageRoll" );
+    const DamageRoll = CONFIG.Dice.rolls.find(r => r.name === "DamageRoll");
     const damageIndexes = [];
     const regex = /@Damage\[/g;
 
@@ -463,7 +463,7 @@ function PF2e_replaceDamageFormat(damagestring, originDoc) {
             } else if (damagestring[j] === ']') {
                 if (bracketCount === 1) {
                     if (j < damagestring.length - 1) {
-                        if (damagestring[j + 1] == "{") {
+                        if (damagestring[j + 1] === "{") {
                             const tempJ = j;
                             for (j; j < damagestring.length; j++) {
                                 if (j === damagestring.length - 1 && damagestring[j] !== "}") {
@@ -495,15 +495,15 @@ function PF2e_replaceDamageFormat(damagestring, originDoc) {
             else {
                 const damageArgs = inlinedamage.trim().substr(8, inlinedamage.length - 9).split(/,(?![^[]*])/);
                 const rollParams = (() => {
-                    switch(true){
+                    switch (true) {
                         //Oddly enough, just putting the document in "actor" already works... but this is to really make sure.
                         case originDoc instanceof Actor:
                             console.log(originDoc);
-                            return {actor: originDoc};
+                            return { actor: originDoc };
                             break;
                         case originDoc instanceof Item:
                             console.log(originDoc);
-                            return {item: originDoc};
+                            return { item: originDoc };
                             break;
                         default:
                             return {};
@@ -608,11 +608,11 @@ function PF2e_parseHTMLText(htmlString) {
     reformattedText = htmldoc.innerHTML;
 
     const templateButtons = htmldoc.querySelectorAll('span[data-pf2-effect-area]');
-    if(templateButtons.length > 0){
+    if (templateButtons.length > 0) {
         templateButtons.forEach(template => {
             const type = template.getAttribute('data-pf2-effect-area');
             let tempTemplate = ""
-            if(TEMPLATE_EMOJI.hasOwnProperty(type)){
+            if (TEMPLATE_EMOJI.hasOwnProperty(type)) {
                 tempTemplate += TEMPLATE_EMOJI[type];
             }
             tempTemplate += "`" + template.textContent + "`";

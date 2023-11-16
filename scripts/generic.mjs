@@ -31,7 +31,7 @@ export function messageParserGeneric(msg) {
         * the polyglotize() function should be edited for other systems
         */
         if (game.modules.get("polyglot")?.active && msg.flags?.polyglot?.language) {
-                    constructedMessage = polyglotize(msg);
+            constructedMessage = polyglotize(msg);
         }
         if (constructedMessage === '') {
             constructedMessage = msg.content;
@@ -104,11 +104,11 @@ function generateRequestParams(message, msgText, embeds, imgurl) {
         : undefined;
     let speakerActor = message.speaker?.actor
         ? game.actors.get(message.speaker.actor)
-        : undefined;
+        : speakerToken?.actor ? speakerToken.actor : undefined;
     // Get both speakerToken and speakerActor, since we want many fallbacks,
     // in case a token is declared in the message but not its actor. Good for macros or other modules/systems that don't
     // rely on a token being on the canvas to create a message.
-    if (anonEnabled() && (speakerToken.actor || speakerActor)) {
+    if (anonEnabled() && (speakerToken?.actor || speakerActor)) {
         const anon = game.modules.get('anonymous').api
         // First: Check if token has an actor and use Anonymous if it does. 
         // This uses a fallback for the message actor in case it is needed.
@@ -123,7 +123,7 @@ function generateRequestParams(message, msgText, embeds, imgurl) {
             alias = anon.getName(speakerActor) + " (" + censorId(speakerToken ? speakerToken.id : speakerActor.id) + ")";
         }
     }
-    else if (speakerToken) { 
+    else if (speakerToken) {
         // If user doesn't have anonymous, this defaults to the visibility of the token name on the board.
         // This is similar to the PF2e implementation of token name visibility.
         switch (speakerToken.displayName) {
@@ -131,7 +131,7 @@ function generateRequestParams(message, msgText, embeds, imgurl) {
             case CONST.TOKEN_DISPLAY_MODES.OWNER:
             case CONST.TOKEN_DISPLAY_MODES.OWNER_HOVER:
             case CONST.TOKEN_DISPLAY_MODES.CONTROL:
-                if(!speakerActor.hasPlayerOwner){
+                if (!speakerActor.hasPlayerOwner) {
                     alias = "Unknown" + " (" + censorId(speakerToken.id) + ")";
                 }
                 break;
@@ -207,7 +207,6 @@ export function createHTMLDiceRollEmbed(message) {
 export function isCard(htmlString) {
     const htmldocElement = document.createElement('div');
     htmldocElement.innerHTML = htmlString;
-
     const divElement = htmldocElement.querySelector('.chat-card');
     if (divElement !== null) {
         return true;
@@ -229,26 +228,21 @@ export function hasDiceRolls(htmlString) {
 }
 
 export function createCardEmbed(message) {
-    let card = message.content;
-    const parser = new DOMParser();
-    let regex = /<[^>]*>[^<]*\n[^<]*<\/[^>]*>/g;
-    card = card.replace(regex, (match) => match.replace(/\n/g, ''));
-    card = card.replace(regex, "");
-    let doc = parser.parseFromString(card, "text/html");
+    const div = document.createElement("div");
+    div.innerHTML = message.content;
     // Find the <h3> element and extract its text content, since h3 works for most systems
     // if not, use the first line it finds
-    const h3Element = doc.querySelector("h3");
+    const h3Element = div.querySelector("h3");
     let title;
     if (h3Element?.textContent) {
         title = h3Element.textContent.trim();
     }
     else {
         //Use first line of plaintext to title the embed instead
-        const strippedContent = card.replace(/<[^>]+>/g, ' ').trim(); // Replace HTML tags with spaces
-        const lines = strippedContent.split('\n'); // Split by newline characters
+        const lines = div.textContent.split('\n'); // Split by newline characters
         title = lines[0].trim(); // Get the first line of plain text
         const regex = new RegExp('\\b' + title + '\\b', 'i');
-        card = card.replace(regex, "");
+        div.innerHTML = div.innerHTML.replace(regex, "");
 
     }
     let desc = "";
@@ -268,14 +262,14 @@ export function createCardEmbed(message) {
         }
     }
     if (descVisible) {
-        let descList = doc.querySelectorAll(".card-content");
+        let descList = div.querySelectorAll(".card-content");
         descList.forEach(function (paragraph) {
             let text = paragraph.innerHTML;
             desc += text + "\n\n";
         });
     }
 
-    return [{ title: title, description: desc, footer: { text: getCardFooter(card) } }];
+    return [{ title: title, description: desc, footer: { text: getCardFooter(message.content) } }];
 }
 
 export function getCardFooter(card) {
@@ -320,14 +314,14 @@ export function polyglotize(message) {
     const getReplacementString = function (languages = []) {
         if (languages.length === 0) {
             //get a list of all PCs and player-controlled actors
-        let playerActors = game.actors.filter(a => a.hasPlayerOwner);
-        let languages = new Set();
-        for (let actor of playerActors) {
-            let characterLanguages = actor.system.traits.languages.value;
-            for (let language of characterLanguages) {
-                languages.add(language);
+            let playerActors = game.actors.filter(a => a.hasPlayerOwner);
+            let languages = new Set();
+            for (let actor of playerActors) {
+                let characterLanguages = actor.system.traits.languages.value;
+                for (let language of characterLanguages) {
+                    languages.add(language);
+                }
             }
-        }
         }
         if (languages.includes(message.flags.polyglot.language)) {
             return message.content;
@@ -353,8 +347,8 @@ export function polyglotize(message) {
                 console.log(e);
                 console.log("foundrytodiscord | Your system \"" + game.system.id + "\" does not support Polyglot integration with this module due to a different actor structure.")
             }
+        }
     }
-}
     else {
         return message.content;
     }
@@ -369,15 +363,15 @@ export function anonymizeText(text, message) {
             return text
                 .replace(new RegExp(`\\b${speakerToken.name}\\b`, 'gi'), anon.getName(speakerToken.actor))
                 .replace(new RegExp(`\\b${speakerToken.actor.name}\\b`, 'gi'), anon.getName(speakerToken.actor));
-    }
+        }
     }
     return text;
 }
 
 export function tokenBar_createTokenBarCard(message) {
     // First, list token properties
-    const parser = new DOMParser();
-    let doc = parser.parseFromString(message.content, "text/html");
+    const div = document.createElement('div');
+    div.innerHTML = message.content;
     let title = "";
     let desc = ""
     let cardheader;
@@ -385,9 +379,9 @@ export function tokenBar_createTokenBarCard(message) {
     let footer = {};
     switch (message.flags["monks-tokenbar"].what) {
         case 'contestedroll':
-            cardheader = doc.querySelector('.card-header');
+            cardheader = div.querySelector('.card-header');
             title = cardheader.querySelector('h3').textContent;
-            const requests = doc.querySelectorAll('.request-name');
+            const requests = div.querySelectorAll('.request-name');
             if (requests.length > 0) {
                 desc += "**__";
                 for (let i = 0; i < requests.length; i++) {
@@ -401,7 +395,7 @@ export function tokenBar_createTokenBarCard(message) {
             if (desc !== "") {
                 desc += "\n\n";
             }
-            actorData = doc.querySelectorAll('li.item.flexrow');
+            actorData = div.querySelectorAll('li.item.flexrow');
             if (actorData.length > 0) {
                 for (let i = 0; i < actorData.length; i++) {
                     const tokenID = actorData[i].getAttribute('data-item-id');
@@ -443,9 +437,9 @@ export function tokenBar_createTokenBarCard(message) {
             }
             break;
         case 'savingthrow':
-            cardheader = doc.querySelector('.card-header');
+            cardheader = div.querySelector('.card-header');
             title = cardheader.querySelector('h3').textContent;
-            actorData = doc.querySelectorAll('li.item.flexcol');
+            actorData = div.querySelectorAll('li.item.flexcol');
             if (actorData.length > 0) {
                 for (let i = 0; i < actorData.length; i++) {
                     const tokenID = actorData[i].getAttribute('data-item-id');
@@ -510,10 +504,10 @@ export function tokenBar_createTokenBarCard(message) {
 }
 
 export function tokenBar_isTokenBarCard(htmlString) {
-    const htmldocElement = document.createElement('div');
-    htmldocElement.innerHTML = htmlString;
+    const div = document.createElement('div');
+    div.innerHTML = htmlString;
 
-    const divElement = htmldocElement.querySelector('.monks-tokenbar');
+    const divElement = div.querySelector('.monks-tokenbar');
     if (divElement !== null) {
         return true;
     } else {
@@ -760,6 +754,6 @@ function censorId(docid) {
     // Censors IDs for anonymized names
     const firstPart = docid.substring(0, 4);
     const censoredId = `${firstPart}****`;
-  
+
     return censoredId;
-  }
+}
