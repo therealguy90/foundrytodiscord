@@ -536,10 +536,6 @@ export function formatTextBySelector(selector, formatter, root) {
 
 export function parseHTMLText(htmlString, customHTMLParser = undefined) {
     let reformattedText = htmlString;
-
-    // Cleanup newlines in raw text before parsing
-    reformattedText = reformattedText.replace(/<[^>]*>[^<]*\n[^<]*<\/[^>]*>/g, match => match.replace(/\n/g, ''));
-
     const htmldoc = document.createElement('div');
     htmldoc.innerHTML = reformattedText;
 
@@ -548,11 +544,10 @@ export function parseHTMLText(htmlString, customHTMLParser = undefined) {
         const elements = htmldoc.querySelectorAll(selector);
         elements.forEach(element => element.parentNode.removeChild(element));
     });
-    htmldoc.innerHTML = htmldoc.innerHTML.replace(/<table/g, '\n<table')
     const tables = htmldoc.querySelectorAll('table');
     tables.forEach((table) => {
         const newTable2D = htmlTo2DTable(table);
-        table.outerHTML = parse2DTable(newTable2D);
+        table.outerHTML = `\n${parse2DTable(newTable2D)}`;
     });
 
     // Remove <img> tags
@@ -595,22 +590,37 @@ export function htmlCodeCleanup(htmltext) {
         const character = entities[entity];
         htmltext = htmltext.replace(new RegExp(entity, 'g'), character);
     }
-    return htmltext.replace(/<(h[1-6])[^>]*>(.*?)<\/\1>/g, '**$2**') // Format header tags
-        .replace(/<(strong|b)>|<\/(strong|b)>/g, '**') // Format strong/bold tags
-        .replace(/<em[^>]*>(.*?)<\/em>/g, '*$1*') // Format em/italic tags
-        .replace(/<hr[^>]*>/g, '-----------------------') // Format hr tags
-        .replace(/>\s+</g, '><') // Remove indentation and formatting
-        .replace(/<li>/g, '- ') // Remove <li> tags
-        .replace(/<\/li>/g, '\n') // Format line breaks after </li>
-        .replace(/<input[^>]*>.*?<\/input>|<input[^>]*>/gi, '') // Remove <input> tags
-        .replace(/<div>|<\/div>/g, '\n') // Remove <div> tags and format line breaks
-        .replace(/<br\s*\/?>/gi, '\n') // Format <br> tags as line breaks
-        .replace(/<p>|<\/p>/g, '\n\n') // Remove <p> tags and format line breaks
-        .replace(/<[^>]*>?/gm, '') // Remove all remaining tags
+    const doc = document.createElement('div');
+    doc.innerHTML = htmltext;
+    console.log(htmltext);
+    const selectorsAndReplacers = [
+        { selector: "h1, h2", replacer: ["# ", "\n"] },
+        { selector: "h3, h4", replacer: ["## ", "\n"] },
+        { selector: "h5, h6", replacer: ["### ", "\n"] },
+        { selector: "strong, b", replacer: ["**", "**"] },
+        { selector: "em, i", replacer: ["*", "*"] },
+        { selector: "hr", replacer: ["-----------------------"] },
+        { selector: "li", replacer: ["- ", "\n"] },
+        { selector: "input", replacer: [""] },
+        { selector: "div", replacer: ["", "\n"] },
+        { selector: "br", replacer: ["\n"] },
+        { selector: "p", replacer: ["", "\n\n"] }
+    ]
+    selectorsAndReplacers.forEach(({ selector, replacer }) => {
+        doc.querySelectorAll(selector).forEach(element => {
+            if (replacer.length === 2) {
+                element.outerHTML = `${replacer[0]}${element.innerHTML}${replacer[1]}`;
+            } else if (replacer.length === 1) {
+                element.outerHTML = `${replacer[0]}`;
+            }
+        });
+    });
+    //console.log(doc.textContent);
+    return doc.textContent
         .replace(/\n\s+/g, '\n\n') // Clean up line breaks and whitespace
         .replace(/\n*----+\n*/g, '\n-----------------------\n') // Cleanup line breaks before and after horizontal lines
         .replace(/ {2,}/g, ' ') // Clean up excess whitespace
-        .replaceAll(" ", ' '); //Cleanup table filler with real spaces
+        .replaceAll(" ", ' ').trim(); // Remove placeholder table filler
 }
 
 
