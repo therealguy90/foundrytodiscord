@@ -25,7 +25,8 @@ const DAMAGE_EMOJI = {
     "force": ':sparkles:',
     "precision": ':dart:',
     "persistent": ':hourglass:',
-    "splash": ':boom:'
+    "splash": ':boom:',
+    "untyped": ""
 }
 
 const TEMPLATE_EMOJI = {
@@ -36,6 +37,8 @@ const TEMPLATE_EMOJI = {
 }
 
 const SAVE_TYPES = ["fortitude", "reflex", "will"]
+
+const DamageRoll = CONFIG.Dice.rolls.find(r => r.name === "DamageRoll");
 
 export function messageParserPF2e(msg) {
     let constructedMessage = '';
@@ -69,7 +72,7 @@ export function messageParserPF2e(msg) {
         }
     }
     else {
-        if (msg.flavor != null && msg.flavor.length > 0) {
+        if ((msg.flavor !== null && msg.flavor.length > 0) || msg.isDamageRoll) {
             embeds = PF2e_createRollEmbed(msg);
         }
         else {
@@ -186,8 +189,11 @@ function PF2e_createRollEmbed(message) {
         title = actionTitle.querySelector("strong").textContent +
             " " + (actionTitle.querySelector(".subtitle") ? actionTitle.querySelector(".subtitle").textContent : "");
     }
-    else {
+    else if(message.flavor){
         title = message.flavor;
+    }
+    else if(message.isDamageRoll){
+        title = "Damage Roll";
     }
     desc += PF2e_parseTraits(message.flavor, true);
 
@@ -245,44 +251,50 @@ function PF2e_createRollEmbed(message) {
 
     if (!message.isReroll) {
         //Add roll information to embed:
-        for (let i = 0; i < message.rolls.length; i++) {
-            desc += "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
-            const speakerActor = game.actors.get(message.speaker.actor);
-            if (speakerActor?.hasPlayerOwner && message.rolls[i].dice[0].faces === 20) {
-                if (message.rolls[i].result.startsWith('20 ')) {
+        const speakerActor = game.actors.get(message.speaker.actor);
+        message.rolls.forEach(roll => {
+            if(speakerActor?.hasPlayerOwner || !message.user.isGM){
+                desc += `:game_die:**\`${roll.formula}\`**\n`
+            }
+            desc += "**:game_die:Result: **" + "__**" + roll.total + "**__";
+            if (speakerActor?.hasPlayerOwner && roll.dice[0].faces === 20) {
+                if (roll.result.startsWith('20 ')) {
                     desc += " __(Nat 20!)__";
                 }
-                else if (message.rolls[i].result.startsWith('1 ')) {
+                else if (roll.result.startsWith('1 ')) {
                     desc += " __(Nat 1)__";
                 }
-                desc += "||(" + message.rolls[i].result + ")||";
+                desc += "||(" + roll.result + ")||";
             }
-            if ((message.isDamageRoll)) {
-                desc += PF2e_parseDamageTypes(message.rolls[i]);
+            if (roll instanceof DamageRoll) {
+                desc += PF2e_parseDamageTypes(roll);
             }
-            else if (PF2e_parseDegree(message.rolls[i].options?.degreeOfSuccess) != "Invalid") {
-                desc += "`(" + PF2e_parseDegree(message.rolls[i].options.degreeOfSuccess) + ")`";
+            else if (PF2e_parseDegree(roll.options?.degreeOfSuccess)) {
+                desc += "`(" + PF2e_parseDegree(roll.options.degreeOfSuccess) + ")`";
             }
-            else if (PF2e_parseDegree(message.flags.pf2e?.context?.outcome) != "Invalid") {
-                desc += "`(" + PF2e_parseDegree(message.flags.pf2e.context.outcome) + ")`";
+            else if (PF2e_parseDegree(message.flags.pf2e?.context?.outcome)) {
+                desc += "`(" + PF2e_parseDegree(message.flags.pf2e.context.outcome) + ")`"; // Assumes only one roll as normal
             }
             desc += "\n";
-        }
+        });
     }
     else {
+        if(speakerActor?.hasPlayerOwner || !message.user.isGM){
+            desc += `:game_die:**\`${roll.formula}\`**\n`
+        }
         desc += "~~:game_die:Result: " + "__" + PF2e_getDiscardedRoll(message) + "__~~\n";
         desc += "**:game_die:Result: **" + "__**" + message.rolls[0].total + "**__";
         const speakerActor = game.actors.get(message.speaker.actor);
-        if (speakerActor?.hasPlayerOwner && message.rolls[i].dice[0].faces === 20) {
-            if (message.rolls[i].result.startsWith('20 ')) {
+        if (speakerActor?.hasPlayerOwner && message.rolls[0].dice[0].faces === 20) {
+            if (message.rolls[0].result.startsWith('20 ')) {
                 desc += " __(Nat 20!)__";
             }
-            else if (message.rolls[i].result.startsWith('1 ')) {
+            else if (message.rolls[0].result.startsWith('1 ')) {
                 desc += " __(Nat 1)__";
             }
-            desc += "||(" + message.rolls[i].result + ")||";
+            desc += "||(" + message.rolls[0].result + ")||";
         }
-        if (PF2e_parseDegree(message.flags.pf2e.context.outcome) != "Invalid") {
+        if (PF2e_parseDegree(message.flags.pf2e.context.outcome)) {
             desc += "`(" + PF2e_parseDegree(message.flags.pf2e.context.outcome) + ")`";
         }
         desc += "\n";
@@ -373,7 +385,7 @@ function PF2e_parseDegree(degree) {
         case 3:
             return "Critical Success";
         default:
-            return "Invalid";
+            return undefined;
     }
 }
 
@@ -442,7 +454,6 @@ function PF2e_getNameFromTemplate(match, templateString, label) {
 }
 
 function PF2e_replaceDamageFormat(damagestring, originDoc) {
-    const DamageRoll = CONFIG.Dice.rolls.find(r => r.name === "DamageRoll");
     const damageIndexes = [];
     const regex = /@Damage\[/g;
 

@@ -170,21 +170,18 @@ export function createGenericRollEmbed(message) {
     let title = ""
     if (message.flavor && message.flavor.length > 0) {
         title = message.flavor;
-        if (desc !== "") {
-            desc += "\n";
-        }
-        for (let i = 0; i < message.rolls.length; i++) {
-            desc += "**:game_die:Result: **" + "__**" + message.rolls[i].total + "**__";
-            desc += "\n";
-        }
     }
     else {
-        title = message.alias + '\'s Rolls';
-        message.rolls.forEach(roll => {
-            desc += 'Rolled ' + roll.formula + ', and got a ' + roll.result.replaceAll("+ 0", "") + " = **" + roll.total + "**\n";
-        })
+        title = message.alias + "\'s Rolls";
     }
-    return [{ title: title, description: desc }];
+    const speakerActor = game.actors.get(message.speaker.actor);
+    message.rolls.forEach(roll => {
+        if(speakerActor?.hasPlayerOwner){
+            desc += `:game_die:**\`${roll.formula}\`**\n`
+        }
+        desc += `:game_die:**\`${roll.formula}\`**\n**:game_die:Result: __${roll.total}__**\n`;
+    });
+    return [{ title: title, description: desc.trim() }];
 }
 
 export function createHTMLDiceRollEmbed(message) {

@@ -60,7 +60,7 @@ export function messageParserDnD5e(msg) {
             }
         }
     }
-    if(anonEnabled()){
+    if (anonEnabled()) {
         constructedMessage = generic.anonymizeText(constructedMessage, msg);
     }
     constructedMessage = DnD5e_reformatMessage(constructedMessage);
@@ -95,6 +95,9 @@ function midiqol_createMergeCard(message) {
             if (result) {
                 switch (game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails) {
                     case 'none':
+                        const rollFormula = element.querySelector(".dice-formula");
+                        rollValue = `:game_die:**\`${rollFormula.textContent}\`**\n:game_die:**(d20) __${message.flags['midi-qol'].d20AttackRoll}__`;
+                        break;
                     case 'detailsDSN':
                     case 'details':
                         if (result !== "") {
@@ -103,7 +106,7 @@ function midiqol_createMergeCard(message) {
                         break;
                     case 'd20Only':
                     case 'd20AttackOnly':
-                        rollValue = ":game_die:**(d20) __" + message.flags['midi-qol'].d20AttackRoll + "__";
+                        rollValue = `:game_die:**(d20) __${message.flags['midi-qol'].d20AttackRoll}__`;
                         break;
                     case 'hitDamage':
                     case 'hitCriticalDamage':
@@ -146,7 +149,13 @@ function midiqol_createMergeCard(message) {
                 rollValue = ":game_die:**Rolled**";
             }
             else {
-                rollValue = ":game_die:**Result: __" + rollValue + "__**";
+                if (game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails === 'none') {
+                    const rollFormula = element.querySelector(".dice-formula");
+                    rollValue = `:game_die:**\`${rollFormula.textContent}\`**\n:game_die:**Result: __${rollValue}__**`;
+                }
+                else {
+                    rollValue = `:game_die:**Result: __${rollValue}__**`;
+                }
             }
             fields.push({ name: damageTitle, value: rollValue, inline: true })
         }
