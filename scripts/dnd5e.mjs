@@ -23,7 +23,7 @@ export function messageParserDnD5e(msg) {
     else if (generic.isCard(msg.content) && msg.rolls?.length < 1) {
         constructedMessage = "";
         if (getThisModuleSetting('sendEmbeds')) {
-            embeds = DnD5e_createCardEmbed(msg);
+            embeds = generic.createCardEmbed(msg);
         }
     }
     else if (!msg.isRoll) {
@@ -38,7 +38,7 @@ export function messageParserDnD5e(msg) {
             msg.content = elements.innerHTML;
         }
         if (game.modules.get("polyglot")?.active && msg.flags?.polyglot?.language) {
-                    constructedMessage = generic.polyglotize(msg);
+            constructedMessage = generic.polyglotize(msg);
         }
         if (constructedMessage === '') {
             constructedMessage = msg.content;
@@ -67,51 +67,6 @@ export function messageParserDnD5e(msg) {
     return generic.getRequestParams(msg, constructedMessage, embeds);
 }
 
-function DnD5e_createCardEmbed(message) {
-    let card = message.content;
-    const parser = new DOMParser();
-    let regex = /<[^>]*>[^<]*\n[^<]*<\/[^>]*>/g; //html cleanup, removing unnecessary blank spaces and newlines
-    card = card.replace(regex, (match) => match.replace(/\n/g, ''));
-    let doc = parser.parseFromString(card, "text/html");
-    const h3Element = doc.querySelector("h3");
-    let title;
-    if (h3Element?.textContent) {
-        title = h3Element.textContent.trim();
-    }
-    else {
-        //Use first line of plaintext to title the embed instead
-        const strippedContent = card.replace(/<[^>]+>/g, ' ').trim(); // Replace HTML tags with spaces
-        const lines = strippedContent.split('\n'); // Split by newline characters
-        title = lines[0].trim(); // Get the first line of plain text
-        const regex = new RegExp('\\b' + title + '\\b', 'i');
-        card = card.replace(regex, "");
-
-    }
-    let desc = "";
-    let speakerActor = undefined;
-    if (message.speaker?.actor) {
-        speakerActor = game.actors.get(message.speaker.actor);
-    }
-
-    //parse card description if source is from a character or actor is owned by a player
-    //this is to limit metagame information and is recommended for most systems.
-    let descVisible = getThisModuleSetting('showDescription');
-    if (speakerActor) {
-        if (anonEnabled() && !game.modules.get('anonymous').api.playersSeeName(speakerActor)) {
-            descVisible = false;
-        }
-    }
-    if (descVisible) {
-        let descList = doc.querySelectorAll(".card-content");
-        descList.forEach(function (paragraph) {
-            let text = paragraph.innerHTML;
-            desc += text + "\n\n";
-        });
-    }
-
-    return [{ title: title, description: desc, footer: { text: generic.getCardFooter(card) } }];
-}
-
 export function DnD5e_reformatMessage(text) {
     let reformattedText = generic.reformatMessage(text);
     //replace Inline Roll Commands
@@ -124,7 +79,7 @@ export function DnD5e_reformatMessage(text) {
 
 // midi might as well be part of the system at this point.
 function midiqol_createMergeCard(message) {
-    let embeds = DnD5e_createCardEmbed(message);
+    let embeds = generic.createCardEmbed(message);
     const divs = document.createElement('div');
     divs.innerHTML = message.content;
     let attackTitle = "";
