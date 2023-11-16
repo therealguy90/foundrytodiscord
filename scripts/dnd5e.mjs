@@ -143,7 +143,7 @@ function midiqol_createMergeCard(message) {
             let rollValue = "";
             rollValue = element.querySelector('h4.dice-total').textContent;
             if (rollValue !== "" && ['all', 'd20AttackOnly'].includes(game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails)) {
-                rollValue = "Rolled";
+                rollValue = ":game_die:**Rolled**";
             }
             else {
                 rollValue = ":game_die:**Result: __" + rollValue + "__**";
