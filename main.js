@@ -135,7 +135,7 @@ async function initSystemStatus() {
 
 Hooks.on('createChatMessage', async (msg) => {
     flushLog = false;
-    if (msg.content == "ftd serveroff" && msg.user.isGM) {
+    if (msg.content === "ftd serveroff" && msg.user.isGM) {
         if (game.user.isGM && getThisModuleSetting('serverStatusMessage')) {
             if (getThisModuleSetting('messageID') && getThisModuleSetting('messageID') !== "") {
                 const editedMessage = new FormData()
@@ -173,10 +173,10 @@ Hooks.on('createChatMessage', async (msg) => {
         if (!isUserMainGM() && (game.users.activeGM || !isUserMainNonGM())) {
             return;
         }
-        if (msg.isRoll && (!isCard(msg.content) && msg.rolls.length > 0) && getThisModuleSetting("rollWebHookURL") == "") {
+        if (msg.isRoll && (!isCard(msg.content) && msg.rolls.length > 0) && getThisModuleSetting("rollWebHookURL") === "") {
             return;
         }
-        if (!msg.isRoll && (isCard(msg.content) && msg.rolls.length < 1) && getThisModuleSetting("webHookURL") == "") {
+        if (!msg.isRoll && (isCard(msg.content) && msg.rolls.length < 1) && getThisModuleSetting("webHookURL") === "") {
             return;
         }
 
@@ -385,7 +385,7 @@ async function requestOnce(retry = 0) {
         console.error('foundrytodiscord | Fetch error:', error);
         if (retry >= 2) {
             console.log("foundrytodiscord | Request discarded from the queue after retrying 2 times.");
-            if (method == "DELETE" && error.message === "404") {
+            if (method === "DELETE" && error.message === "404") {
                 deleteSentMessage(msgID, dmsgID);
             }
             requestQueue.shift();
