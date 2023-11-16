@@ -40,25 +40,21 @@ const SAVE_TYPES = ["fortitude", "reflex", "will"]
 export function messageParserPF2e(msg) {
     let constructedMessage = '';
     let embeds = [];
-    let cardType = 0;
-    if ((generic.isCard(msg.content) && msg.rolls?.length < 1)) {
-        cardType = 1;
+    if (PF2e_isActionCard(msg) && msg.rolls?.length < 1) {
+        if (getThisModuleSetting('sendEmbeds')) {
+            embeds = PF2e_createActionCardEmbed();
     }
-    else if (PF2e_isActionCard(msg) && msg.rolls?.length < 1) {
-        cardType = 2;
     }
-
-    if (PF2e_isConditionCard(msg)) {
+    else if (PF2e_isConditionCard(msg)) {
         embeds = PF2e_createConditionCard(msg);
     }
     else if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)) {
-        cardType = 0;
         embeds = generic.tokenBar_createTokenBarCard(msg);
     }
-    else if (cardType !== 0) {
+    else if (generic.isCard(msg.content) && msg.rolls?.length < 1) {
         constructedMessage = "";
         if (getThisModuleSetting('sendEmbeds')) {
-            embeds = PF2e_createCardEmbed(msg, cardType);
+            embeds = PF2e_createCardEmbed(msg);
         }
     }
     else if (!msg.isRoll || (msg.isRoll && msg.rolls.length < 1)) {
@@ -108,67 +104,73 @@ export function messageParserPF2e(msg) {
     return generic.getRequestParams(msg, constructedMessage, embeds);
 }
 
-function PF2e_createCardEmbed(message, cardType) {
-    let card = message.content;
-    const parser = new DOMParser();
-    let doc = parser.parseFromString(card, "text/html");
+function PF2e_createCardEmbed(message) {
+    const div = document.createElement('div');
+    div.innerHTML = message.content;
     let desc = "";
     let title;
-    // Find the <h3> element and extract its text content, since h3 works for most systems
+    // Find the <h3> element as title
     //generic card
-    if (cardType === 1) {
-        const h3Element = doc.querySelector("h3");
+
+    const h3Element = div.querySelector("h3");
         const actionGlyphElement = h3Element.querySelector(".action-glyph");
         if (actionGlyphElement) {
             actionGlyphElement.remove();
         }
         title = h3Element.textContent.trim();
         desc = PF2e_parseTraits(message.content);
-    }
-    //pf2e action card, introduced in v5.4.0
-    else if (cardType === 2) {
-        const actionCardParser = new DOMParser();
-        const actionDoc = actionCardParser.parseFromString(message.flavor, "text/html");
-        const h4Element = actionDoc.querySelector("h4.action");
-        title = h4Element.querySelector("strong").textContent;
-        desc = PF2e_parseTraits(message.flavor);
-    }
-    let speakerActor = undefined;
+    let speakerActor;
     if (message.speaker?.actor) {
         speakerActor = game.actors.get(message.speaker.actor);
     }
 
-    //parse card description if source is from a character or actor is owned by a player
+    //parse card description if actor is owned by a player
     //this is to limit metagame information
     let descVisible = getThisModuleSetting('showDescription');
 
     if (speakerActor) {
-        if (anonEnabled() && !game.modules.get('anonymous').api.playersSeeName(speakerActor)) {
+        if (anonEnabled() && !speakerActor.hasPlayerOwner) {
             descVisible = false;
         }
     }
     if (descVisible) {
-        if (cardType === 1) {
-            let descList = doc.querySelectorAll(".card-content");
+        let descList = div.querySelectorAll(".card-content");
             descList.forEach(function (paragraph) {
                 let text = paragraph.innerHTML
                 desc += text + "\n\n";
             });
         }
-        else if (cardType === 2) {
+
+    return [{ title: title, description: desc, footer: { text: generic.getCardFooter(div.innerHTML) } }];
+}
+
+function PF2e_createActionCardEmbed(message) {
+    const div = document.createElement('div');
+    div.innerHTML = message.content;
+    let desc = "";
+    let title;
+    const actionDiv = document.createElement('div');
+    actionDiv.innerHTML = message.flavor;
+    const h4Element = actionDiv.querySelector("h4.action");
+    title = h4Element.querySelector("strong").textContent;
+    desc = PF2e_parseTraits(message.flavor);
+    if (speakerActor) {
+        if (anonEnabled() && !speakerActor.hasPlayerOwner) {
+            descVisible = false;
+        }
+    }
+    if (descVisible) {
             if (message.flags?.pf2e?.context?.item) {
                 desc += game.actors.get(message.speaker.actor).items.get(message.flags.pf2e.context.item).system.description.value;
             }
             else {
-                const actionContent = doc.querySelector(".action-content");
+            const actionContent = div.querySelector(".action-content");
                 if (actionContent) {
                     desc += actionContent.innerHTML;
-                }
             }
         }
     }
-
-    return [{ title: title, description: desc, footer: { text: generic.getCardFooter(card) } }];
+    return [{ title: title, description: desc, footer: { text: generic.getCardFooter(div.innerHTML) } }];
 }
 
 
