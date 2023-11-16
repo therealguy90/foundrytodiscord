@@ -588,17 +588,17 @@ export function htmlCodeCleanup(htmltext) {
     doc.innerHTML = htmltext;
     console.log(htmltext);
     const selectorsAndReplacers = [
-        { selector: "h1, h2", replacer: ["# ", "\n"] },
-        { selector: "h3, h4", replacer: ["## ", "\n"] },
-        { selector: "h5, h6", replacer: ["### ", "\n"] },
-        { selector: "strong, b", replacer: ["**", "**"] },
-        { selector: "em, i", replacer: ["*", "*"] },
-        { selector: "hr", replacer: ["-----------------------"] },
-        { selector: "li", replacer: ["- ", "\n"] },
-        { selector: "input", replacer: [""] },
-        { selector: "div", replacer: ["", "\n"] },
-        { selector: "br", replacer: ["\n"] },
-        { selector: "p", replacer: ["", "\n\n"] }
+        { selector: "h1, h2",       replacer: ["# ", "\n"]                  },
+        { selector: "h3, h4",       replacer: ["## ", "\n"]                 },
+        { selector: "h5, h6",       replacer: ["### ", "\n"]                },
+        { selector: "strong, b",    replacer: ["**", "**"]                  },
+        { selector: "em, i",        replacer: ["*", "*"]                    },
+        { selector: "hr",           replacer: ["-----------------------"]   },
+        { selector: "li",           replacer: ["- ", "\n"]                  },
+        { selector: "input",        replacer: [""]                          },
+        { selector: "div",          replacer: ["", "\n"]                    },
+        { selector: "br",           replacer: ["\n"]                        },
+        { selector: "p",            replacer: ["", "\n\n"]                  }
     ]
     selectorsAndReplacers.forEach(({ selector, replacer }) => {
         doc.querySelectorAll(selector).forEach(element => {
