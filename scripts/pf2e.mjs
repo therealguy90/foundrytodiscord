@@ -15,7 +15,7 @@ const DAMAGE_EMOJI = {
     "good": ':angel:',
     "lawful": ':scales:',
     "mental": ':brain:',
-    "poison": ':biohazard:',
+    "poison": ':spider:',
     "bleed": ':drop_of_blood:',
     "precision": 'dart',
     "negative": ':skull:',
@@ -26,7 +26,7 @@ const DAMAGE_EMOJI = {
     "precision": ':dart:',
     "persistent": ':hourglass:',
     "splash": ':boom:',
-    "untyped": ""
+    "untyped": ":grey_question:"
 }
 
 const TEMPLATE_EMOJI = {
@@ -195,7 +195,7 @@ function PF2e_createRollEmbed(message) {
     else if(message.isDamageRoll){
         title = "Damage Roll";
     }
-    desc += PF2e_parseTraits(message.flavor, true);
+    desc = PF2e_parseTraits(message.flavor, true);
 
     //Build description
     if (anonEnabled()) {
@@ -226,6 +226,9 @@ function PF2e_createRollEmbed(message) {
                 desc += "`" + curToken.name + "` ";
             }
         });
+        if(message.flags['pf2e-target-damage'].targets.length >= 1){
+            desc += "\n";
+        }
     }
     else {
         if (message.flags?.pf2e?.context?.target?.token) {
@@ -245,6 +248,7 @@ function PF2e_createRollEmbed(message) {
                     desc += "`" + targetToken.name + "` ";
                 }
             }
+            desc += "\n";
         }
     }
     desc += "\n";
@@ -257,7 +261,7 @@ function PF2e_createRollEmbed(message) {
                 desc += `:game_die:**\`${roll.formula}\`**\n`
             }
             desc += "**:game_die:Result: **" + "__**" + roll.total + "**__";
-            if (speakerActor?.hasPlayerOwner && roll.dice[0].faces === 20) {
+            if (speakerActor?.hasPlayerOwner && roll.dice[0]?.faces === 20) {
                 if (roll.result.startsWith('20 ')) {
                     desc += " __(Nat 20!)__";
                 }
@@ -275,7 +279,7 @@ function PF2e_createRollEmbed(message) {
             else if (PF2e_parseDegree(message.flags.pf2e?.context?.outcome)) {
                 desc += "`(" + PF2e_parseDegree(message.flags.pf2e.context.outcome) + ")`"; // Assumes only one roll as normal
             }
-            desc += "\n";
+            desc += "\n\n";
         });
     }
     else {
