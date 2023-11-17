@@ -45,7 +45,7 @@ export function messageParserPF2e(msg) {
     let embeds = [];
     if (PF2e_isActionCard(msg) && msg.rolls?.length < 1) {
         if (getThisModuleSetting('sendEmbeds')) {
-            embeds = PF2e_createActionCardEmbed();
+            embeds = PF2e_createActionCardEmbed(msg);
         }
     }
     else if (PF2e_isConditionCard(msg)) {
@@ -157,7 +157,12 @@ function PF2e_createActionCardEmbed(message) {
     actionDiv.innerHTML = message.flavor;
     const h4Element = actionDiv.querySelector("h4.action");
     title = h4Element.querySelector("strong").textContent;
-    desc = PF2e_parseTraits(message.flavor);
+    desc = PF2e_parseTraits(message.flavor) + "\n";
+    let speakerActor;
+    if (message.speaker?.actor) {
+        speakerActor = game.actors.get(message.speaker.actor);
+    }
+    let descVisible = getThisModuleSetting('showDescription');
     if (speakerActor) {
         if (anonEnabled() && !speakerActor.hasPlayerOwner) {
             descVisible = false;
