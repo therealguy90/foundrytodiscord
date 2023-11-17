@@ -143,7 +143,7 @@ function generateRequestParams(message, msgText, embeds, imgurl) {
         embeds = splitEmbed(embeds[0]);
     }
     // Add username to embed
-    if (embeds[0] && message.user && message.alias !== message.user && getThisModuleSetting('showAuthor')) {
+    if (embeds[0] && message.user && message.alias !== message.user.name && getThisModuleSetting('showAuthor')) {
         embeds[0].author = {
             name: message.user.name,
             icon_url: generateimglink(message.user.avatar)
