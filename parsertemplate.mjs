@@ -1,12 +1,12 @@
 /*import * as generic from './generic.mjs';
 import { anonEnabled, getThisModuleSetting }  from './helpers/modulesettings.mjs';*/
-//MOVE YOUR PARSER TO THE SCRIPTS FOLDER
+// MOVE YOUR PARSER TO THE SCRIPTS FOLDER
 
 /*  CUSTOM SYSTEM PARSER CREATION GUIDE:
 *   Please hide metadata that should be hidden to players.
 *
-*   My programming style may not work for you. Notice how everything is done functionally.
-*   If this is too complicated for you, shoot me a DM on Discord (@loki123) and we can talk about it.
+*   My programming style may not work for you.
+*   If this is too complicated, shoot me a DM on Discord (@loki123) and we can talk about it.
 *   If you use a different programming style for message parsing, I may not be able to maintain it when issues arise.
 *   You can commission me on making a custom parser for other systems, or if many people request the system, 
 *   I'll do it pretty much for free, given help and testers.
@@ -18,16 +18,16 @@ import { anonEnabled, getThisModuleSetting }  from './helpers/modulesettings.mjs
 *           and embeds is the list of (up to) 10 embeds.
 *       - Add this parser to initParser in modulesettings.mjs.
 *       - Do not worry about parsing HTML text in chat card parsers. Keep the raw HTML formatting until reformatMessage is called.
-*         All HTML parsing is already handled, unless it's system-specific, in which case, 
-*         it must be added to a custom parseHTMLText.
+*           All HTML parsing is already handled, unless it's system-specific, in which case, 
+*           it must be added to a custom parseHTMLText.
 *       - If you want to format a table from text that isn't exactly a table, parse2DTable exists, which does most of the work.
-*         HTML tables are already handled. Do not worry.
-*         Simply provide parse2DTable with a 2D array of your custom table. 
-*         First row of the array should be the table headers.
+*           HTML tables are already handled. Do not worry.
+*           Simply provide parse2DTable with a 2D array of your custom table. 
+*           First row of the array should be the table headers.
 *       - Make sure your code abides with the module settings!
 *
 *   2. a System_reformatMessage (i.e. DnD5e_reformatMessage) function
-*       - Custom @ tags and etc must be formatted here.
+*       - Custom @ tags, inline rolls, and etc must be formatted here.
 *       - Look at other parsers to find out how this works.
 */
 
@@ -55,27 +55,16 @@ export function messageParserSystem(msg){
             }
             msg.content = elements.innerHTML;
         }
-        //Above snippet can be removed safely.
+        //Above snippet can be removed safely. 
 
         /*Attempt polyglot support. This will ONLY work if the structure is similar:
         * for PF2e and DnD5e, this would be actor.system.traits.languages.value
         * polyglotize() can be edited for other systems. Make a new function in this file, copying polyglotize() from generic.mjs.
         */
         if (game.modules.get("polyglot")?.active && msg.flags?.polyglot?.language) {
-            if (!getThisModuleSetting("commonLanguages").toLowerCase().includes(msg.flags.polyglot.language)) {
-                if (getThisModuleSetting('includeOnly') === "") {
-                    constructedMessage = generic.polyglotize(msg);
-                }
-                else {
-                    listLanguages = getThisModuleSetting('includeOnly').split(",").map(item => item.trim().toLowerCase());
-                    if (!listLanguages == null) {
-                        listLanguages = [];
-                    }
-                    constructedMessage = generic.polyglotize(msg, listLanguages);
-                }
-            }
+            constructedMessage = generic.polyglotize(msg);
         }
-        if (constructedMessage == '') {
+        if (constructedMessage === '') {
             constructedMessage = msg.content;
         }
     }
@@ -84,16 +73,19 @@ export function messageParserSystem(msg){
         embeds = generic.createGenericRollEmbed(msg); // foundry /r command or other rolls not covered by your parser.
     }
 
-    if (embeds != [] && embeds.length > 0) {
-        embeds[0].description = System_reformatMessage(embeds[0].description);
+    if (embeds && embeds.length > 0) {
+        embeds[0].description = System_reformatMessage(embeds[0].description, originDoc);
         constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === embeds[0].title) ? "" : msg.flavor;
-        // use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
-        // sadly, the anonymous module doesn't do this as css styling, so this needs to be done here.
+        //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         if (anonEnabled()) {
             for (let i = 0; i < embeds.length; i++) {
-                embeds[i] = generic.anonymizeEmbed(msg, embeds[i]);
+                embeds[i].title = generic.anonymizeText(embeds[i].title, msg);
+                embeds[i].description = generic.anonymizeText(embeds[i].description, msg);
             }
         }
+    }
+    if (anonEnabled()) {
+        constructedMessage = generic.anonymizeText(constructedMessage, msg);
     }
     constructedMessage = System_reformatMessage(constructedMessage);
     return generic.getRequestParams(msg, constructedMessage, embeds); //ALWAYS keep this as the return.
