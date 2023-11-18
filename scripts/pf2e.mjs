@@ -156,7 +156,7 @@ function PF2e_createActionCardEmbed(message) {
     const actionDiv = document.createElement('div');
     actionDiv.innerHTML = message.flavor;
     const h4Element = actionDiv.querySelector("h4.action");
-    title = h4Element.querySelector("strong").textContent;
+    title = `${h4Element.querySelector("strong").textContent} ${actionDiv.querySelector(".subtitle") ? actionDiv.querySelector(".subtitle").textContent : ""}`;
     desc = `${PF2e_parseTraits(message.flavor)}\n`;
     let speakerActor;
     if (message.speaker?.actor) {
