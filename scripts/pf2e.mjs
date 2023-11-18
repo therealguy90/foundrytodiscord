@@ -72,7 +72,7 @@ export function messageParserPF2e(msg) {
         }
     }
     else {
-        if ((msg.flavor !== null && msg.flavor.length > 0) || msg.isDamageRoll) {
+        if ((msg.flavor !== null && msg.flavor.length > 0) || (msg.isDamageRoll && PF2e_containsDamageDieOnly(msg.rolls))) {
             embeds = PF2e_createRollEmbed(msg);
         }
         else {
@@ -703,4 +703,8 @@ function PF2e_getDiscardedRoll(message) {
     const doc = parser.parseFromString(message.content, "text/html");
     const rerollDiscardDiv = doc.querySelector(".pf2e-reroll-discard .dice-total");
     return rerollDiscardDiv.textContent;
+}
+
+function PF2e_containsDamageDieOnly(rolls){
+    return rolls.every(roll => !/(d20|d2|dc)/.test(roll.formula));
 }
