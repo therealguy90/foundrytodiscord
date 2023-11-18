@@ -157,7 +157,7 @@ function PF2e_createActionCardEmbed(message) {
     actionDiv.innerHTML = message.flavor;
     const h4Element = actionDiv.querySelector("h4.action");
     title = h4Element.querySelector("strong").textContent;
-    desc = PF2e_parseTraits(message.flavor) + "\n";
+    desc = `${PF2e_parseTraits(message.flavor)}\n`;
     let speakerActor;
     if (message.speaker?.actor) {
         speakerActor = game.actors.get(message.speaker.actor);
@@ -221,14 +221,14 @@ function PF2e_createRollEmbed(message) {
             const curToken = curScene.tokens.get(target.id);
             if (anonEnabled()) {
                 if (!anon.playersSeeName(curToken.actor)) {
-                    desc += "`" + anon.getName(curToken.actor) + "` ";
+                    desc += `\`${anon.getName(curToken.actor)}\` `;
                 }
                 else {
-                    desc += "`" + curToken.name + "` ";
+                    desc += `\`${curToken.name}\` `;
                 }
             }
             else {
-                desc += "`" + curToken.name + "` ";
+                desc += `\`${curToken.name}\` `;
             }
         });
         if(message.flags['pf2e-target-damage'].targets.length >= 1){
@@ -242,15 +242,15 @@ function PF2e_createRollEmbed(message) {
             const targetToken = game.scenes.get(message.speaker.scene).tokens.get(targetTokenId);
             if (targetToken) {
                 if (anonEnabled()) {
-                    if (!anon.playersSeeName(targetToken.actor)) {
-                        desc += "`" + anon.getName(targetToken.actor) + "` ";
+                    if (!anon.playersSeeName(curToken.actor)) {
+                        desc += `\`${anon.getName(curToken.actor)}\` `;
                     }
                     else {
-                        desc += "`" + targetToken.name + "` ";
+                        desc += `\`${curToken.name}\` `;
                     }
                 }
                 else {
-                    desc += "`" + targetToken.name + "` ";
+                    desc += `\`${curToken.name}\` `;
                 }
             }
             desc += "\n";
@@ -265,7 +265,7 @@ function PF2e_createRollEmbed(message) {
             if(getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))){
                 desc += `:game_die:**\`${roll.formula}\`**\n`
             }
-            desc += "**:game_die:Result: **" + "__**" + roll.total + "**__";
+            desc += `:game_die:**Result: __${roll.total}__**`;
             if (speakerActor?.hasPlayerOwner && roll.dice[0]?.faces === 20) {
                 if (roll.result.startsWith('20 ')) {
                     desc += " __(Nat 20!)__";
@@ -273,16 +273,16 @@ function PF2e_createRollEmbed(message) {
                 else if (roll.result.startsWith('1 ')) {
                     desc += " __(Nat 1)__";
                 }
-                desc += "||(" + roll.result + ")||";
+                desc += `||(${roll.result})||`;
             }
             if (roll instanceof DamageRoll) {
                 desc += PF2e_parseDamageTypes(roll);
             }
             else if (PF2e_parseDegree(roll.options?.degreeOfSuccess)) {
-                desc += "`(" + PF2e_parseDegree(roll.options.degreeOfSuccess) + ")`";
+                desc += `\`(${PF2e_parseDegree(roll.options.degreeOfSuccess)})\``;
             }
             else if (PF2e_parseDegree(message.flags.pf2e?.context?.outcome)) {
-                desc += "`(" + PF2e_parseDegree(message.flags.pf2e.context.outcome) + ")`"; // Assumes only one roll as normal
+                desc += `\`(${PF2e_parseDegree(message.flags.pf2e.context.outcome)})\``; // Assumes only one roll as normal
             }
             desc += "\n\n";
         });
@@ -291,8 +291,8 @@ function PF2e_createRollEmbed(message) {
         if(getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))){
             desc += `:game_die:**\`${roll.formula}\`**\n`
         }
-        desc += "~~:game_die:Result: " + "__" + PF2e_getDiscardedRoll(message) + "__~~\n";
-        desc += "**:game_die:Result: **" + "__**" + message.rolls[0].total + "**__";
+        desc += `~~:game_die:Result: __${PF2e_getDiscardedRoll(message)}__~~\n`;
+        desc += `:game_die:**Result: __${message.rolls[0].total}__**`;
         const speakerActor = game.actors.get(message.speaker.actor);
         if (speakerActor?.hasPlayerOwner && message.rolls[0].dice[0].faces === 20) {
             if (message.rolls[0].result.startsWith('20 ')) {
@@ -301,10 +301,10 @@ function PF2e_createRollEmbed(message) {
             else if (message.rolls[0].result.startsWith('1 ')) {
                 desc += " __(Nat 1)__";
             }
-            desc += "||(" + message.rolls[0].result + ")||";
+            desc += `||(${message.rolls[0].result})||`;
         }
         if (PF2e_parseDegree(message.flags.pf2e.context.outcome)) {
-            desc += "`(" + PF2e_parseDegree(message.flags.pf2e.context.outcome) + ")`";
+            desc += `\`(${PF2e_parseDegree(message.flags.pf2e.context.outcome)})\``;
         }
         desc += "\n";
     }
@@ -337,9 +337,10 @@ function PF2e_parseDamageTypes(baserolls) {
                     persFormula = persFormula.replace(regex, '');
                     damages += persFormula.trim();
                 }
-                damages += (roll.persistent ? DAMAGE_EMOJI["persistent"] : "") + (precision ? DAMAGE_EMOJI["precision"] : "") + (splash ? DAMAGE_EMOJI["splash"] : "");
+                //damages += (roll.persistent ? DAMAGE_EMOJI["persistent"] : "") + (precision ? DAMAGE_EMOJI["precision"] : "") + (splash ? DAMAGE_EMOJI["splash"] : "");
+                damages += `${(roll.persistent ? DAMAGE_EMOJI["persistent"] : "")}${(precision ? DAMAGE_EMOJI["precision"] : "")}${(splash ? DAMAGE_EMOJI["splash"] : "")}`;
                 if (!DAMAGE_EMOJI[roll.type]) {
-                    damages += "[" + roll.type + "]";
+                    damages += `[${roll.type}]`;
                 }
                 else {
                     damages += DAMAGE_EMOJI[roll.type];
@@ -358,12 +359,12 @@ function PF2e_parseDamageTypes(baserolls) {
                     damages += DAMAGE_EMOJI[roll.type];
                 }
                 else {
-                    damages += "[" + roll.type + "]";
+                    damages += `[${roll.type}]`;
                 }
             });
         });
     }
-    return " ||**(" + damages + ")**||";
+    return ` ||**(${damages})**||`;
 }
 
 function PF2e_parseDegree(degree) {
@@ -398,9 +399,9 @@ function PF2e_parseDegree(degree) {
     }
 }
 
-function PF2e_getNameFromCheck(match, checkString, customText) {
-    if (customText) {
-        return ":game_die:`" + customText + "`";
+function PF2e_getNameFromCheck(match, checkString, label) {
+    if (label) {
+        return `:game_die:\`${label}\``;
     }
     else {
         return ":game_die:" + (function () {
@@ -449,7 +450,7 @@ function PF2e_getNameFromTemplate(match, templateString, label) {
             templateLabel += TEMPLATE_EMOJI[template.type];
         }
         if (label) {
-            templateLabel += "`" + label + "`";
+            templateLabel += `\`${label}\``;
         }
         else {
             templateLabel += "`" + game.i18n.format("PF2E.TemplateLabel", {
@@ -577,12 +578,12 @@ function PF2e_parseTraits(text, isRoll = false) {
         }
         if (tags?.length) {
             for (let i = 0; i < tags.length; i++) {
-                traits = traits + "[" + tags[i] + "] ";
+                traits += `[${tags[i]}] `;
             }
         }
     }
     if (traits.trim() !== "") {
-        return "`" + traits.trim() + "`\n";
+        return `\`${traits.trim()}\`\n`;
     }
     else {
         return "";
@@ -592,7 +593,6 @@ function PF2e_parseTraits(text, isRoll = false) {
 
 function PF2e_parseInlineString(checkString) {
     let check = {};
-
     // Split the string into an array of key-value pairs
     let pairs = checkString.split("|");
     for (let i = 0; i < pairs.length; i++) {

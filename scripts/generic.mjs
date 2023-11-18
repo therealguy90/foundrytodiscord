@@ -120,7 +120,7 @@ function generateRequestParams(message, msgText, embeds, imgurl) {
             speakerActor = game.actors.find(actor => actor.name === message.alias);
         }
         if (speakerActor && !anon.playersSeeName(speakerActor)) {
-            alias = anon.getName(speakerActor) + " (" + censorId(speakerToken ? speakerToken.id : speakerActor.id) + ")";
+            alias = `${anon.getName(speakerActor)} (${censorId(speakerToken ? speakerToken.id : speakerActor.id)})`;
         }
     }
     else if (speakerToken) {
