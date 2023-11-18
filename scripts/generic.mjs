@@ -30,7 +30,7 @@ export function messageParserGeneric(msg) {
         * for PF2e and DnD5e, this would be actor.system.traits.languages.value
         * the polyglotize() function should be edited for other systems
         */
-        if (game.modules.get("polyglot")?.active && msg.flags?.polyglot?.language) {
+        if (getThisModuleSetting('enablePolyglot') && game.modules.get("polyglot")?.active && msg.flags?.polyglot?.language) {
             constructedMessage = polyglotize(msg);
         }
         if (constructedMessage === '') {

@@ -37,7 +37,7 @@ export function messageParserDnD5e(msg) {
             }
             msg.content = elements.innerHTML;
         }
-        if (game.modules.get("polyglot")?.active && msg.flags?.polyglot?.language) {
+        if (getThisModuleSetting('enablePolyglot') && game.modules.get("polyglot")?.active && msg.flags?.polyglot?.language) {
             constructedMessage = generic.polyglotize(msg);
         }
         if (constructedMessage === '') {

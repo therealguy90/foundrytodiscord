@@ -135,6 +135,15 @@ export function initModuleSettings() {
         type: Boolean
     });
     if (game.modules.get("polyglot")?.active) {
+        game.settings.register('foundrytodiscord', "enablePolyglot", {
+            name: "(Polyglot) Enable language check",
+            hint: "Turn this off to disable polyglot integration with Foundry to Discord.",
+            scope: "world",
+            config: true,
+            default: true,
+            type: Boolean
+        });
+        if (getThisModuleSetting("enablePolyglot")) {
         game.settings.register('foundrytodiscord', "commonLanguages", {
             name: "(Polyglot) Override common languages: ",
             hint: "A list of languages that are \"common\" to your world. By default, this is \"common\", but this can be replaced by a list of language ids, separated by commas. Homebrew languages might use a different language id, such as 'hb_english'",
@@ -151,6 +160,7 @@ export function initModuleSettings() {
             default: "",
             type: String
         });
+        }
     }
     if (game.modules.get("anonymous")?.active) {
         game.settings.register('foundrytodiscord', 'enableAnon', {
@@ -223,6 +233,6 @@ export function getSystemParser() {
     }
 }
 
-export function anonEnabled(){
+export function anonEnabled() {
     return game.modules.get("anonymous")?.active && getThisModuleSetting('enableAnon');
 }

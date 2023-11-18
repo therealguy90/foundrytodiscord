@@ -64,7 +64,7 @@ export function messageParserPF2e(msg) {
         /*Attempt polyglot support. This will ONLY work if the structure is similar:
         * actor.system.traits.languages.value
         */
-        if (game.modules.get("polyglot")?.active && msg.flags?.polyglot?.language) {
+        if (getThisModuleSetting('enablePolyglot') && game.modules.get("polyglot")?.active && msg.flags?.polyglot?.language) {
             constructedMessage = generic.polyglotize(msg);
         }
         if (constructedMessage === '') {
