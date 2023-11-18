@@ -242,15 +242,15 @@ function PF2e_createRollEmbed(message) {
             const targetToken = game.scenes.get(message.speaker.scene).tokens.get(targetTokenId);
             if (targetToken) {
                 if (anonEnabled()) {
-                    if (!anon.playersSeeName(curToken.actor)) {
-                        desc += `\`${anon.getName(curToken.actor)}\` `;
+                    if (!anon.playersSeeName(targetToken.actor)) {
+                        desc += `\`${anon.getName(targetToken.actor)}\` `;
                     }
                     else {
-                        desc += `\`${curToken.name}\` `;
+                        desc += `\`${targetToken.name}\` `;
                     }
                 }
                 else {
-                    desc += `\`${curToken.name}\` `;
+                    desc += `\`${targetToken.name}\` `;
                 }
             }
             desc += "\n";
