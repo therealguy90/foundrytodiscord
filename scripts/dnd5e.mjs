@@ -96,7 +96,12 @@ function midiqol_createMergeCard(message) {
                 switch (game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails) {
                     case 'none':
                         const rollFormula = element.querySelector(".dice-formula");
+                        if (getThisModuleSetting('showFormula')) {
                         rollValue = `:game_die:**\`${rollFormula.textContent}\`**\n:game_die:**(d20) __${message.flags['midi-qol'].d20AttackRoll}__`;
+                        }
+                        else{
+                            rollValue = `\`:game_die:**Result: __${result}__\``;
+                        }
                         break;
                     case 'detailsDSN':
                     case 'details':
@@ -149,7 +154,7 @@ function midiqol_createMergeCard(message) {
                 rollValue = ":game_die:**Rolled**";
             }
             else {
-                if (game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails === 'none') {
+                if (getThisModuleSetting('showFormula') && game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails === 'none') {
                     const rollFormula = element.querySelector(".dice-formula");
                     rollValue = `:game_die:**\`${rollFormula.textContent}\`**\n:game_die:**Result: __${rollValue}__**`;
                 }

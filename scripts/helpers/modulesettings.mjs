@@ -126,6 +126,14 @@ export function initModuleSettings() {
         default: true,
         type: Boolean
     });
+    game.settings.register('foundrytodiscord', 'showFormula', {
+        name: "Show roll formulas where applicable",
+        hint: "Enable roll formulas to be shown in roll embeds where applicable. This does not override the general rule of roll formula visibility, i.e. most rolls from the GM are generally still hidden if this is turned on, and GM roll formulas are only shown in midi-qol when GM roll detail hiding is set to \"None\".",
+        scope: "world",
+        config: true,
+        default: true,
+        type: Boolean
+    });
     if (game.modules.get("polyglot")?.active) {
         game.settings.register('foundrytodiscord', "commonLanguages", {
             name: "(Polyglot) Override common languages: ",

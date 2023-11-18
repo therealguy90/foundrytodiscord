@@ -262,7 +262,7 @@ function PF2e_createRollEmbed(message) {
         //Add roll information to embed:
         const speakerActor = game.actors.get(message.speaker.actor);
         message.rolls.forEach(roll => {
-            if(speakerActor?.hasPlayerOwner || !message.user.isGM){
+            if(getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))){
                 desc += `:game_die:**\`${roll.formula}\`**\n`
             }
             desc += "**:game_die:Result: **" + "__**" + roll.total + "**__";
@@ -288,7 +288,7 @@ function PF2e_createRollEmbed(message) {
         });
     }
     else {
-        if(speakerActor?.hasPlayerOwner || !message.user.isGM){
+        if(getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))){
             desc += `:game_die:**\`${roll.formula}\`**\n`
         }
         desc += "~~:game_die:Result: " + "__" + PF2e_getDiscardedRoll(message) + "__~~\n";
