@@ -406,9 +406,9 @@ function PF2e_getNameFromCheck(match, checkString, customText) {
         return ":game_die:" + (function () {
             const check = PF2e_parseInlineString(checkString);
             let tempcheck = "`";
-            if (check.showDC) {
-                if (check.showDC === "all" || check.showdc === "all") {
-                    tempcheck += "DC " + check.dc + " ";
+            if (check.showDC || check.showdc) {
+                if (check.showDC.toLowerCase() === "all" || check.showdc.toLowerCase() === "all") {
+                    tempcheck += `DC ${check.dc} `;
                 }
             }
             if (check.type) {
