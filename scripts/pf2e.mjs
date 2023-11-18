@@ -516,14 +516,16 @@ function PF2e_replaceDamageFormat(damagestring, originDoc) {
                 const damageArgs = inlinedamage.trim().substr(8, inlinedamage.length - 9).split(/,(?![^[]*])/);
                 const rollParams = (() => {
                     switch (true) {
-                        //Oddly enough, just putting the document in "actor" already works... but this is to really make sure.
                         case originDoc instanceof Actor:
                             console.log(originDoc);
                             return { actor: originDoc };
                             break;
                         case originDoc instanceof Item:
                             console.log(originDoc);
-                            return { item: originDoc };
+                            return { 
+                                    actor: originDoc.parent instanceof Actor ? originDoc.parent : null,
+                                    item: originDoc
+                                    };
                             break;
                         default:
                             return {};
