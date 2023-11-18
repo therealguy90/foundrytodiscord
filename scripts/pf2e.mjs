@@ -518,11 +518,9 @@ function PF2e_replaceDamageFormat(damagestring, originDoc) {
                 const rollParams = (() => {
                     switch (true) {
                         case originDoc instanceof Actor:
-                            console.log(originDoc);
                             return { actor: originDoc };
                             break;
                         case originDoc instanceof Item:
-                            console.log(originDoc);
                             return { 
                                     actor: originDoc.parent instanceof Actor ? originDoc.parent : null,
                                     item: originDoc

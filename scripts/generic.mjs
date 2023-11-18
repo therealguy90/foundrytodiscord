@@ -583,7 +583,6 @@ export function htmlCodeCleanup(htmltext) {
     }
     const doc = document.createElement('div');
     doc.innerHTML = htmltext;
-    console.log(htmltext);
     const selectorsAndReplacers = [
         { selector: "h1, h2",       replacer: ["# ", "\n"]                  },
         { selector: "h3, h4",       replacer: ["## ", "\n"]                 },
@@ -606,7 +605,6 @@ export function htmlCodeCleanup(htmltext) {
             }
         });
     });
-    //console.log(doc.textContent);
     return doc.textContent
         .replace(/\n\s+/g, '\n\n') // Clean up line breaks and whitespace
         .replace(/\n*----+\n*/g, '\n-----------------------\n') // Cleanup line breaks before and after horizontal lines
