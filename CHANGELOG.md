@@ -1,4 +1,16 @@
-# 1.6.3
+# 1.7.0
+
+- Adds roll formulas where they should be visible. (Can be removed in settings)
+- Adds a setting to disregard Polyglot
+- Removes all legacy v10 code for hook filtering.
+- Revamped most of the HTML parser, functionality remains more or less the same.
+- (pf2e) Parse `@Damage` with actor context for parity.
+- (pf2e) `@Check` showdc fixed to work with `showDC` and `showdc`.
+- (pf2e) Added support for `@Template`.
+- Major code refactoring.
+- Small bug and localization fixes.
+
+## 1.6.3
 
 - Fixes "Send Image to Discord" on ImagePopouts when said image is raw base64 data.
 - Parse isRoll messages that contain no rolls as regular messages instead
