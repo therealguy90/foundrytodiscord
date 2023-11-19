@@ -69,11 +69,11 @@ export function messageParserDnD5e(msg) {
 
 export function DnD5e_reformatMessage(text) {
     let reformattedText = generic.reformatMessage(text);
-    const inlineRollEnricher = CONFIG.TextEditor.enrichers.find(enricher => enricher.enricher.name === "enrichString");
-    let regex = inlineRollEnricher.pattern;
-    reformattedText = reformattedText.replace(regex, `\`${inlineRollEnricher.enricher(match).textContent}\``);
+    //const inlineRollEnricher = CONFIG.TextEditor.enrichers.find(enricher => enricher.enricher.name === "enrichString");
+    //let regex = inlineRollEnricher.pattern;
+    //reformattedText = reformattedText.replace(regex, `\`${inlineRollEnricher.enricher(match).textContent}\``);
     //replace Inline Roll Commands
-    regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
+    let regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
     reformattedText = reformattedText.replace(regex, ':game_die:`$1`');
     regex = /\[\[\/(.*?) (.*?)\]\]/g;
     reformattedText = reformattedText.replace(regex, ':game_die:`$2`');
