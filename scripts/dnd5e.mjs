@@ -37,7 +37,7 @@ export function messageParserDnD5e(msg) {
             }
             msg.content = elements.innerHTML;
         }
-        if (getThisModuleSetting('enablePolyglot') && game.modules.get("polyglot")?.active && msg.flags?.polyglot?.language) {
+        if (game.modules.get("polyglot")?.active && getThisModuleSetting('enablePolyglot') && msg.flags?.polyglot?.language) {
             constructedMessage = generic.polyglotize(msg);
         }
         if (constructedMessage === '') {
@@ -69,8 +69,11 @@ export function messageParserDnD5e(msg) {
 
 export function DnD5e_reformatMessage(text) {
     let reformattedText = generic.reformatMessage(text);
+    const inlineRollEnricher = CONFIG.TextEditor.enrichers.find(enricher => enricher.enricher.name === "enrichString");
+    let regex = inlineRollEnricher.pattern;
+    reformattedText = reformattedText.replace(regex, `\`${inlineRollEnricher.enricher(match).textContent}\``);
     //replace Inline Roll Commands
-    let regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
+    regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
     reformattedText = reformattedText.replace(regex, ':game_die:`$1`');
     regex = /\[\[\/(.*?) (.*?)\]\]/g;
     reformattedText = reformattedText.replace(regex, ':game_die:`$2`');
