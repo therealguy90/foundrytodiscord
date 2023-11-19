@@ -40,7 +40,7 @@ const SAVE_TYPES = ["fortitude", "reflex", "will"]
 
 const DamageRoll = CONFIG.Dice.rolls.find(r => r.name === "DamageRoll");
 
-export function messageParserPF2e(msg) {
+export async function messageParserPF2e(msg) {
     let constructedMessage = '';
     let embeds = [];
     if (PF2e_isActionCard(msg) && msg.rolls?.length < 1) {

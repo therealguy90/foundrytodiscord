@@ -7,13 +7,13 @@ import * as api from '../api.js';
 
 
 // Application header buttons
-export function initMenuHooks() {
-    Hooks.on('getJournalSheetHeaderButtons', (sheet, buttons) => {
+export async function initMenuHooks() {
+    Hooks.on('getJournalSheetHeaderButtons', async (sheet, buttons) => {
         buttons.unshift({
             label: "Send Current Page to Discord",
             class: 'send-to-discord',
             icon: 'fa-brands fa-discord',
-            onclick: () => {
+            onclick: async () => {
                 const pageIndex = sheet.pageIndex;
                 const pageData = sheet._pages[pageIndex];
                 let formData = new FormData();
@@ -25,7 +25,7 @@ export function initMenuHooks() {
                         embeds = [{
                             author: { name: "From Journal " + sheet.title },
                             title: pageData.name,
-                            description: reformat(pageData.text.content)
+                            description: await reformat(pageData.text.content)
                         }];
                         if (embeds[0].description.length > 4000) {
                             embeds = splitEmbed(embeds[0]);
@@ -169,7 +169,7 @@ export function initMenuHooks() {
                 label: "Send Quest Details to Discord",
                 class: 'send-to-discord',
                 icon: 'fa-brands fa-discord',
-                onclick: () => {
+                onclick: async () => {
                     const questData = app._quest;
                     let embeds = [];
                     //Build author object
@@ -206,7 +206,7 @@ export function initMenuHooks() {
                     }
                     // Build Description
                     const reformat = getReformatter();
-                    let description = reformat(questData.description);
+                    let description = await reformat(questData.description);
 
                     let fields = [];
                     // Build Objectives field

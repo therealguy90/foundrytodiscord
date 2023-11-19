@@ -3,7 +3,7 @@ import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs'
 import { splitEmbed, hexToColor } from './helpers/embeds.mjs';
 import { generateimglink } from './helpers/images.mjs';
 
-export function messageParserGeneric(msg) {
+export async function messageParserGeneric(msg) {
     let constructedMessage = '';
     let embeds = [];
     if (game.modules.get('monks-tokenbar')?.active && tokenBar_isTokenBarCard(msg.content)) {

@@ -74,7 +74,7 @@ Hooks.once("ready", function () {
         if (curInviteURL !== "" && !curInviteURL.endsWith("/")) {
             game.settings.set('foundrytodiscord', 'inviteURL', curInviteURL + "/");
         }
-        else if(curInviteURL === ""){
+        else if (curInviteURL === "") {
             game.settings.set('foundrytodiscord', 'inviteURL', "http://");
         }
         initSystemStatus();
@@ -156,7 +156,7 @@ Hooks.on('createChatMessage', async (msg) => {
                 const response = await api.editMessage(editedMessage, getThisModuleSetting('webHookURL'), getThisModuleSetting('messageID'));
                 if (response.ok) {
                     console.log('foundrytodiscord | Server state set to OFFLINE');
-                    ChatMessage.create({ content: 'Server state set to OFFLINE.', speaker: {alias: "Foundry to Discord"}, whisper: [game.user.id] });
+                    ChatMessage.create({ content: 'Server state set to OFFLINE.', speaker: { alias: "Foundry to Discord" }, whisper: [game.user.id] });
                     msg.delete();
                 }
                 else {
@@ -295,7 +295,46 @@ function deleteAll(msgObjects, msg) {
 * previously-sent messages, and for the messages to not be erased after the client reloads their browser.
 */
 function tryRequest(msg, method, hookOverride = "") {
-    let requestParams = messageParse(msg);
+    messageParse(msg).then((requestParams) => {
+        if (requestParams) {
+            if (requestParams.params.avatar_url === "") {
+                console.warn("foundrytodiscord | Your Invite URL is not set! Avatar images cannot be displayed on Discord.")
+            }
+            let formData = new FormData()
+            if (game.modules.get("chat-media")?.active || game.modules.get("chatgifs")?.active) {
+                const { formDataTemp, contentTemp } = getChatMediaAttachments(formData, requestParams.params.content, msg.content);
+                if (formDataTemp !== formData) {
+                    formData = formDataTemp;
+                }
+                requestParams.params.content = contentTemp;
+            }
+            if (requestParams.params.content === "" && requestParams.params.embeds.length === 0 && !formData.get('files[0]')) {
+                if (!msg.content.includes('<img') && !msg.content.includes('<video')) {
+                    return;
+                }
+                else {
+                    requestParams.params.content += addMediaLinks(msg);
+                }
+                if (requestParams.params.content === "") {
+                    return;
+                }
+            }
+            let waitHook;
+            if (requestParams.hook.includes("?")) {
+                waitHook = requestParams.hook + "&wait=true";
+            }
+            else {
+                waitHook = requestParams.hook + "?wait=true";
+            }
+            formData.append('payload_json', JSON.stringify(requestParams.params));
+            requestQueue.push({ hook: hookOverride === "" ? waitHook : hookOverride, formData: formData, msgID: msg.id, method: method, dmsgID: null });
+            if (!isProcessing) {
+                isProcessing = true;
+                requestOnce();
+            }
+        }
+    })
+    /*let requestParams = messageParse(msg);
     if (requestParams) {
         if (requestParams.params.avatar_url === "") {
             console.warn("foundrytodiscord | Your Invite URL is not set! Avatar images cannot be displayed on Discord.")
@@ -332,7 +371,7 @@ function tryRequest(msg, method, hookOverride = "") {
             isProcessing = true;
             requestOnce();
         }
-    }
+    }*/
 }
 
 async function requestOnce(retry = 0) {
@@ -557,6 +596,6 @@ function isUserMainGM() {
     return game.user === game.users.activeGM;
 }
 
-function isUserMainNonGM(){
+function isUserMainNonGM() {
     return game.user === game.users.filter(user => user.active && !user.isGM).sort((a, b) => a.name.localeCompare(b.name))[0];
 }

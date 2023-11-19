@@ -2,7 +2,7 @@ import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs'
 import { parse2DTable } from './helpers/tables.mjs';
 import * as generic from './generic.mjs';
 
-export function messageParserDnD5e(msg) {
+export async function messageParserDnD5e(msg) {
     let constructedMessage = '';
     let embeds = [];
     if (game.modules.get('midi-qol')?.active && midiqol_isMergeCard(msg.content)) {
@@ -63,11 +63,11 @@ export function messageParserDnD5e(msg) {
     if (anonEnabled()) {
         constructedMessage = generic.anonymizeText(constructedMessage, msg);
     }
-    constructedMessage = DnD5e_reformatMessage(constructedMessage);
+    constructedMessage = await DnD5e_reformatMessage(constructedMessage);
     return generic.getRequestParams(msg, constructedMessage, embeds);
 }
 
-export function DnD5e_reformatMessage(text) {
+export async function DnD5e_reformatMessage(text) {
     let reformattedText = generic.reformatMessage(text);
     //const inlineRollEnricher = CONFIG.TextEditor.enrichers.find(enricher => enricher.enricher.name === "enrichString");
     //let regex = inlineRollEnricher.pattern;
@@ -102,7 +102,7 @@ function midiqol_createMergeCard(message) {
                         if (getThisModuleSetting('showFormula')) {
                             rollValue = `:game_die:**\`${rollFormula.textContent}\`**\n:game_die:**Result: __${result}__`;
                         }
-                        else{
+                        else {
                             rollValue = `:game_die:**Result: __${result}__`;
                         }
                         break;
