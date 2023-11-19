@@ -1,4 +1,9 @@
-# 1.7.0
+# 1.7.1
+
+- Fixes midi-qol attack roll result visibility when hide is set to 'none'
+- Hotfix for some messages failing to send.
+
+## 1.7.0
 
 - Adds roll formulas where they should be visible. (Can be removed in settings)
 - Adds a setting to disregard Polyglot
