@@ -14,7 +14,7 @@ While it will work with other systems, the extent of compatibility may vary. Reg
 
 **Anonymous:**
 - Mimics the behavior of "anonymous" actors, including using replacement names for descriptions and message aliases.
-- To avoid Discord grouping up same-named messages, it sends the token ID to Discord with the replacement name (e.g., "Unknown NPC (V73Oqm1EL1KOoXOl)").
+- To avoid Discord grouping up same-named messages, it sends the token ID to Discord with the replacement name (e.g., "Unknown NPC (V73O****)").
 
 **Polyglot:**
 - Detects the languages known by players and sends languages they don't know to Discord as "Unintelligible."
