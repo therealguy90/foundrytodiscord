@@ -97,16 +97,16 @@ function midiqol_createMergeCard(message) {
                     case 'none':
                         const rollFormula = element.querySelector(".dice-formula");
                         if (getThisModuleSetting('showFormula')) {
-                            rollValue = `:game_die:**\`${rollFormula.textContent}\`**\n:game_die:**(d20) __${message.flags['midi-qol'].d20AttackRoll}__`;
+                            rollValue = `:game_die:**\`${rollFormula.textContent}\`**\n:game_die:**Result: __${result}__`;
                         }
                         else{
-                            rollValue = `\`:game_die:**Result: __${result}__\``;
+                            rollValue = `:game_die:**Result: __${result}__`;
                         }
                         break;
                     case 'detailsDSN':
                     case 'details':
                         if (result !== "") {
-                            rollValue = `\`:game_die:**Result: __${result}__\``;
+                            rollValue = `:game_die:**Result: __${result}__`;
                         }
                         break;
                     case 'd20Only':
