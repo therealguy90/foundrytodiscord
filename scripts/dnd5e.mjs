@@ -49,7 +49,7 @@ export async function messageParserDnD5e(msg) {
     }
 
     if (embeds != [] && embeds.length > 0) {
-        embeds[0].description = DnD5e_reformatMessage(embeds[0].description);
+        embeds[0].description = await DnD5e_reformatMessage(embeds[0].description);
         constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === embeds[0].title) ? "" : msg.flavor;
         //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
