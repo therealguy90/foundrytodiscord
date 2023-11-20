@@ -189,7 +189,16 @@ function PF2e_createRollEmbed(message) {
     //Build Title
     const actionTitle = div.querySelector("h4.action");
     if (actionTitle) {
-        title = `${actionTitle.querySelector("strong").textContent} ${(actionTitle.querySelector(".subtitle") ? actionTitle.querySelector(".subtitle").textContent : "")}`;
+        const strongtitle = actionTitle.querySelector("strong").textContent;
+        const subtitle = actionTitle.querySelector(".subtitle");
+        if(strongtitle || subtitle){
+            title = `${strongtitle} ${(subtitle ? subtitle.textContent : "")}`;
+        }
+        else{
+            if(message.isDamageRoll){
+                title = "Damage Roll";
+            }
+        }
     }
     else if (message.flavor) {
         title = message.flavor;
