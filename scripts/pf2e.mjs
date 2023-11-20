@@ -90,7 +90,7 @@ export async function messageParserPF2e(msg) {
         originDoc = game.actors.get(msg.speaker.actor); //Fallback to speaker in case it's needed.
     }
     if (embeds && embeds.length > 0) {
-        embeds[0].description = PF2e_reformatMessage(embeds[0].description, originDoc);
+        embeds[0].description = await PF2e_reformatMessage(embeds[0].description, originDoc);
         constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === embeds[0].title) ? "" : msg.flavor;
         //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         //sadly, the anonymous module does this right before the message is displayed in foundry, so we have to parse it here.
@@ -104,7 +104,7 @@ export async function messageParserPF2e(msg) {
     if (anonEnabled()) {
         constructedMessage = generic.anonymizeText(constructedMessage, msg);
     }
-    constructedMessage = PF2e_reformatMessage(constructedMessage, originDoc);
+    constructedMessage = await PF2e_reformatMessage(constructedMessage, originDoc);
     return generic.getRequestParams(msg, constructedMessage, embeds);
 }
 
@@ -194,10 +194,10 @@ function PF2e_createRollEmbed(message) {
         title = actionTitle.querySelector("strong").textContent +
             " " + (actionTitle.querySelector(".subtitle") ? actionTitle.querySelector(".subtitle").textContent : "");
     }
-    else if(message.flavor){
+    else if (message.flavor) {
         title = message.flavor;
     }
-    else if(message.isDamageRoll){
+    else if (message.isDamageRoll) {
         title = "Damage Roll";
     }
     desc = PF2e_parseTraits(message.flavor, true);
@@ -231,7 +231,7 @@ function PF2e_createRollEmbed(message) {
                 desc += `\`${curToken.name}\` `;
             }
         });
-        if(message.flags['pf2e-target-damage'].targets.length >= 1){
+        if (message.flags['pf2e-target-damage'].targets.length >= 1) {
             desc += "\n";
         }
     }
@@ -262,7 +262,7 @@ function PF2e_createRollEmbed(message) {
         //Add roll information to embed:
         const speakerActor = game.actors.get(message.speaker.actor);
         message.rolls.forEach(roll => {
-            if(getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))){
+            if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))) {
                 desc += `:game_die:**\`${roll.formula}\`**\n`
             }
             desc += `:game_die:**Result: __${roll.total}__**`;
@@ -288,7 +288,7 @@ function PF2e_createRollEmbed(message) {
         });
     }
     else {
-        if(getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))){
+        if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))) {
             desc += `:game_die:**\`${roll.formula}\`**\n`
         }
         desc += `~~:game_die:Result: __${PF2e_getDiscardedRoll(message)}__~~\n`;
@@ -399,150 +399,6 @@ function PF2e_parseDegree(degree) {
     }
 }
 
-function PF2e_getNameFromCheck(match, checkString, label) {
-    if (label) {
-        return `:game_die:\`${label}\``;
-    }
-    else {
-        return ":game_die:" + (function () {
-            const check = PF2e_parseInlineString(checkString);
-            let tempcheck = "`";
-            if (check.showDC || check.showdc) {
-                if (check.showDC.toLowerCase() === "all" || check.showdc.toLowerCase() === "all") {
-                    tempcheck += `DC ${check.dc} `;
-                }
-            }
-            if (check.type) {
-                if (check.type === "flat") {
-                    return tempcheck + game.i18n.localize("PF2E.FlatCheck") + "`";
-                }
-                let skillcheck = check.type;
-                if (SAVE_TYPES.includes(check.type)) {
-                    skillcheck = game.i18n.localize(CONFIG.PF2E.saves[skillcheck]);
-                    return tempcheck + (check.basic ? game.i18n.format("PF2E.InlineCheck.BasicWithSave", { save: skillcheck }) : skillcheck) + "`";
-                }
-                const locStringForm = (() => {
-                    if (CONFIG.PF2E.skills.hasOwnProperty(skillcheck)) {
-                        return CONFIG.PF2E.skills[skillcheck];
-                    }
-                    else if (CONFIG.PF2E.skillList.hasOwnProperty(skillcheck)) {
-                        return CONFIG.PF2E.skillList[skillcheck];
-                    }
-                })();
-                return tempcheck + (locStringForm
-                    ? game.i18n.localize(locStringForm)
-                    : skillcheck
-                        .split("-")
-                        .map((word) => {
-                            return word.slice(0, 1).toUpperCase() + word.slice(1);
-                        })
-                        .join(" ")) + "`";
-            }
-        })();
-    }
-}
-
-function PF2e_getNameFromTemplate(match, templateString, label) {
-    return (() => {
-        const template = PF2e_parseInlineString(templateString);
-        let templateLabel = "";
-        if (TEMPLATE_EMOJI.hasOwnProperty(template.type)) {
-            templateLabel += TEMPLATE_EMOJI[template.type];
-        }
-        if (label) {
-            templateLabel += `\`${label}\``;
-        }
-        else {
-            templateLabel += "`" + game.i18n.format("PF2E.TemplateLabel", {
-                size: template.distance,
-                unit: game.i18n.localize("PF2E.Foot"),
-                shape: game.i18n.localize(CONFIG.PF2E.areaTypes[template.type])
-            }) + "`";
-        }
-        return templateLabel;
-    })();
-}
-
-function PF2e_replaceDamageFormat(damagestring, originDoc) {
-    const damageIndexes = [];
-    const regex = /@Damage\[/g;
-
-    let match;
-    while ((match = regex.exec(damagestring)) !== null) {
-        damageIndexes.push(match.index);
-    }
-    const extractedDamageStrings = [];
-
-    for (let i = 0; i < damageIndexes.length; i++) {
-        const startIndex = damageIndexes[i];
-        let bracketCount = 0;
-
-        // Search for the matching closing bracket
-        for (let j = startIndex + 7; j < damagestring.length; j++) {
-            if (damagestring[j] === '[') {
-                bracketCount++;
-            } else if (damagestring[j] === ']') {
-                if (bracketCount === 1) {
-                    if (j < damagestring.length - 1) {
-                        if (damagestring[j + 1] === "{") {
-                            const tempJ = j;
-                            for (j; j < damagestring.length; j++) {
-                                if (j === damagestring.length - 1 && damagestring[j] !== "}") {
-                                    j = tempJ;
-                                    break;
-                                }
-                                if (damagestring[j] === "}") {
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    extractedDamageStrings.push(damagestring.substring(startIndex, j + 1));
-                    break;
-                }
-                bracketCount--;
-            }
-        }
-    }
-
-    extractedDamageStrings.forEach(inlinedamage => {
-        let tempdamage = ":game_die:`";
-        damagestring = damagestring.replace(inlinedamage, () => {
-            const regex = /\{([^}]+)\}/;
-            const match = inlinedamage.match(regex);
-            if (match) {
-                return tempdamage += match[1].trim() + "`";
-            }
-            else {
-                const damageArgs = inlinedamage.trim().substr(8, inlinedamage.length - 9).split(/,(?![^[]*])/);
-                const rollParams = (() => {
-                    switch (true) {
-                        case originDoc instanceof Actor:
-                            return { actor: originDoc };
-                            break;
-                        case originDoc instanceof Item:
-                            return { 
-                                    actor: originDoc.parent instanceof Actor ? originDoc.parent : null,
-                                    item: originDoc
-                                    };
-                            break;
-                        default:
-                            return {};
-                            break;
-                    }
-                })();
-                damageArgs.forEach(damageArg => {
-                    const droll = new DamageRoll(damageArg, rollParams, {});
-                    const formula = droll.formula;
-                    tempdamage += formula;
-                });
-                return tempdamage.trim() + "`";
-            }
-        })
-    });
-    return damagestring;
-}
-
 function PF2e_parseTraits(text, isRoll = false) {
     let displayTraits = true;
     //check if anonymous allows traits to be displayed
@@ -601,17 +457,50 @@ function PF2e_parseInlineString(checkString) {
 }
 
 
-export function PF2e_reformatMessage(text, actor) {
+export async function PF2e_reformatMessage(text, originDoc) {
     let reformattedText = generic.reformatMessage(text, PF2e_parseHTMLText);
-    //replace @Damage appropriately
-    reformattedText = PF2e_replaceDamageFormat(reformattedText, actor);
-    //replace Checks
-    let regex = /@Check\[(.*?)](?:{([^}]+)})?/g;
-    reformattedText = reformattedText.replace(regex, (match, checkString, label) => PF2e_getNameFromCheck(match, checkString, label));
-    regex = /@Template\[(.*?)](?:{([^}]+)})?/g;
-    reformattedText = reformattedText.replace(regex, (match, checkString, label) => PF2e_getNameFromTemplate(match, checkString, label));
-
-    regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
+    let enricherRegex = /@(Check|Template)\[([^\]]+)\](?:{([^}]+)})?/g
+    let rollData;
+    switch (true) {
+        case originDoc instanceof Actor:
+            rollData = { actor: originDoc };
+            break;
+        case originDoc instanceof Item:
+            rollData = { item: originDoc };
+            break;
+        default:
+            rollData = {};
+            break;
+    }
+    let options = { rollData: (rollData ? rollData : {}) };
+    let match;
+    while ((match = enricherRegex.exec(reformattedText)) !== null) {
+        if (match) {
+            const inlineButton = await game.pf2e.TextEditor.enrichString(match, options);
+            if(inlineButton){
+                let label = "";
+                const [_match, inlineType, paramString, inlineLabel] = match;
+                const params = PF2e_parseInlineString(paramString);
+                if(TEMPLATE_EMOJI.hasOwnProperty(params.type)){
+                    label += TEMPLATE_EMOJI[params.type];
+                }
+                else{
+                    label += ":game_die:";
+                }
+                label += `\`${inlineButton.textContent}\``;
+                reformattedText = reformattedText.replace(match[0], label);
+            }
+            
+        }
+    }
+    enricherRegex = /@(Damage)\[((?:[^[\]]*|\[[^[\]]*\])*)\](?:{([^}]+)})?/g
+    while ((match = enricherRegex.exec(reformattedText)) !== null) {
+        if (match) {
+            const inlineButton = await game.pf2e.TextEditor.enrichString(match, options);
+            reformattedText = reformattedText.replace(match[0], (await game.pf2e.TextEditor.enrichString(match, options)).textContent);
+        }
+    }
+    let regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
     reformattedText = reformattedText.replace(regex, ':game_die:`$1`');
     regex = /\[\[\/(.*?) (.*?)\]\]/g;
     reformattedText = reformattedText.replace(regex, ':game_die:`$2`');
@@ -705,6 +594,6 @@ function PF2e_getDiscardedRoll(message) {
     return rerollDiscardDiv.textContent;
 }
 
-function PF2e_containsDamageDieOnly(rolls){
+function PF2e_containsDamageDieOnly(rolls) {
     return rolls.every(roll => !/(d20|d2|dc)/.test(roll.formula));
 }
