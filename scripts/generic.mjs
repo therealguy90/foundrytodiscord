@@ -176,7 +176,7 @@ export function createGenericRollEmbed(message) {
     }
     const speakerActor = game.actors.get(message.speaker.actor);
     message.rolls.forEach(roll => {
-        if(getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))){
+        if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))) {
             desc += `:game_die:**\`${roll.formula}\`**\n`
         }
         desc += `**:game_die:Result: __${roll.total}__**\n\n`;
