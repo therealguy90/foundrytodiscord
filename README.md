@@ -36,6 +36,9 @@ While it will work with other systems, the extent of compatibility may vary. Reg
 **Midi QOL:**
 - Edits Mergecards in real-time.
 
+## Known Issues:
+- Foundry to Discord uses the same enrichers that a system uses for ease of parsing custom inline rolls and the like. This means that notification warnings or console errors may be doubled if the enricher throws them at you. Not a huge issue, but it's something.
+
 ## Setup
 
 1. Create a Webhook in your Discord server and specify the channel to output chat to. Copy the Webhook URL; you'll need it later.
