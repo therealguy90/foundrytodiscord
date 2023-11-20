@@ -149,13 +149,7 @@ export async function PF2e_reformatMessage(text, originDoc = undefined) {
                 let label = "";
                 const [_match, inlineType, paramString, inlineLabel] = match;
                 const params = PF2e_parseInlineString(paramString);
-                if (TEMPLATE_EMOJI.hasOwnProperty(params.type)) {
-                    label += TEMPLATE_EMOJI[params.type];
-                }
-                else {
-                    label += ":game_die:";
-                }
-                label += `\`${inlineButton.textContent}\``;
+                label += `${TEMPLATE_EMOJI.hasOwnProperty(params.type) ? TEMPLATE_EMOJI[params.type] : ":game_die:"}\`${inlineButton.textContent}\``;
                 allMatches.push({
                     original: _match,
                     replacement: label
@@ -277,11 +271,11 @@ function PF2e_createRollEmbed(message) {
     if (actionTitle) {
         const strongtitle = actionTitle.querySelector("strong").textContent;
         const subtitle = actionTitle.querySelector(".subtitle");
-        if(strongtitle || subtitle){
+        if (strongtitle || subtitle) {
             title = `${strongtitle} ${(subtitle ? subtitle.textContent : "")}`;
         }
-        else{
-            if(message.isDamageRoll){
+        else {
+            if (message.isDamageRoll) {
                 title = "Damage Roll";
             }
         }
