@@ -330,7 +330,12 @@ export function polyglotize(message) {
     let listLanguages = [];
     if (!getThisModuleSetting("commonLanguages").toLowerCase().includes(message.flags.polyglot.language)) {
         if (getThisModuleSetting("includeOnly") === "") {
-            return getReplacementString();
+            try {
+                return getReplacementString();
+            }
+            catch (e) {
+                console.log("foundrytodiscord | Your system \"" + game.system.id + "\" does not support Polyglot integration with this module due to a different actor structure.")
+            }
         }
         else {
             listLanguages = getThisModuleSetting("includeOnly").split(",").map(item => item.trim().toLowerCase());
@@ -341,7 +346,6 @@ export function polyglotize(message) {
                 return getReplacementString(listLanguages);
             }
             catch (e) {
-                console.log(e);
                 console.log("foundrytodiscord | Your system \"" + game.system.id + "\" does not support Polyglot integration with this module due to a different actor structure.")
             }
         }
