@@ -457,7 +457,7 @@ function PF2e_parseInlineString(checkString) {
 }
 
 
-export async function PF2e_reformatMessage(text, originDoc) {
+export async function PF2e_reformatMessage(text, originDoc = undefined) {
     let reformattedText = generic.reformatMessage(text, PF2e_parseHTMLText);
     let enricherRegex = /@(Check|Template)\[([^\]]+)\](?:{([^}]+)})?/g
     let rollData;
@@ -477,27 +477,29 @@ export async function PF2e_reformatMessage(text, originDoc) {
     while ((match = enricherRegex.exec(reformattedText)) !== null) {
         if (match) {
             const inlineButton = await game.pf2e.TextEditor.enrichString(match, options);
-            if(inlineButton){
+            if (inlineButton) {
                 let label = "";
                 const [_match, inlineType, paramString, inlineLabel] = match;
                 const params = PF2e_parseInlineString(paramString);
-                if(TEMPLATE_EMOJI.hasOwnProperty(params.type)){
+                if (TEMPLATE_EMOJI.hasOwnProperty(params.type)) {
                     label += TEMPLATE_EMOJI[params.type];
                 }
-                else{
+                else {
                     label += ":game_die:";
                 }
                 label += `\`${inlineButton.textContent}\``;
                 reformattedText = reformattedText.replace(match[0], label);
             }
-            
+
         }
     }
     enricherRegex = /@(Damage)\[((?:[^[\]]*|\[[^[\]]*\])*)\](?:{([^}]+)})?/g
     while ((match = enricherRegex.exec(reformattedText)) !== null) {
         if (match) {
             const inlineButton = await game.pf2e.TextEditor.enrichString(match, options);
-            reformattedText = reformattedText.replace(match[0], (await game.pf2e.TextEditor.enrichString(match, options)).textContent);
+            if (inlineButton) {
+                reformattedText = reformattedText.replace(match[0], `:game_die:\`${inlineButton.textContent}\``);
+            }
         }
     }
     let regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
