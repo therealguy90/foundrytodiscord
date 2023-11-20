@@ -77,7 +77,7 @@ export async function DnD5e_reformatMessage(text) {
         const inlineButton = await inlineRollEnricher.enricher(match);
         if(inlineButton){
             const _match = match[0]
-            label = inlineButton.textContent;
+            const label = `:game_die:\`${inlineButton.textContent}\``;
             allMatches.push({
                 original: _match,
                 replacement: label
