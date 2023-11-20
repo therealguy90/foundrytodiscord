@@ -70,16 +70,29 @@ export async function messageParserDnD5e(msg) {
 export async function DnD5e_reformatMessage(text) {
     let reformattedText = generic.reformatMessage(text);
     const inlineRollEnricher = CONFIG.TextEditor.enrichers.find(enricher => enricher.enricher.name === "enrichString");
-    let regex = inlineRollEnricher.pattern;
-    await Promise.all(Array.from(text.matchAll(regex), m => m).map(async match => {
-        reformattedText = reformattedText.replace(match.input, `:game_die:\`${(await inlineRollEnricher.enricher(match)).textContent.trim()}\``);
-    }));
+    let enricherRegex = inlineRollEnricher.pattern;
+    let allMatches = [];
+    let match;
+    while((match = enricherRegex.exec(reformattedText)) !== null){
+        const inlineButton = await inlineRollEnricher.enricher(match);
+        if(inlineButton){
+            const _match = match[0]
+            label = inlineButton.textContent;
+            allMatches.push({
+                original: _match,
+                replacement: label
+            });
+        }
+    }
+    for (const replacement of allMatches) {
+        reformattedText = reformattedText.replace(replacement.original, replacement.replacement);
+    }
     //reformattedText = reformattedText.replace(regex,);
     //replace Inline Roll Commands
-    regex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
-    reformattedText = reformattedText.replace(regex, ':game_die:`$1`');
-    regex = /\[\[\/(.*?) (.*?)\]\]/g;
-    reformattedText = reformattedText.replace(regex, ':game_die:`$2`');
+    enricherRegex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
+    reformattedText = reformattedText.replace(enricherRegex, ':game_die:`$1`');
+    enricherRegex = /\[\[\/(.*?) (.*?)\]\]/g;
+    reformattedText = reformattedText.replace(enricherRegex, ':game_die:`$2`');
     return reformattedText;
 }
 

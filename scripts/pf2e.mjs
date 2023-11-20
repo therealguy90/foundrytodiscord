@@ -470,13 +470,24 @@ export async function PF2e_reformatMessage(text, originDoc = undefined) {
     }
     let options = { rollData: (rollData ? rollData : {}) };
     let match;
+    // Converts them to @Damage, so that the enricher can take care of parsing the roll.
+    let allMatches = [];
     // Trust me, even I don't know how this regex works.
-    // matches [[/r or /br xxxx #flavor]] for legacy rolls.
-    let enricherRegex = /\[\[\/b?r\s*((?:\d+d\d+(?:\[[^\[\]]*\])?|\d+(?:\[[^\[\]]*\])?)(?:\s*[-+]\s*\d+d\d+(?:\[[^\[\]]*\])?|\s*[-+]\s*\d+(?:\[[^\[\]]*\])?)*)(?:\s*#\s*([^{}\[\]]+))?[^{}]*\]\](?:{([^{}]*)})?/g
+    // matches [[/r or /br xxxx #flavor]]{label} for legacy rolls.
+    let enricherRegex = /\[\[\/b?r\s*((?:\d+d\d+(?:\[[^\[\]]*\])?|\d+(?:\[[^\[\]]*\])?)(?:\s*[-+]\s*\d+d\d+(?:\[[^\[\]]*\])?|\s*[-+]\s*\d+(?:\[[^\[\]]*\])?)*)(?:\s*#\s*([^{}\[\]]+))?[^{}]*?\]\](?:{([^{}]*)})?/g;
+
     while ((match = enricherRegex.exec(reformattedText)) !== null) {
         const [_match, params, flavor, label] = match;
-        reformattedText = reformattedText.replace(_match, `@Damage[${params}]${label ? `{${label}}` : ""}`);
+        allMatches.push({
+            original: _match,
+            replacement: `@Damage[${params}]${label ? `{${label}}` : ""}`
+        });
     }
+
+    for (const replacement of allMatches) {
+        reformattedText = reformattedText.replace(replacement.original, replacement.replacement);
+    }
+    allMatches = [];
 
     enricherRegex = /@(Check|Template)\[([^\]]+)\](?:{([^}]+)})?/g
     while ((match = enricherRegex.exec(reformattedText)) !== null) {
@@ -493,20 +504,33 @@ export async function PF2e_reformatMessage(text, originDoc = undefined) {
                     label += ":game_die:";
                 }
                 label += `\`${inlineButton.textContent}\``;
-                reformattedText = reformattedText.replace(_match, label);
+                allMatches.push({
+                    original: _match,
+                    replacement: label
+                });
             }
-
         }
     }
-    
+
     enricherRegex = /@(Damage)\[((?:[^[\]]*|\[[^[\]]*\])*)\](?:{([^}]+)})?/g
     while ((match = enricherRegex.exec(reformattedText)) !== null) {
         if (match) {
             const inlineButton = await game.pf2e.TextEditor.enrichString(match, options);
             if (inlineButton) {
-                reformattedText = reformattedText.replace(match[0], `:game_die:\`${inlineButton.textContent}\``);
+                console.log(match);
+                console.log(match[0]);
+                const _match = match[0];
+                const label = `:game_die:\`${inlineButton.textContent}\``;
+                allMatches.push({
+                    original: _match,
+                    replacement: label
+                });
             }
         }
+    }
+    // Perform replacements after finding all matches
+    for (const replacement of allMatches) {
+        reformattedText = reformattedText.replace(replacement.original, replacement.replacement);
     }
     return reformattedText.trim();
 }
