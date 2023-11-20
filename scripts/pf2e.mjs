@@ -106,6 +106,127 @@ export async function messageParserPF2e(msg) {
     return generic.getRequestParams(msg, constructedMessage, embeds);
 }
 
+export async function PF2e_reformatMessage(text, originDoc = undefined) {
+    let reformattedText = generic.reformatMessage(text, PF2e_parseHTMLText);
+    let rollData;
+    switch (true) {
+        case originDoc instanceof Actor:
+            rollData = { actor: originDoc };
+            break;
+        case originDoc instanceof Item:
+            rollData = { item: originDoc };
+            break;
+        default:
+            rollData = {};
+            break;
+    }
+    let options = { rollData: (rollData ? rollData : {}) };
+    let match;
+    // Converts them to @Damage, so that the enricher can take care of parsing the roll.
+    let allMatches = [];
+    // Trust me, even I don't know how this regex works.
+    // matches [[/r or /br xxxx #flavor]]{label} for legacy rolls.
+    let enricherRegex = /\[\[\/b?r\s*((?:\d+d\d+(?:\[[^\[\]]*\])?|\d+(?:\[[^\[\]]*\])?)(?:\s*[-+]\s*\d+d\d+(?:\[[^\[\]]*\])?|\s*[-+]\s*\d+(?:\[[^\[\]]*\])?)*)(?:\s*#\s*([^{}\[\]]+))?[^{}]*?\]\](?:{([^{}]*)})?/g;
+
+    while ((match = enricherRegex.exec(reformattedText)) !== null) {
+        const [_match, params, flavor, label] = match;
+        allMatches.push({
+            original: _match,
+            replacement: `@Damage[${params}]${label ? `{${label}}` : ""}`
+        });
+    }
+
+    for (const replacement of allMatches) {
+        reformattedText = reformattedText.replace(replacement.original, replacement.replacement);
+    }
+
+    allMatches = [];
+    enricherRegex = /@(Check|Template)\[([^\]]+)\](?:{([^}]+)})?/g
+    while ((match = enricherRegex.exec(reformattedText)) !== null) {
+        if (match) {
+            const inlineButton = await game.pf2e.TextEditor.enrichString(match, options);
+            if (inlineButton) {
+                let label = "";
+                const [_match, inlineType, paramString, inlineLabel] = match;
+                const params = PF2e_parseInlineString(paramString);
+                if (TEMPLATE_EMOJI.hasOwnProperty(params.type)) {
+                    label += TEMPLATE_EMOJI[params.type];
+                }
+                else {
+                    label += ":game_die:";
+                }
+                label += `\`${inlineButton.textContent}\``;
+                allMatches.push({
+                    original: _match,
+                    replacement: label
+                });
+            }
+        }
+    }
+
+    enricherRegex = /@(Damage)\[((?:[^[\]]*|\[[^[\]]*\])*)\](?:{([^}]+)})?/g
+    while ((match = enricherRegex.exec(reformattedText)) !== null) {
+        if (match) {
+            const inlineButton = await game.pf2e.TextEditor.enrichString(match, options);
+            if (inlineButton) {
+                const _match = match[0];
+                const label = `:game_die:\`${inlineButton.textContent}\``;
+                allMatches.push({
+                    original: _match,
+                    replacement: label
+                });
+            }
+        }
+    }
+    // Perform replacements after finding all matches
+    for (const replacement of allMatches) {
+        reformattedText = reformattedText.replace(replacement.original, replacement.replacement);
+    }
+    return reformattedText.trim();
+}
+
+function PF2e_parseHTMLText(htmlString) {
+    let reformattedText = htmlString;
+    const htmldoc = document.createElement('div');
+    htmldoc.innerHTML = reformattedText;
+    // Format various elements
+    generic.formatTextBySelector('.inline-check, span[data-pf2-check]', text => `:game_die:\`${text}\``, htmldoc);
+    reformattedText = htmldoc.innerHTML;
+
+    const templateButtons = htmldoc.querySelectorAll('span[data-pf2-effect-area]');
+    if (templateButtons.length > 0) {
+        templateButtons.forEach(template => {
+            const type = template.getAttribute('data-pf2-effect-area');
+            let tempTemplate = ""
+            if (TEMPLATE_EMOJI.hasOwnProperty(type)) {
+                tempTemplate += TEMPLATE_EMOJI[type];
+            }
+            tempTemplate += "`" + template.textContent + "`";
+            template.outerHTML = tempTemplate;
+        })
+    }
+    reformattedText = htmldoc.innerHTML;
+
+    //Old format for status effects. Kept this in for now, but will be removed later on.
+    const statuseffectlist = htmldoc.querySelectorAll('.statuseffect-rules');
+    if (statuseffectlist.length !== 0) {
+        let statfx = '';
+        statuseffectlist.forEach(effect => {
+            statfx += effect.innerHTML.replace(/<p>.*?<\/p>/g, '') + '\n';
+        });
+        const tempdivs = document.createElement('div');
+        tempdivs.innerHTML = reformattedText;
+        const targetdiv = tempdivs.querySelector('.dice-total.statuseffect-message');
+        if (targetdiv) {
+            targetdiv.innerHTML = statfx;
+        }
+        generic.removeElementsBySelector('.dice-total.statuseffect-message ul', tempdivs);
+        reformattedText = tempdivs.innerHTML;
+    }
+
+    return reformattedText;
+}
+
 function PF2e_createCardEmbed(message) {
     const div = document.createElement('div');
     div.innerHTML = message.content;
@@ -145,41 +266,6 @@ function PF2e_createCardEmbed(message) {
 
     return [{ title: title, description: desc, footer: { text: generic.getCardFooter(div.innerHTML) } }];
 }
-
-function PF2e_createActionCardEmbed(message) {
-    const div = document.createElement('div');
-    div.innerHTML = message.content;
-    let desc = "";
-    let title;
-    const actionDiv = document.createElement('div');
-    actionDiv.innerHTML = message.flavor;
-    const h4Element = actionDiv.querySelector("h4.action");
-    title = `${h4Element.querySelector("strong").textContent} ${actionDiv.querySelector(".subtitle") ? actionDiv.querySelector(".subtitle").textContent : ""}`;
-    desc = `${PF2e_parseTraits(message.flavor)}\n`;
-    let speakerActor;
-    if (message.speaker?.actor) {
-        speakerActor = game.actors.get(message.speaker.actor);
-    }
-    let descVisible = getThisModuleSetting('showDescription');
-    if (speakerActor) {
-        if (anonEnabled() && !speakerActor.hasPlayerOwner) {
-            descVisible = false;
-        }
-    }
-    if (descVisible) {
-        if (message.flags?.pf2e?.context?.item) {
-            desc += game.actors.get(message.speaker.actor).items.get(message.flags.pf2e.context.item).system.description.value;
-        }
-        else {
-            const actionContent = div.querySelector(".action-content");
-            if (actionContent) {
-                desc += actionContent.innerHTML;
-            }
-        }
-    }
-    return [{ title: title, description: desc, footer: { text: generic.getCardFooter(div.innerHTML) } }];
-}
-
 
 function PF2e_createRollEmbed(message) {
     const div = document.createElement('div');
@@ -319,6 +405,104 @@ function PF2e_createRollEmbed(message) {
 
 }
 
+function PF2e_createActionCardEmbed(message) {
+    const div = document.createElement('div');
+    div.innerHTML = message.content;
+    let desc = "";
+    let title;
+    const actionDiv = document.createElement('div');
+    actionDiv.innerHTML = message.flavor;
+    const h4Element = actionDiv.querySelector("h4.action");
+    title = `${h4Element.querySelector("strong").textContent} ${actionDiv.querySelector(".subtitle") ? actionDiv.querySelector(".subtitle").textContent : ""}`;
+    desc = `${PF2e_parseTraits(message.flavor)}\n`;
+    let speakerActor;
+    if (message.speaker?.actor) {
+        speakerActor = game.actors.get(message.speaker.actor);
+    }
+    let descVisible = getThisModuleSetting('showDescription');
+    if (speakerActor) {
+        if (anonEnabled() && !speakerActor.hasPlayerOwner) {
+            descVisible = false;
+        }
+    }
+    if (descVisible) {
+        if (message.flags?.pf2e?.context?.item) {
+            desc += game.actors.get(message.speaker.actor).items.get(message.flags.pf2e.context.item).system.description.value;
+        }
+        else {
+            const actionContent = div.querySelector(".action-content");
+            if (actionContent) {
+                desc += actionContent.innerHTML;
+            }
+        }
+    }
+    return [{ title: title, description: desc, footer: { text: generic.getCardFooter(div.innerHTML) } }];
+}
+
+function PF2e_createConditionCard(message) {
+    let desc = ""
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(message.content, "text/html");
+    const participantConditions = doc.querySelector(".participant-conditions");
+    const conditions = participantConditions.querySelectorAll("span");
+    conditions.forEach(condition => {
+        desc += "**" + condition.textContent + "**\n";
+    });
+    return [{ description: desc.trim() }];
+}
+
+function PF2e_parseTraits(text, isRoll = false) {
+    let displayTraits = true;
+    //check if anonymous allows traits to be displayed
+    if (anonEnabled()) {
+        if (game.settings.get("anonymous", "pf2e.traits")) {
+            if (isRoll && game.settings.get("anonymous", "pf2e.traits") === "rolls") {
+                displayTraits = false;
+            }
+            else if (game.settings.get("anonymous", "pf2e.traits") === "always") {
+                displayTraits = false;
+            }
+        }
+    }
+    let traits = "";
+    if (displayTraits) {
+        const card = text;
+        const parser = new DOMParser();
+        let doc = parser.parseFromString(card, "text/html");
+        let tags;
+        let tagsSection = doc.querySelector(".item-properties.tags:not(.modifiers)");
+        try {
+            tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
+        }
+        catch (error) {
+            try {
+                tagsSection = doc.querySelector('.tags:not(.modifiers)');
+                tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
+            }
+            catch (error) {
+            }
+        }
+        if (tags?.length) {
+            for (let i = 0; i < tags.length; i++) {
+                traits += `[${tags[i]}] `;
+            }
+        }
+    }
+    if (traits.trim() !== "") {
+        return `\`${traits.trim()}\`\n`;
+    }
+    else {
+        return "";
+    }
+}
+
+function PF2e_getDiscardedRoll(message) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(message.content, "text/html");
+    const rerollDiscardDiv = doc.querySelector(".pf2e-reroll-discard .dice-total");
+    return rerollDiscardDiv.textContent;
+}
+
 function PF2e_parseDamageTypes(baserolls) {
     let damages = ""
     if (!baserolls.options.splashOnly) {
@@ -343,7 +527,6 @@ function PF2e_parseDamageTypes(baserolls) {
                     persFormula = persFormula.replace(regex, '');
                     damages += persFormula.trim();
                 }
-                //damages += (roll.persistent ? DAMAGE_EMOJI["persistent"] : "") + (precision ? DAMAGE_EMOJI["precision"] : "") + (splash ? DAMAGE_EMOJI["splash"] : "");
                 damages += `${(roll.persistent ? DAMAGE_EMOJI["persistent"] : "")}${(precision ? DAMAGE_EMOJI["precision"] : "")}${(splash ? DAMAGE_EMOJI["splash"] : "")}`;
                 if (!DAMAGE_EMOJI[roll.type]) {
                     damages += `[${roll.type}]`;
@@ -405,52 +588,6 @@ function PF2e_parseDegree(degree) {
     }
 }
 
-function PF2e_parseTraits(text, isRoll = false) {
-    let displayTraits = true;
-    //check if anonymous allows traits to be displayed
-    if (anonEnabled()) {
-        if (game.settings.get("anonymous", "pf2e.traits")) {
-            if (isRoll && game.settings.get("anonymous", "pf2e.traits") === "rolls") {
-                displayTraits = false;
-            }
-            else if (game.settings.get("anonymous", "pf2e.traits") === "always") {
-                displayTraits = false;
-            }
-        }
-    }
-    let traits = "";
-    if (displayTraits) {
-        const card = text;
-        const parser = new DOMParser();
-        let doc = parser.parseFromString(card, "text/html");
-        let tags;
-        let tagsSection = doc.querySelector(".item-properties.tags:not(.modifiers)");
-        try {
-            tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
-        }
-        catch (error) {
-            try {
-                tagsSection = doc.querySelector('.tags:not(.modifiers)');
-                tags = Array.from(tagsSection.querySelectorAll(".tag")).map(tag => tag.textContent);
-            }
-            catch (error) {
-            }
-        }
-        if (tags?.length) {
-            for (let i = 0; i < tags.length; i++) {
-                traits += `[${tags[i]}] `;
-            }
-        }
-    }
-    if (traits.trim() !== "") {
-        return `\`${traits.trim()}\`\n`;
-    }
-    else {
-        return "";
-    }
-}
-
-
 function PF2e_parseInlineString(checkString) {
     let check = {};
     // Split the string into an array of key-value pairs
@@ -460,130 +597,6 @@ function PF2e_parseInlineString(checkString) {
         check[key] = value === "true" ? true : value === "false" ? false : value;
     }
     return check;
-}
-
-
-export async function PF2e_reformatMessage(text, originDoc = undefined) {
-    let reformattedText = generic.reformatMessage(text, PF2e_parseHTMLText);
-    let rollData;
-    switch (true) {
-        case originDoc instanceof Actor:
-            rollData = { actor: originDoc };
-            break;
-        case originDoc instanceof Item:
-            rollData = { item: originDoc };
-            break;
-        default:
-            rollData = {};
-            break;
-    }
-    let options = { rollData: (rollData ? rollData : {}) };
-    let match;
-    // Converts them to @Damage, so that the enricher can take care of parsing the roll.
-    let allMatches = [];
-    // Trust me, even I don't know how this regex works.
-    // matches [[/r or /br xxxx #flavor]]{label} for legacy rolls.
-    let enricherRegex = /\[\[\/b?r\s*((?:\d+d\d+(?:\[[^\[\]]*\])?|\d+(?:\[[^\[\]]*\])?)(?:\s*[-+]\s*\d+d\d+(?:\[[^\[\]]*\])?|\s*[-+]\s*\d+(?:\[[^\[\]]*\])?)*)(?:\s*#\s*([^{}\[\]]+))?[^{}]*?\]\](?:{([^{}]*)})?/g;
-
-    while ((match = enricherRegex.exec(reformattedText)) !== null) {
-        const [_match, params, flavor, label] = match;
-        allMatches.push({
-            original: _match,
-            replacement: `@Damage[${params}]${label ? `{${label}}` : ""}`
-        });
-    }
-
-    for (const replacement of allMatches) {
-        reformattedText = reformattedText.replace(replacement.original, replacement.replacement);
-    }
-    allMatches = [];
-
-    enricherRegex = /@(Check|Template)\[([^\]]+)\](?:{([^}]+)})?/g
-    while ((match = enricherRegex.exec(reformattedText)) !== null) {
-        if (match) {
-            const inlineButton = await game.pf2e.TextEditor.enrichString(match, options);
-            if (inlineButton) {
-                let label = "";
-                const [_match, inlineType, paramString, inlineLabel] = match;
-                const params = PF2e_parseInlineString(paramString);
-                if (TEMPLATE_EMOJI.hasOwnProperty(params.type)) {
-                    label += TEMPLATE_EMOJI[params.type];
-                }
-                else {
-                    label += ":game_die:";
-                }
-                label += `\`${inlineButton.textContent}\``;
-                allMatches.push({
-                    original: _match,
-                    replacement: label
-                });
-            }
-        }
-    }
-
-    enricherRegex = /@(Damage)\[((?:[^[\]]*|\[[^[\]]*\])*)\](?:{([^}]+)})?/g
-    while ((match = enricherRegex.exec(reformattedText)) !== null) {
-        if (match) {
-            const inlineButton = await game.pf2e.TextEditor.enrichString(match, options);
-            if (inlineButton) {
-                console.log(match);
-                console.log(match[0]);
-                const _match = match[0];
-                const label = `:game_die:\`${inlineButton.textContent}\``;
-                allMatches.push({
-                    original: _match,
-                    replacement: label
-                });
-            }
-        }
-    }
-    // Perform replacements after finding all matches
-    for (const replacement of allMatches) {
-        reformattedText = reformattedText.replace(replacement.original, replacement.replacement);
-    }
-    return reformattedText.trim();
-}
-
-function PF2e_parseHTMLText(htmlString) {
-    let reformattedText = htmlString;
-    const htmldoc = document.createElement('div');
-    htmldoc.innerHTML = reformattedText;
-    // Format various elements
-    generic.formatTextBySelector('.inline-check, span[data-pf2-check]', text => `:game_die:\`${text}\``, htmldoc);
-    reformattedText = htmldoc.innerHTML;
-
-    const templateButtons = htmldoc.querySelectorAll('span[data-pf2-effect-area]');
-    if (templateButtons.length > 0) {
-        templateButtons.forEach(template => {
-            const type = template.getAttribute('data-pf2-effect-area');
-            let tempTemplate = ""
-            if (TEMPLATE_EMOJI.hasOwnProperty(type)) {
-                tempTemplate += TEMPLATE_EMOJI[type];
-            }
-            tempTemplate += "`" + template.textContent + "`";
-            template.outerHTML = tempTemplate;
-        })
-    }
-    reformattedText = htmldoc.innerHTML;
-
-    //Old format for status effects. Kept this in for now, but will be removed later on.
-    const statuseffectlist = htmldoc.querySelectorAll('.statuseffect-rules');
-    if (statuseffectlist.length !== 0) {
-        let statfx = '';
-        statuseffectlist.forEach(effect => {
-            statfx += effect.innerHTML.replace(/<p>.*?<\/p>/g, '') + '\n';
-        });
-        const tempdivs = document.createElement('div');
-        tempdivs.innerHTML = reformattedText;
-        const targetdiv = tempdivs.querySelector('.dice-total.statuseffect-message');
-        if (targetdiv) {
-            targetdiv.innerHTML = statfx;
-        }
-        generic.removeElementsBySelector('.dice-total.statuseffect-message ul', tempdivs);
-        reformattedText = tempdivs.innerHTML;
-    }
-
-    return reformattedText;
 }
 
 function PF2e_isActionCard(message) {
@@ -609,25 +622,6 @@ function PF2e_isConditionCard(message) {
     else {
         return false;
     }
-}
-
-function PF2e_createConditionCard(message) {
-    let desc = ""
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(message.content, "text/html");
-    const participantConditions = doc.querySelector(".participant-conditions");
-    const conditions = participantConditions.querySelectorAll("span");
-    conditions.forEach(condition => {
-        desc += "**" + condition.textContent + "**\n";
-    });
-    return [{ description: desc.trim() }];
-}
-
-function PF2e_getDiscardedRoll(message) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(message.content, "text/html");
-    const rerollDiscardDiv = doc.querySelector(".pf2e-reroll-discard .dice-total");
-    return rerollDiscardDiv.textContent;
 }
 
 function PF2e_containsDamageDieOnly(rolls) {
