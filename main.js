@@ -50,14 +50,14 @@ Hooks.on("renderApplication", (app, html) => {
 
 // For the "Send to Discord" context menu on chat messages.
 // Seldom needed, but if chat mirroring is disabled, this is one way to circumvent it.
-Hooks.on('getChatLogEntryContext', (html, options) => {
+Hooks.on('getChatLogEntryContext', async (html, options) => {
     options.unshift({
         name: "Send to Discord",
         icon: '<i class="fa-brands fa-discord"></i>',
         condition: game.user.isGM,
-        callback: li => {
+        callback: async li => {
             let message = game.messages.get(li.attr("data-message-id"));
-            tryRequest(message, 'POST');
+            await tryRequest(message, 'POST');
         }
     })
 });
@@ -180,7 +180,7 @@ Hooks.on('createChatMessage', async (msg) => {
             return;
         }
 
-        tryRequest(msg, 'POST');
+        await tryRequest(msg, 'POST');
     }
 });
 
@@ -210,7 +210,7 @@ Hooks.on('updateChatMessage', async (msg, change, options) => {
             }
             if (msgObjects) {
                 if (msgChange === "edit") {
-                    msgObjects.forEach(msgObject => {
+                    msgObjects.forEach(async (msgObject) => {
                         const url = msgObject.url;
                         const message = msgObject.message;
                         if (url.split('?').length > 1) {
@@ -219,7 +219,7 @@ Hooks.on('updateChatMessage', async (msg, change, options) => {
                         } else {
                             editHook = url + '/messages/' + message.id;
                         }
-                        tryRequest(msg, 'PATCH', editHook);
+                        await tryRequest(msg, 'PATCH', editHook);
                     });
                 }
                 else if (msgChange === "delete") {
@@ -243,7 +243,7 @@ Hooks.on('updateChatMessage', async (msg, change, options) => {
                     msgObjects = getThisModuleSetting('clientMessageList')[msg.id];
                 }
                 if (!msgObjects || msgObjects.length === 0) {
-                    tryRequest(msg, "POST");
+                    await tryRequest(msg, "POST");
                     return;
                 }
             }
@@ -294,47 +294,8 @@ function deleteAll(msgObjects, msg) {
 * A successfully sent message is added to the object stored in a hidden module setting (max 100). This allows all clients to access
 * previously-sent messages, and for the messages to not be erased after the client reloads their browser.
 */
-function tryRequest(msg, method, hookOverride = "") {
-    messageParse(msg).then((requestParams) => {
-        if (requestParams) {
-            if (requestParams.params.avatar_url === "") {
-                console.warn("foundrytodiscord | Your Invite URL is not set! Avatar images cannot be displayed on Discord.")
-            }
-            let formData = new FormData()
-            if (game.modules.get("chat-media")?.active || game.modules.get("chatgifs")?.active) {
-                const { formDataTemp, contentTemp } = getChatMediaAttachments(formData, requestParams.params.content, msg.content);
-                if (formDataTemp !== formData) {
-                    formData = formDataTemp;
-                }
-                requestParams.params.content = contentTemp;
-            }
-            if (requestParams.params.content === "" && requestParams.params.embeds.length === 0 && !formData.get('files[0]')) {
-                if (!msg.content.includes('<img') && !msg.content.includes('<video')) {
-                    return;
-                }
-                else {
-                    requestParams.params.content += addMediaLinks(msg);
-                }
-                if (requestParams.params.content === "") {
-                    return;
-                }
-            }
-            let waitHook;
-            if (requestParams.hook.includes("?")) {
-                waitHook = requestParams.hook + "&wait=true";
-            }
-            else {
-                waitHook = requestParams.hook + "?wait=true";
-            }
-            formData.append('payload_json', JSON.stringify(requestParams.params));
-            requestQueue.push({ hook: hookOverride === "" ? waitHook : hookOverride, formData: formData, msgID: msg.id, method: method, dmsgID: null });
-            if (!isProcessing) {
-                isProcessing = true;
-                requestOnce();
-            }
-        }
-    })
-    /*let requestParams = messageParse(msg);
+async function tryRequest(msg, method, hookOverride = "") {
+    let requestParams = await messageParse(msg);
     if (requestParams) {
         if (requestParams.params.avatar_url === "") {
             console.warn("foundrytodiscord | Your Invite URL is not set! Avatar images cannot be displayed on Discord.")
@@ -371,7 +332,7 @@ function tryRequest(msg, method, hookOverride = "") {
             isProcessing = true;
             requestOnce();
         }
-    }*/
+    }
 }
 
 async function requestOnce(retry = 0) {
