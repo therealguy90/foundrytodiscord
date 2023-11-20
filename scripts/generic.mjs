@@ -625,6 +625,18 @@ export function reformatMessage(text, customHTMLParser = undefined) {
         reformattedText = parseHTMLText(reformattedText, customHTMLParser);
     }
     reformattedText = replaceGenericAtTags(reformattedText);
+    if (game.modules.get('monks-tokenbar')?.active) {
+        const tokenBarRequestEnricher = CONFIG.TextEditor.enrichers.find(enricher => enricher.hasOwnProperty('id') && enricher.id === "MonksTokenBarRequest");
+        const pattern = tokenBarRequestEnricher.pattern;
+        const enricher = tokenBarRequestEnricher.enricher;
+        let match;
+        while ((match = pattern.exec(reformattedText)) !== null) {
+            let labelString = enricher(match);
+            if (labelString) {
+                reformattedText = reformattedText.replace(match[0], `:game_die:${labelString.textContent}`);
+            }
+        }
+    }
     return reformattedText;
 }
 
