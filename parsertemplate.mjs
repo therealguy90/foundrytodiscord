@@ -16,7 +16,7 @@ import { anonEnabled, getThisModuleSetting }  from './helpers/modulesettings.mjs
 *       - requirements: must return generic.getRequestParams(msg, constructedMessage, embeds);
 *           where msg is the ChatMessage passed to the parser, constructedMessage is the raw text content of the message,
 *           and embeds is the list of (up to) 10 embeds.
-*       - Add this parser to initParser in modulesettings.mjs.
+*       - Add this parser to getSystemParser in modulesettings.mjs.
 *       - Do not worry about parsing HTML text in chat card parsers. Keep the raw HTML formatting until reformatMessage is called.
 *           All HTML parsing is already handled, unless it's system-specific, in which case, 
 *           it must be added to a custom parseHTMLText.
@@ -31,7 +31,7 @@ import { anonEnabled, getThisModuleSetting }  from './helpers/modulesettings.mjs
 *       - Look at other parsers to find out how this works.
 */
 
-export function messageParserSystem(msg){
+export /*async?*/ function messageParserSystem(msg){
     let constructedMessage = '';
     let embeds = [];
     //make detectors for custom system chatcards here, or embeds in general. See the other parsers to know how to do it.
@@ -92,7 +92,7 @@ export function messageParserSystem(msg){
 }
 
 
-export function System_reformatMessage(text){
+export /*async?*/ function System_reformatMessage(text){
     let reformattedText = generic.reformatMessage(text/*, System_parseHTMLText*/);
     // Add more message reformatting here. For example, PF2e has @Damage[] and @Check[], 
     // so there's a custom reformatter for that.
