@@ -210,7 +210,12 @@ export function initModuleSettings() {
 }
 
 export function getThisModuleSetting(settingName) {
-    return game.settings.get('foundrytodiscord', settingName);
+    try {
+        return game.settings.get('foundrytodiscord', settingName);
+    }
+    catch(e){
+        return undefined;
+    }
 }
 
 export function getSystemParser() {
