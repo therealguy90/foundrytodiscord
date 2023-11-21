@@ -1,4 +1,13 @@
-# 1.7.1
+# 1.7.2
+
+- (dnd5e) Support 2.4.0's custom enricher format.
+- (pf2e) Use system enrichers
+- (pf2e) Adds support for legacy `[[/r]]` enricher (which some items still have)
+- (pf2e) Better parses headers with "Level" text besides them, i.e. "Specialization Ability - Level 7"
+- Fixes parsing of empty text within `<b>`,`<i>` and similar html
+- Adds support for Monk's TokenBar `@Request` and `@Contested`
+
+## 1.7.1
 
 - Fixes midi-qol attack roll result visibility when hide is set to 'none'
 - Hotfix for some messages failing to send.
