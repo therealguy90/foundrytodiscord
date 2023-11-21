@@ -47,9 +47,27 @@ export async function messageParserDnD5e(msg) {
     else {
         embeds = generic.createGenericRollEmbed(msg);
     }
-
+    let originActor;
+    if (msg.flags?.dnd5e?.use?.itemUuid) {
+        originActor = fromUuidSync(msg.flags.dnd5e.use.itemUuid).actor;
+    }
+    else if(game.modules.get('midi-qol')?.active && (msg.flags["midi-qol"]?.itemUuid || msg.flags["midi-qol"]?.actorUuid)){
+        if(msg.flags["midi-qol"]?.itemUuid){
+            originActor = fromUuidSync(msg.flags["midi-qol"].itemUuid).actor;
+        }
+        else if(msg.flags["midi-qol"]?.actorUuid){
+            originActor = fromUuidSync(msg.flags["midi-qol"].actorUuid);
+        }
+    }
+    else if (msg.speaker?.actor) {
+        originActor = game.actors.get(msg.speaker.actor); //Fallback to speaker in case it's needed.
+    }
+    let rollData;
+    if(originActor?.system){
+        rollData = originActor.system;
+    }
     if (embeds != [] && embeds.length > 0) {
-        embeds[0].description = await DnD5e_reformatMessage(embeds[0].description);
+        embeds[0].description = await DnD5e_reformatMessage(embeds[0].description, rollData);
         constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === embeds[0].title) ? "" : msg.flavor;
         // use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         // we have to mimic this behavior here, since visibility is client-sided, and we are parsing raw message content.
@@ -63,21 +81,27 @@ export async function messageParserDnD5e(msg) {
     if (anonEnabled()) {
         constructedMessage = generic.anonymizeText(constructedMessage, msg);
     }
-    constructedMessage = await DnD5e_reformatMessage(constructedMessage);
+    constructedMessage = await DnD5e_reformatMessage(constructedMessage, rollData);
     return generic.getRequestParams(msg, constructedMessage, embeds);
 }
 
-export async function DnD5e_reformatMessage(text) {
-    let reformattedText = generic.reformatMessage(text);
+export async function DnD5e_reformatMessage(text, rollData = undefined) {
+    let reformattedText = generic.reformatMessage(text, DnD5E_parseHTMLText);
+    let options = {rollData: rollData};
     const inlineRollEnricher = CONFIG.TextEditor.enrichers.find(enricher => enricher.enricher.name === "enrichString");
+    let enricher = inlineRollEnricher.enricher;
     let enricherRegex = inlineRollEnricher.pattern;
     let allMatches = [];
     let match;
     while((match = enricherRegex.exec(reformattedText)) !== null){
-        const inlineButton = await inlineRollEnricher.enricher(match);
-        if(inlineButton){
+        const enrichedRoll = await enricher(match, options);
+        if(enrichedRoll){
+            const inlineButtons = enrichedRoll.querySelectorAll('a.roll-link');
+            inlineButtons.forEach(inlineButton => {
+                inlineButton.replaceWith(`:game_die:\`${inlineButton.textContent.trim()}\``);
+            });
             const _match = match[0]
-            const label = `:game_die:\`${inlineButton.textContent}\``;
+            const label = `${enrichedRoll.textContent.trim()}`;
             allMatches.push({
                 original: _match,
                 replacement: label
@@ -93,6 +117,17 @@ export async function DnD5e_reformatMessage(text) {
     reformattedText = reformattedText.replace(enricherRegex, ':game_die:`$1`');
     enricherRegex = /\[\[\/(.*?) (.*?)\]\]/g;
     reformattedText = reformattedText.replace(enricherRegex, ':game_die:`$2`');
+    return reformattedText;
+}
+
+function DnD5E_parseHTMLText(htmlString) {
+    let reformattedText = htmlString;
+    const htmldoc = document.createElement('div');
+    htmldoc.innerHTML = reformattedText;
+    // Format various elements
+    generic.formatTextBySelector('a.roll-link', text => `:game_die:\`${text}\``, htmldoc);
+    reformattedText = htmldoc.innerHTML;
+
     return reformattedText;
 }
 
