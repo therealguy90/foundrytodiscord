@@ -186,14 +186,13 @@ function PF2e_parseHTMLText(htmlString) {
     // Format various elements
     generic.formatTextBySelector('.inline-check, span[data-pf2-check]', text => `:game_die:\`${text}\``, htmldoc);
     reformattedText = htmldoc.innerHTML;
-    const headers = htmldoc.querySelectorAll('h1,h2,h3,h4,h5,h6');
-    headers.forEach(header => {
+    htmldoc.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(header => {
         header.querySelectorAll('span[style="float:right"]').forEach(floatright => {
-            if(header.textContent.trim() !== floatright.textContent.trim()){
+            if (header.textContent.trim() !== floatright.textContent.trim()) {
                 floatright.textContent = ` - ${floatright.textContent}`;
             }
+        });
     });
-    })
     const templateButtons = htmldoc.querySelectorAll('span[data-pf2-effect-area]');
     if (templateButtons.length > 0) {
         templateButtons.forEach(template => {
