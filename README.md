@@ -38,6 +38,7 @@ While it will work with other systems, the extent of compatibility may vary. Reg
 
 ## Known Issues:
 - Foundry to Discord uses the same enrichers that a system uses for ease of parsing custom inline rolls and the like. This means that notification warnings or console errors may be doubled if the enricher throws them at you. Not a huge issue, but it's something.
+- There's a very low chance that a midi-qol mergecard might not be parsed properly. I do not know the cause of this, and it is *almost* always the first mergecard the module encounters. Subsequent ones are fine... for some reason.
 
 ## Setup
 
