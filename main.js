@@ -136,7 +136,7 @@ async function initSystemStatus() {
 Hooks.on('createChatMessage', async (msg) => {
     flushLog = false;
     if (msg.content === "ftd serveroff" && msg.user.isGM) {
-        if (game.user.isGM && getThisModuleSetting('serverStatusMessage')) {
+        if (getThisModuleSetting('serverStatusMessage')) {
             if (getThisModuleSetting('messageID') && getThisModuleSetting('messageID') !== "") {
                 const editedMessage = new FormData()
                 const body = JSON.stringify({
@@ -170,7 +170,7 @@ Hooks.on('createChatMessage', async (msg) => {
         if (getThisModuleSetting("ignoreWhispers") && msg.whisper.length > 0) {
             return;
         }
-        if (!isUserMainGM() && (game.users.activeGM || !isUserMainNonGM())) {
+        if (!isUserMainGM() && (game.users.activeGM || !(getThisModuleSetting("allowNoGM") && isUserMainNonGM()))) {
             return;
         }
         if (msg.isRoll && (!isCard(msg.content) && msg.rolls.length > 0) && getThisModuleSetting("rollWebHookURL") === "") {
@@ -185,10 +185,8 @@ Hooks.on('createChatMessage', async (msg) => {
 });
 
 Hooks.on('updateChatMessage', async (msg, change, options) => {
-    if (!isUserMainGM()) {
-        if (game.users.activeGM || (!getThisModuleSetting("allowNoGM") && game.user.id !== game.users.filter(user => user.active).sort((a, b) => a.name.localeCompare(b.name))[0].id)) {
-            return;
-        }
+    if (!isUserMainGM() && (game.users.activeGM || !(getThisModuleSetting("allowNoGM") && isUserMainNonGM()))) {
+        return;
     }
     let tries = 10; // Number of tries before giving up
     const checkExist = async (msgChange) => {
@@ -253,7 +251,10 @@ Hooks.on('updateChatMessage', async (msg, change, options) => {
 });
 
 Hooks.on('deleteChatMessage', async (msg) => {
-    if (!flushLog && !getThisModuleSetting('disableDeletions') && (isUserMainGM() || (getThisModuleSetting("allowNoGM") && !game.users.activeGM && isUserMainNonGM()))) {
+    if (!isUserMainGM() && (game.users.activeGM || !(getThisModuleSetting("allowNoGM") && isUserMainNonGM()))) {
+        return;
+    }
+    if (!flushLog && !getThisModuleSetting('disableDeletions')) {
         if (getThisModuleSetting('messageList').hasOwnProperty(msg.id) || getThisModuleSetting('clientMessageList').hasOwnProperty(msg.id)) {
             let msgObjects;
             if (game.user.isGM) {
@@ -277,7 +278,15 @@ function deleteAll(msgObjects, msg) {
         } else {
             deleteHook = url + '/messages/' + message.id;
         }
-        requestQueue.push({ hook: deleteHook, formData: null, msgID: msg.id, method: 'DELETE', dmsgID: message.id });
+        requestQueue.push(
+            {
+                hook: deleteHook,
+                formData: null,
+                msgID: msg.id,
+                method: 'DELETE',
+                dmsgID: message.id
+            }
+        );
         if (!isProcessing) {
             isProcessing = true;
             requestOnce();
@@ -327,7 +336,15 @@ async function tryRequest(msg, method, hookOverride = "") {
             waitHook = requestParams.hook + "?wait=true";
         }
         formData.append('payload_json', JSON.stringify(requestParams.params));
-        requestQueue.push({ hook: hookOverride === "" ? waitHook : hookOverride, formData: formData, msgID: msg.id, method: method, dmsgID: null });
+        requestQueue.push(
+            {
+                hook: hookOverride === "" ? waitHook : hookOverride,
+                formData: formData,
+                msgID: msg.id,
+                method: method,
+                dmsgID: null
+            }
+        );
         if (!isProcessing) {
             isProcessing = true;
             requestOnce();
@@ -420,31 +437,24 @@ function getChatMediaAttachments(formData, msgText, content) {
                 const dataSrc = imgElement.getAttribute('data-src');
                 const src = imgElement.getAttribute('src');
                 const altText = imgElement.getAttribute('alt');
-
+                let srcToUse;
                 if (dataSrc) {
-                    if (dataSrc.startsWith("data")) {
-                        const blob = dataToBlob(dataSrc);
-                        formData.append('files[' + filecount + ']', blob, altText);
-                        filecount++;
-                    }
-                    else if (dataSrc.includes('http')) {
-                        if (msgText !== "") {
-                            msgText += "\n";
-                        }
-                        msgText += dataSrc;
-                    }
+                    srcToUse = dataSrc;
                 }
                 else if (src) {
-                    if (src.startsWith("data")) {
-                        const blob = dataToBlob(src);
-                        formData.append('files[' + filecount + ']', blob, altText);
+                    srcToUse = src;
+                }
+                if (srcToUse) {
+                    if (srcToUse.startsWith("data")) {
+                        const blob = dataToBlob(srcToUse);
+                        formData.append(`files[${filecount}]`, blob, altText);
                         filecount++;
                     }
-                    else if (src.includes('http')) {
+                    else if (srcToUse.includes('http')) {
                         if (msgText !== "") {
                             msgText += "\n";
                         }
-                        msgText += src;
+                        msgText += srcToUse;
                     }
                 }
             }
