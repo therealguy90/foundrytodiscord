@@ -603,7 +603,7 @@ export function htmlCodeCleanup(htmltext) {
     selectorsAndReplacers.forEach(({ selector, replacer }) => {
         doc.querySelectorAll(selector).forEach(element => {
             if (replacer.length === 2) {
-                element.outerHTML = `${replacer[0]}${element.innerHTML}${replacer[1]}`;
+                element.outerHTML = `${element.textContent.trim() !== "" ? `${replacer[0]}${element.innerHTML}${replacer[1]}` : ""}`;
             } else if (replacer.length === 1) {
                 element.outerHTML = `${replacer[0]}`;
             }
