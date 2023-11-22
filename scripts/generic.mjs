@@ -52,7 +52,7 @@ export async function messageParserGeneric(msg) {
 
     //Fix formatting before sending
     if (embeds != [] && embeds.length > 0) {
-        embeds[0].description = reformatMessage(embeds[0].description);
+        embeds[0].description = await reformatMessage(embeds[0].description);
         constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === embeds[0].title) ? "" : msg.flavor;
         // use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         // we have to mimic this behavior here, since visibility is client-sided, and we are parsing raw message content.
@@ -66,7 +66,7 @@ export async function messageParserGeneric(msg) {
     if (anonEnabled()) {
         constructedMessage = anonymizeText(constructedMessage, msg)
     }
-    constructedMessage = reformatMessage(constructedMessage);
+    constructedMessage = await reformatMessage(constructedMessage);
     if (constructedMessage !== "" || embeds.length > 0) { //avoid sending empty messages
         return getRequestParams(msg, constructedMessage, embeds);
     }
@@ -94,17 +94,20 @@ export function getRequestParams(message, msgText, embeds) {
         }
     }
 
-    return { hook: hook, params: generateRequestParams(message, msgText, embeds, imgurl) };
+    return { hook: hook, params: generateMessageObject(message, msgText, embeds, imgurl) };
 }
 
-function generateRequestParams(message, msgText, embeds, imgurl) {
+function generateMessageObject(message, msgText, embeds, imgurl) {
     let alias = message.alias;
     const speakerToken = (message.speaker?.token && message.speaker?.scene)
         ? game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token)
         : undefined;
     let speakerActor = message.speaker?.actor
         ? game.actors.get(message.speaker.actor)
-        : speakerToken?.actor ? speakerToken.actor : undefined;
+        : speakerToken?.actor ? speakerToken.actor : undefined; // This is longer than it should be, but I still like this.
+
+    // POST-PARSE ALIAS VISIBILITY CHECK
+
     // Get both speakerToken and speakerActor, since we want many fallbacks,
     // in case a token is declared in the message but not its actor. Good for macros or other modules/systems that don't
     // rely on a token being on the canvas to create a message.
@@ -117,6 +120,7 @@ function generateRequestParams(message, msgText, embeds, imgurl) {
             speakerActor = speakerToken.actor;
         }
         if (!speakerActor) {
+            // More redundancy. I take metagame visibility seriously.
             speakerActor = game.actors.find(actor => actor.name === message.alias);
         }
         if (speakerActor && !anon.playersSeeName(speakerActor)) {
@@ -143,7 +147,7 @@ function generateRequestParams(message, msgText, embeds, imgurl) {
         embeds = splitEmbed(embeds[0]);
     }
     // Add username to embed
-    if (embeds[0] && message.user && message.alias !== message.user.name && getThisModuleSetting('showAuthor')) {
+    if (getThisModuleSetting('showAuthor') && embeds[0] && message.user && message.alias !== message.user.name) {
         embeds[0].author = {
             name: message.user.name,
             icon_url: generateimglink(message.user.avatar)
@@ -165,6 +169,35 @@ function generateRequestParams(message, msgText, embeds, imgurl) {
     return params;
 }
 
+function generateDiscordAvatar(message) {
+    // Prioritize chat-portrait for parity
+    if (game.modules.get("chat-portrait")?.active && message.flags["chat-portrait"]?.src) {
+        return generateimglink(message.flags["chat-portrait"].src);
+    }
+
+    if (message.speaker?.scene && message.speaker.token) {
+        const speakerToken = game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token);
+        if (speakerToken.texture?.src && speakerToken.texture.src !== "") {
+            return generateimglink(speakerToken.texture.src);
+        }
+    }
+
+    if (message.speaker?.actor) {
+        const speakerActor = game.actors.get(message.speaker.actor);
+        if (speakerActor?.prototypeToken?.texture?.src) {
+            return generateimglink(speakerActor.prototypeToken.texture.src);
+        }
+    }
+
+    // Probably need to remove this, honestly. Doesn't do anything in practice.
+    const aliasMatchedActor = game.actors.find(actor => actor.name === message.alias);
+    if (aliasMatchedActor?.prototypeToken?.texture?.src) {
+        return generateimglink(aliasMatchedActor.prototypeToken.texture.src);
+    }
+
+    return generateimglink(message.user?.avatar);
+}
+
 export function createGenericRollEmbed(message) {
     let desc = ""
     let title = ""
@@ -182,46 +215,6 @@ export function createGenericRollEmbed(message) {
         desc += `**:game_die:Result: __${roll.total}__**\n\n`;
     });
     return [{ title: title, description: desc.trim() }];
-}
-
-export function createHTMLDiceRollEmbed(message) {
-    const title = message.flavor;
-    let desc = "";
-    const elements = document.createElement('div');
-    elements.innerHTML = message.content;
-    const diceResults = elements.querySelectorAll('.dice-total');
-    diceResults.forEach((total) => {
-        if (Number(total.textContent)) {
-            desc += ":game_die: **Result: __" + total.textContent + "__**\n";
-        }
-        else {
-            desc += "**" + total.textContent + "**\n";
-        }
-    })
-    return [{ title: title, description: desc }];
-}
-
-export function isCard(htmlString) {
-    const htmldocElement = document.createElement('div');
-    htmldocElement.innerHTML = htmlString;
-    const divElement = htmldocElement.querySelector('.chat-card');
-    if (divElement !== null) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-export function hasDiceRolls(htmlString) {
-    const elements = document.createElement('div');
-    elements.innerHTML = htmlString;
-    const diceRolls = elements.querySelectorAll('.dice-roll');
-    if (diceRolls.length > 0) {
-        return true;
-    }
-    else {
-        return false;
-    }
 }
 
 export function createCardEmbed(message) {
@@ -305,6 +298,233 @@ export function getCardFooter(card) {
     else {
         return "";
     }
+}
+
+/* All text being parsed eventually goes through reformatMessage. This is the backbone of the module, and is what allows
+*  HTML to be parsed into readable text. The structure of the module is a little weird, I must admit, but this is
+*  the best solution I can think of.  
+*/
+export async function reformatMessage(text, customHTMLParser = undefined) {
+    let reformattedText = text;
+    const isHtmlFormatted = /<[a-z][\s\S]*>/i.test(reformattedText);
+    if (isHtmlFormatted) {
+        reformattedText = parseHTMLText(reformattedText, customHTMLParser);
+    }
+    reformattedText = await replaceGenericAtTags(reformattedText);
+    if (game.modules.get('monks-tokenbar')?.active) {
+        const tokenBarRequestEnricher = CONFIG.TextEditor.enrichers.find(enricher => enricher.hasOwnProperty('id') && enricher.id === "MonksTokenBarRequest");
+        const enricherRegex = tokenBarRequestEnricher.pattern;
+        const enricher = tokenBarRequestEnricher.enricher;
+        let match;
+        let allMatches = [];
+        while ((match = enricherRegex.exec(reformattedText)) !== null) {
+            let inlineButton = enricher(match);
+            if (inlineButton) {
+                const _match = match[0];
+                const label = `:game_die:\`${inlineButton.textContent}\``;
+                allMatches.push({
+                    original: _match,
+                    replacement: label
+                });
+            }
+        }
+        for (const replacement of allMatches) {
+            reformattedText = reformattedText.replace(replacement.original, replacement.replacement);
+        }
+    }
+    return reformattedText;
+}
+
+export function parseHTMLText(htmlString, customHTMLParser = undefined) {
+    let reformattedText = htmlString;
+    const htmldoc = document.createElement('div');
+    htmldoc.innerHTML = reformattedText;
+
+    // Remove elements with data-visibility attribute and hidden styles
+    ['[data-visibility="gm"]', '[data-visibility="owner"]', '[style*="display:none"]'].forEach(selector => {
+        const elements = htmldoc.querySelectorAll(selector);
+        elements.forEach(element => element.parentNode.removeChild(element));
+    });
+    const tables = htmldoc.querySelectorAll('table');
+    tables.forEach((table) => {
+        const newTable2D = htmlTo2DTable(table);
+        table.outerHTML = `\n${parse2DTable(newTable2D)}`;
+    });
+
+    // Remove <img> tags
+    removeElementsBySelector('img', htmldoc);
+    // Format various elements
+    formatTextBySelector('.inline-roll', text => `:game_die:\`${text}\``, htmldoc);
+
+    reformattedText = htmldoc.innerHTML;
+    if (customHTMLParser) {
+        reformattedText = customHTMLParser(reformattedText);
+    }
+    htmldoc.innerHTML = reformattedText;
+
+    const dataLinks = htmldoc.querySelectorAll('a[data-uuid]');
+    if (dataLinks.length > 0) {
+        dataLinks.forEach(link => {
+            const newLink = link.cloneNode(true);
+            const uuid = newLink.getAttribute('data-uuid');
+            newLink.textContent = "@UUID[" + uuid + "]" + "{" + newLink.textContent + "}"; // Can be formatted later
+            link.parentNode.replaceChild(newLink, link);
+        });
+    }
+    reformattedText = htmldoc.innerHTML;
+
+    // Format everything else
+    reformattedText = htmlCodeCleanup(reformattedText);
+
+    return reformattedText;
+}
+
+export function removeElementsBySelector(selector, root) {
+    const elements = (root || document).querySelectorAll(selector);
+    elements.forEach(element => element.remove());
+}
+
+export function formatTextBySelector(selector, formatter, root) {
+    const elements = (root || document).querySelectorAll(selector);
+    elements.forEach(element => {
+        const formattedText = formatter(element.textContent.trim());
+        element.replaceWith(formattedText);
+    });
+}
+
+export function htmlCodeCleanup(htmltext) {
+    const entities = {
+        '&amp;': '&',
+        '&lt;': '<',
+        '&gt;': '>',
+        '&nbsp;': ' ',
+        '&quot;': '"'
+    };
+    for (const entity in entities) {
+        const character = entities[entity];
+        htmltext = htmltext.replace(new RegExp(entity, 'g'), character);
+    }
+    const doc = document.createElement('div');
+    doc.innerHTML = htmltext;
+    const selectorsAndReplacers = [
+        { selector: "h1, h2", replacer: ["# ", "\n"] },
+        { selector: "h3, h4", replacer: ["## ", "\n"] },
+        { selector: "h5, h6", replacer: ["### ", "\n"] },
+        { selector: "strong, b", replacer: ["**", "**"] },
+        { selector: "em, i", replacer: ["*", "*"] },
+        { selector: "hr", replacer: ["-----------------------"] },
+        { selector: "li", replacer: ["- ", "\n"] },
+        { selector: "input", replacer: [""] },
+        { selector: "div", replacer: ["", "\n"] },
+        { selector: "br", replacer: ["\n"] },
+        { selector: "p", replacer: ["", "\n\n"] }
+    ]
+    selectorsAndReplacers.forEach(({ selector, replacer }) => {
+        doc.querySelectorAll(selector).forEach(element => {
+            if (replacer.length === 2) {
+                element.outerHTML = `${element.textContent.trim() !== "" ? `${replacer[0]}${element.innerHTML}${replacer[1]}` : ""}`;
+            } else if (replacer.length === 1) {
+                element.outerHTML = `${replacer[0]}`;
+            }
+        });
+    });
+    return doc.textContent
+        .replace(/\n\s+/g, '\n\n') // Clean up line breaks and whitespace
+        .replace(/\n*----+\n*/g, '\n-----------------------\n') // Cleanup line breaks before and after horizontal lines
+        .replace(/ {2,}/g, ' ') // Clean up excess whitespace
+        .replaceAll(" ", ' ').trim(); // Remove placeholder table filler
+}
+
+async function replaceGenericAtTags(text) {
+    const regexAtTags = /@([^]+?)\[([^]+?)\](?:\{([^]+?)\})?/g;
+    let reformattedText = text.replace(regexAtTags, async (match, atTagType, identifier, customText) => {
+        let toReplace = "";
+        let document;
+
+        let isId = true;
+        if (identifier.length !== 16) {
+            isId = false;
+        }
+        let doctype = "";
+        switch (atTagType) {
+            case "Localize":
+                toReplace = replaceGenericAtTags(game.i18n.localize(identifier));
+                break;
+            case "UUID":
+                document = await fromUuid(identifier);
+                break;
+            case "Compendium":
+                document = await fromUuid("Compendium." + identifier);
+                break;
+            case "Actor":
+                doctype = "actors";
+                break;
+            case "Item":
+                doctype = "items";
+                break;
+            case "Scene":
+                doctype = "scenes";
+                break;
+            case "Macro":
+                doctype = "macros";
+                break;
+            case "JournalEntry":
+                doctype = "journals";
+                break;
+            case "RollTable":
+                doctype = "tables";
+                break;
+            default:
+                document = undefined;
+                break;
+        }
+        if (doctype !== "") {
+            if (isId) {
+                document = game[doctype].get(identifier);
+            }
+            else {
+                document = game[doctype].find(document => document.name === identifier);
+            }
+        }
+        if (document) {
+            switch (true) {
+                case document instanceof Actor:
+                    toReplace += ":bust_in_silhouette:";
+                    break;
+                case document instanceof Scene:
+                    toReplace += ":map:";
+                    break;
+                case document instanceof Macro:
+                    toReplace += ":link:";
+                    break;
+                case document instanceof JournalEntry:
+                    toReplace += ":book:";
+                    break;
+                case document instanceof RollTable:
+                    toReplace += ":page_facing_up:";
+                    break;
+                case document instanceof Folder:
+                    toReplace += ":file_folder:";
+                    break;
+                default:
+                    toReplace += ":baggage_claim:";
+                    break;
+            }
+        }
+        if (toReplace !== "") {
+            if (customText && customText !== "") {
+                toReplace += "`" + customText + "`";
+            }
+            else if (document) {
+                toReplace += "`" + document.name + "`";
+            }
+        }
+        else {
+            toReplace = match;
+        }
+        return toReplace;
+    });
+    return reformattedText;
 }
 
 export function polyglotize(message) {
@@ -504,6 +724,46 @@ export function tokenBar_createTokenBarCard(message) {
     return [{ title: title, description: desc.trim(), footer: footer }];
 }
 
+export function createHTMLDiceRollEmbed(message) {
+    const title = message.flavor;
+    let desc = "";
+    const elements = document.createElement('div');
+    elements.innerHTML = message.content;
+    const diceResults = elements.querySelectorAll('.dice-total');
+    diceResults.forEach((total) => {
+        if (Number(total.textContent)) {
+            desc += ":game_die: **Result: __" + total.textContent + "__**\n";
+        }
+        else {
+            desc += "**" + total.textContent + "**\n";
+        }
+    })
+    return [{ title: title, description: desc }];
+}
+
+export function isCard(htmlString) {
+    const htmldocElement = document.createElement('div');
+    htmldocElement.innerHTML = htmlString;
+    const divElement = htmldocElement.querySelector('.chat-card');
+    if (divElement !== null) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+export function hasDiceRolls(htmlString) {
+    const elements = document.createElement('div');
+    elements.innerHTML = htmlString;
+    const diceRolls = elements.querySelectorAll('.dice-roll');
+    if (diceRolls.length > 0) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
 export function tokenBar_isTokenBarCard(htmlString) {
     const div = document.createElement('div');
     div.innerHTML = htmlString;
@@ -514,260 +774,6 @@ export function tokenBar_isTokenBarCard(htmlString) {
     } else {
         return false;
     }
-}
-
-export function removeElementsBySelector(selector, root) {
-    const elements = (root || document).querySelectorAll(selector);
-    elements.forEach(element => element.remove());
-}
-
-export function formatTextBySelector(selector, formatter, root) {
-    const elements = (root || document).querySelectorAll(selector);
-    elements.forEach(element => {
-        const formattedText = formatter(element.textContent.trim());
-        element.replaceWith(formattedText);
-    });
-}
-
-export function parseHTMLText(htmlString, customHTMLParser = undefined) {
-    let reformattedText = htmlString;
-    const htmldoc = document.createElement('div');
-    htmldoc.innerHTML = reformattedText;
-
-    // Remove elements with data-visibility attribute and hidden styles
-    ['[data-visibility="gm"]', '[data-visibility="owner"]', '[style*="display:none"]'].forEach(selector => {
-        const elements = htmldoc.querySelectorAll(selector);
-        elements.forEach(element => element.parentNode.removeChild(element));
-    });
-    const tables = htmldoc.querySelectorAll('table');
-    tables.forEach((table) => {
-        const newTable2D = htmlTo2DTable(table);
-        table.outerHTML = `\n${parse2DTable(newTable2D)}`;
-    });
-
-    // Remove <img> tags
-    removeElementsBySelector('img', htmldoc);
-    // Format various elements
-    formatTextBySelector('.inline-roll', text => `:game_die:\`${text}\``, htmldoc);
-
-    reformattedText = htmldoc.innerHTML;
-    if (customHTMLParser) {
-        reformattedText = customHTMLParser(reformattedText);
-    }
-    htmldoc.innerHTML = reformattedText;
-
-    const dataLinks = htmldoc.querySelectorAll('a[data-uuid]');
-    if (dataLinks.length > 0) {
-        dataLinks.forEach(link => {
-            const newLink = link.cloneNode(true);
-            const uuid = newLink.getAttribute('data-uuid');
-            newLink.textContent = "@UUID[" + uuid + "]" + "{" + newLink.textContent + "}"; // Can be formatted later
-            link.parentNode.replaceChild(newLink, link);
-        });
-    }
-    reformattedText = htmldoc.innerHTML;
-
-    // Format everything else
-    reformattedText = htmlCodeCleanup(reformattedText);
-
-    return reformattedText;
-}
-
-export function htmlCodeCleanup(htmltext) {
-    const entities = {
-        '&amp;': '&',
-        '&lt;': '<',
-        '&gt;': '>',
-        '&nbsp;': ' ',
-        '&quot;': '"'
-    };
-    for (const entity in entities) {
-        const character = entities[entity];
-        htmltext = htmltext.replace(new RegExp(entity, 'g'), character);
-    }
-    const doc = document.createElement('div');
-    doc.innerHTML = htmltext;
-    const selectorsAndReplacers = [
-        { selector: "h1, h2",       replacer: ["# ", "\n"]                  },
-        { selector: "h3, h4",       replacer: ["## ", "\n"]                 },
-        { selector: "h5, h6",       replacer: ["### ", "\n"]                },
-        { selector: "strong, b",    replacer: ["**", "**"]                  },
-        { selector: "em, i",        replacer: ["*", "*"]                    },
-        { selector: "hr",           replacer: ["-----------------------"]   },
-        { selector: "li",           replacer: ["- ", "\n"]                  },
-        { selector: "input",        replacer: [""]                          },
-        { selector: "div",          replacer: ["", "\n"]                    },
-        { selector: "br",           replacer: ["\n"]                        },
-        { selector: "p",            replacer: ["", "\n\n"]                  }
-    ]
-    selectorsAndReplacers.forEach(({ selector, replacer }) => {
-        doc.querySelectorAll(selector).forEach(element => {
-            if (replacer.length === 2) {
-                element.outerHTML = `${element.textContent.trim() !== "" ? `${replacer[0]}${element.innerHTML}${replacer[1]}` : ""}`;
-            } else if (replacer.length === 1) {
-                element.outerHTML = `${replacer[0]}`;
-            }
-        });
-    });
-    return doc.textContent
-        .replace(/\n\s+/g, '\n\n') // Clean up line breaks and whitespace
-        .replace(/\n*----+\n*/g, '\n-----------------------\n') // Cleanup line breaks before and after horizontal lines
-        .replace(/ {2,}/g, ' ') // Clean up excess whitespace
-        .replaceAll(" ", ' ').trim(); // Remove placeholder table filler
-}
-
-
-//reformatMessage makes text readable.
-export function reformatMessage(text, customHTMLParser = undefined) {
-    let reformattedText = text;
-    const isHtmlFormatted = /<[a-z][\s\S]*>/i.test(reformattedText);
-    if (isHtmlFormatted) {
-        reformattedText = parseHTMLText(reformattedText, customHTMLParser);
-    }
-    reformattedText = replaceGenericAtTags(reformattedText);
-    if (game.modules.get('monks-tokenbar')?.active) {
-        const tokenBarRequestEnricher = CONFIG.TextEditor.enrichers.find(enricher => enricher.hasOwnProperty('id') && enricher.id === "MonksTokenBarRequest");
-        const enricherRegex = tokenBarRequestEnricher.pattern;
-        const enricher = tokenBarRequestEnricher.enricher;
-        let match;
-        let allMatches = [];
-        while ((match = enricherRegex.exec(reformattedText)) !== null) {
-            let inlineButton = enricher(match);
-            if (inlineButton) {
-                const _match = match[0];
-                const label = `:game_die:\`${inlineButton.textContent}\``;
-                allMatches.push({
-                    original: _match,
-                    replacement: label
-                });
-            }
-        }
-        for (const replacement of allMatches) {
-            reformattedText = reformattedText.replace(replacement.original, replacement.replacement);
-        }
-    }
-    return reformattedText;
-}
-
-function replaceGenericAtTags(text) {
-    const regexAtTags = /@([^]+?)\[([^]+?)\](?:\{([^]+?)\})?/g;
-    let reformattedText = text.replace(regexAtTags, (match, atTagType, identifier, customText) => {
-        let toReplace = "";
-        let document;
-
-        let isId = true;
-        if (identifier.length !== 16) {
-            isId = false;
-        }
-        let doctype = "";
-        switch (atTagType) {
-            case "Localize":
-                toReplace = replaceGenericAtTags(game.i18n.localize(identifier));
-                break;
-            case "UUID":
-                document = fromUuidSync(identifier);
-                break;
-            case "Compendium":
-                document = fromUuidSync("Compendium." + identifier);
-                break;
-            case "Actor":
-                doctype = "actors";
-                break;
-            case "Item":
-                doctype = "items";
-                break;
-            case "Scene":
-                doctype = "scenes";
-                break;
-            case "Macro":
-                doctype = "macros";
-                break;
-            case "JournalEntry":
-                doctype = "journals";
-                break;
-            case "RollTable":
-                doctype = "tables";
-                break;
-            default:
-                document = undefined;
-                break;
-        }
-        if (doctype !== "") {
-            if (isId) {
-                document = game[doctype].get(identifier);
-            }
-            else {
-                document = game[doctype].find(document => document.name === identifier);
-            }
-        }
-        if (document) {
-            switch (true) {
-                case document instanceof Actor:
-                    toReplace += ":bust_in_silhouette:";
-                    break;
-                case document instanceof Scene:
-                    toReplace += ":map:";
-                    break;
-                case document instanceof Macro:
-                    toReplace += ":link:";
-                    break;
-                case document instanceof JournalEntry:
-                    toReplace += ":book:";
-                    break;
-                case document instanceof RollTable:
-                    toReplace += ":page_facing_up:";
-                    break;
-                case document instanceof Folder:
-                    toReplace += ":file_folder:";
-                    break;
-                default:
-                    toReplace += ":baggage_claim:";
-                    break;
-            }
-        }
-        if (toReplace !== "") {
-            if (customText && customText !== "") {
-                toReplace += "`" + customText + "`";
-            }
-            else if (document) {
-                toReplace += "`" + document.name + "`";
-            }
-        }
-        else {
-            toReplace = match;
-        }
-        return toReplace;
-    });
-    return reformattedText;
-}
-
-function generateDiscordAvatar(message) {
-    // Prioritize chat-portrait for parity
-    if (game.modules.get("chat-portrait")?.active && message.flags["chat-portrait"]?.src) {
-        return generateimglink(message.flags["chat-portrait"].src);
-    }
-
-    if (message.speaker?.scene && message.speaker.token) {
-        const speakerToken = game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token);
-        if (speakerToken.texture?.src && speakerToken.texture.src !== "") {
-            return generateimglink(speakerToken.texture.src);
-        }
-    }
-
-    if (message.speaker?.actor) {
-        const speakerActor = game.actors.get(message.speaker.actor);
-        if (speakerActor?.prototypeToken?.texture?.src) {
-            return generateimglink(speakerActor.prototypeToken.texture.src);
-        }
-    }
-
-    // Probably need to remove this, honestly. Doesn't do anything in practice.
-    const aliasMatchedActor = game.actors.find(actor => actor.name === message.alias);
-    if (aliasMatchedActor?.prototypeToken?.texture?.src) {
-        return generateimglink(aliasMatchedActor.prototypeToken.texture.src);
-    }
-
-    return generateimglink(message.user?.avatar);
 }
 
 function censorId(docid) {

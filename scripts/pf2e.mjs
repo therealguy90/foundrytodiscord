@@ -82,7 +82,7 @@ export async function messageParserPF2e(msg) {
     // an actor, especially scaling abilities and spells.
     let originDoc;
     if (msg.flags?.pf2e?.origin?.uuid) {
-        originDoc = fromUuidSync(msg.flags.pf2e.origin.uuid);
+        originDoc = await fromUuid(msg.flags.pf2e.origin.uuid);
     }
     else if (msg.speaker?.actor) {
         originDoc = game.actors.get(msg.speaker.actor); //Fallback to speaker in case it's needed.
@@ -107,7 +107,7 @@ export async function messageParserPF2e(msg) {
 }
 
 export async function PF2e_reformatMessage(text, originDoc = undefined) {
-    let reformattedText = generic.reformatMessage(text, PF2e_parseHTMLText);
+    let reformattedText = await generic.reformatMessage(text, PF2e_parseHTMLText);
     let rollData;
     switch (true) {
         case originDoc instanceof Actor:

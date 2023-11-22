@@ -47,16 +47,19 @@ export async function messageParserDnD5e(msg) {
     else {
         embeds = generic.createGenericRollEmbed(msg);
     }
+    // DnD5e's enricher needs a CharacterData input to parse string such as @actor.level.
+    // To ensure this happens, there's a few fallbacks that we can use. These may be redundant, but it's better to be
+    // on the safe side.
     let originActor;
     if (msg.flags?.dnd5e?.use?.itemUuid) {
-        originActor = fromUuidSync(msg.flags.dnd5e.use.itemUuid).actor;
+        originActor = await fromUuid(msg.flags.dnd5e.use.itemUuid).actor;
     }
     else if(game.modules.get('midi-qol')?.active && (msg.flags["midi-qol"]?.itemUuid || msg.flags["midi-qol"]?.actorUuid)){
         if(msg.flags["midi-qol"]?.itemUuid){
-            originActor = fromUuidSync(msg.flags["midi-qol"].itemUuid).actor;
+            originActor = await fromUuid(msg.flags["midi-qol"].itemUuid).actor;
         }
         else if(msg.flags["midi-qol"]?.actorUuid){
-            originActor = fromUuidSync(msg.flags["midi-qol"].actorUuid);
+            originActor = await fromUuid(msg.flags["midi-qol"].actorUuid);
         }
     }
     else if (msg.speaker?.actor) {
@@ -86,8 +89,8 @@ export async function messageParserDnD5e(msg) {
 }
 
 export async function DnD5e_reformatMessage(text, rollData = undefined) {
-    let reformattedText = generic.reformatMessage(text, DnD5E_parseHTMLText);
-    let options = {rollData: rollData};
+    let reformattedText = await generic.reformatMessage(text, DnD5E_parseHTMLText);
+    const options = {rollData: rollData};
     const inlineRollEnricher = CONFIG.TextEditor.enrichers.find(enricher => enricher.enricher.name === "enrichString");
     let enricher = inlineRollEnricher.enricher;
     let enricherRegex = inlineRollEnricher.pattern;
