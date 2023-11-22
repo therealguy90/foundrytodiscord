@@ -31,7 +31,7 @@ import { anonEnabled, getThisModuleSetting }  from './helpers/modulesettings.mjs
 *       - Look at other parsers to find out how this works.
 */
 
-export /*async?*/ function messageParserSystem(msg){
+export async function messageParserSystem(msg){
     let constructedMessage = '';
     let embeds = [];
     //make detectors for custom system chatcards here, or embeds in general. See the other parsers to know how to do it.
@@ -74,7 +74,7 @@ export /*async?*/ function messageParserSystem(msg){
     }
 
     if (embeds && embeds.length > 0) {
-        embeds[0].description = System_reformatMessage(embeds[0].description, originDoc);
+        embeds[0].description = await System_reformatMessage(embeds[0].description, originDoc);
         constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === embeds[0].title) ? "" : msg.flavor;
         //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         if (anonEnabled()) {
@@ -87,13 +87,13 @@ export /*async?*/ function messageParserSystem(msg){
     if (anonEnabled()) {
         constructedMessage = generic.anonymizeText(constructedMessage, msg);
     }
-    constructedMessage = System_reformatMessage(constructedMessage);
+    constructedMessage = await System_reformatMessage(constructedMessage);
     return generic.getRequestParams(msg, constructedMessage, embeds); //ALWAYS keep this as the return.
 }
 
 
-export /*async?*/ function System_reformatMessage(text){
-    let reformattedText = generic.reformatMessage(text/*, System_parseHTMLText*/);
+export async function System_reformatMessage(text){
+    let reformattedText = await generic.reformatMessage(text/*, System_parseHTMLText*/);
     // Add more message reformatting here. For example, PF2e has @Damage[] and @Check[], 
     // so there's a custom reformatter for that.
     return reformattedText.trim();
