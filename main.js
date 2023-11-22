@@ -303,8 +303,9 @@ function deleteAll(msgObjects, msg) {
 * A successfully sent message is added to the object stored in a hidden module setting (max 100). This allows all clients to access
 * previously-sent messages, and for the messages to not be erased after the client reloads their browser.
 */
-async function tryRequest(msg, method, hookOverride = "") {
+async function tryRequest(msg, method, hookOverride = undefined) {
     let requestParams = await messageParse(msg);
+    // do post-parse checks, such as adding images to upload and editing webhook links
     if (requestParams) {
         if (requestParams.params.avatar_url === "") {
             console.warn("foundrytodiscord | Your Invite URL is not set! Avatar images cannot be displayed on Discord.")
@@ -338,7 +339,7 @@ async function tryRequest(msg, method, hookOverride = "") {
         formData.append('payload_json', JSON.stringify(requestParams.params));
         requestQueue.push(
             {
-                hook: hookOverride === "" ? waitHook : hookOverride,
+                hook: hookOverride ? waitHook : hookOverride,
                 formData: formData,
                 msgID: msg.id,
                 method: method,
