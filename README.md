@@ -40,6 +40,14 @@ While it will work with other systems, the extent of compatibility may vary. Reg
 - Foundry to Discord uses the same enrichers that a system uses for ease of parsing custom inline rolls and the like. This means that notification warnings or console errors may be doubled if the enricher throws them at you. Not a huge issue, but it's something.
 - There's a very low chance that a midi-qol mergecard might not be parsed properly. I do not know the cause of this, and it is *almost* always the first mergecard the module encounters. Subsequent ones are fine... for some reason.
 
+## Frequently Asked Suggestions:
+
+**How about adding more webhooks so I can have the chat stream to two servers?**
+- Rate limiting is the main limiting factor in this. Modules like midi-qol are already pushing the rate limit as it is (mergecards edit the same message about 5 or 6 times in less than a second). Adding more webhooks is just going to make the module slower to respond (messages won't be lost to the rate limits because of the queueing system Founry to Discord implements). However, you're free to do anything with Foundry to Discord, and that includes making a copy of it on your machine, changing the package names to something different, and setting it up as usual. This will allow you to have two different channels with different settings, mirroring the same chat, but it's obviously not recommended to do so, and I won't be supporting the use of two or more instances of the module.
+
+**Sending statblocks to Discord**
+- Every actor structure is different. While I would love to do this, it's simply a matter of maintaining sheet parsers for every system I'll support, and it's a one-man team over here. I advise you to make a macro for your system using the API and share it around to folks who want this sort of functionality.
+
 ## Setup
 
 1. Create a Webhook in your Discord server and specify the channel to output chat to. Copy the Webhook URL; you'll need it later.
