@@ -60,9 +60,7 @@ export async function sendMessage(formData, isRoll = false, sceneID = game.user.
             return { response: response, message: message }
         }
     } catch (error) {
-        console.log("foundrytodiscord | Error sending message: ", error);
-        throw new Error("An error occurred.");
-        return error;
+        console.error("foundrytodiscord | Error sending message: ", error);
     }
 }
 
@@ -98,6 +96,6 @@ export async function deleteMessage(webhook, messageID) {
     console.log("foundrytodiscord | Attempting to delete message...");
     return await fetch(webhook, { method: 'DELETE' })
         .catch(error => {
-            console.log("foundrytodiscord | Error deleting message:", error);
+            console.error("foundrytodiscord | Error deleting message:", error);
         });
 }
