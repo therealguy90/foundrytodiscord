@@ -135,7 +135,7 @@ function generateMessageObject(message, msgText, embeds, imgurl) {
             case CONST.TOKEN_DISPLAY_MODES.OWNER:
             case CONST.TOKEN_DISPLAY_MODES.OWNER_HOVER:
             case CONST.TOKEN_DISPLAY_MODES.CONTROL:
-                if (!speakerActor.hasPlayerOwner) {
+                if (!speakerActor?.hasPlayerOwner || !speakerToken.hasPlayerOwner) {
                     alias = "Unknown" + " (" + censorId(speakerToken.id) + ")";
                 }
                 break;
