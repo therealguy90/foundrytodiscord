@@ -339,7 +339,7 @@ async function tryRequest(msg, method, hookOverride = undefined) {
         formData.append('payload_json', JSON.stringify(requestParams.params));
         requestQueue.push(
             {
-                hook: hookOverride ? waitHook : hookOverride,
+                hook: !hookOverride ? waitHook : hookOverride,
                 formData: formData,
                 msgID: msg.id,
                 method: method,
