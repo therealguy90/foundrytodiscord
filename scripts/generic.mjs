@@ -435,7 +435,7 @@ export function htmlCodeCleanup(htmltext) {
         .replaceAll(" ", ' ').trim(); // Remove placeholder table filler
 }
 
-async function replaceGenericAtTags(text) {
+function replaceGenericAtTags(text) {
     const regexAtTags = /@([^]+?)\[([^]+?)\](?:\{([^]+?)\})?/g;
     let reformattedText = text.replace(regexAtTags, (match, atTagType, identifier, customText) => {
         let toReplace = "";
@@ -447,9 +447,6 @@ async function replaceGenericAtTags(text) {
         }
         let doctype = "";
         switch (atTagType) {
-            case "Localize":
-                toReplace = replaceGenericAtTags(game.i18n.localize(identifier));
-                break;
             case "UUID":
                 document = fromUuidSync(identifier);
                 break;

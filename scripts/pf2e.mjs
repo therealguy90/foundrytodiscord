@@ -122,11 +122,24 @@ export async function PF2e_reformatMessage(text, originDoc = undefined) {
     }
     let options = { rollData: (rollData ? rollData : {}) };
     let match;
-    // Converts them to @Damage, so that the enricher can take care of parsing the roll.
     let allMatches = [];
+    let enricherRegex = /@Localize\[([^\]]+)\](?:{([^}]+)})?/g;
+    while ((match = enricherRegex.exec(reformattedText)) !== null) {
+        const [_match, identifier] = match;
+        const replacement = await PF2e_reformatMessage(game.i18n.localize(identifier), originDoc);
+        allMatches.push({
+            original: _match,
+            replacement: replacement
+        });
+    }
+    for (const replacement of allMatches) {
+        reformattedText = reformattedText.replace(replacement.original, replacement.replacement);
+    }
+    // Converts them to @Damage, so that the enricher can take care of parsing the roll.
+    allMatches = [];
     // Trust me, even I don't know how this regex works.
     // matches [[/r or /br xxxx #flavor]]{label} for legacy rolls.
-    let enricherRegex = /\[\[\/b?r\s*((?:\d+d\d+(?:\[[^\[\]]*\])?|\d+(?:\[[^\[\]]*\])?)(?:\s*[-+]\s*\d+d\d+(?:\[[^\[\]]*\])?|\s*[-+]\s*\d+(?:\[[^\[\]]*\])?)*)(?:\s*#\s*([^{}\[\]]+))?[^{}]*?\]\](?:{([^{}]*)})?/g;
+    enricherRegex = /\[\[\/b?r\s*((?:\d+d\d+(?:\[[^\[\]]*\])?|\d+(?:\[[^\[\]]*\])?)(?:\s*[-+]\s*\d+d\d+(?:\[[^\[\]]*\])?|\s*[-+]\s*\d+(?:\[[^\[\]]*\])?)*)(?:\s*#\s*([^{}\[\]]+))?[^{}]*?\]\](?:{([^{}]*)})?/g;
 
     while ((match = enricherRegex.exec(reformattedText)) !== null) {
         const [_match, params, flavor, label] = match;
