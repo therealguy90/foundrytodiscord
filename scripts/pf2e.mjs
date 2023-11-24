@@ -145,11 +145,23 @@ export async function PF2e_reformatMessage(text, originDoc = undefined) {
     while ((match = enricherRegex.exec(reformattedText)) !== null) {
         if (match) {
             const inlineButton = await game.pf2e.TextEditor.enrichString(match, options);
+            console.log(inlineButton);
+            const dataSpan = inlineButton.querySelector("[data-visibility]");
+            const visibility = dataSpan.getAttribute('data-visibility');
+            if(visibility){
+                switch(visibility){
+                    case "gm":
+                    case "none":
+                    case "owner":
+                        dataSpan.remove();
+                        break;
+                }
+            }
             if (inlineButton) {
                 let label = "";
                 const [_match, inlineType, paramString, inlineLabel] = match;
                 const params = PF2e_parseInlineString(paramString);
-                label += `${TEMPLATE_EMOJI.hasOwnProperty(params.type) ? TEMPLATE_EMOJI[params.type] : ":game_die:"}\`${inlineButton.textContent}\``;
+                label += `${TEMPLATE_EMOJI.hasOwnProperty(params.type) ? TEMPLATE_EMOJI[params.type] : ":game_die:"}\`${inlineButton.textContent.trim()}\``;
                 allMatches.push({
                     original: _match,
                     replacement: label

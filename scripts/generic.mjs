@@ -341,7 +341,7 @@ export function parseHTMLText(htmlString, customHTMLParser = undefined) {
     htmldoc.innerHTML = reformattedText;
 
     // Remove elements with data-visibility attribute and hidden styles
-    ['[data-visibility="gm"]', '[data-visibility="owner"]', '[style*="display:none"]'].forEach(selector => {
+    ['[data-visibility="gm"]', '[data-visibility="owner"]','[data-visibility="none"]', '[style*="display:none"]'].forEach(selector => {
         const elements = htmldoc.querySelectorAll(selector);
         elements.forEach(element => element.parentNode.removeChild(element));
     });
@@ -437,10 +437,10 @@ export function htmlCodeCleanup(htmltext) {
 
 async function replaceGenericAtTags(text) {
     const regexAtTags = /@([^]+?)\[([^]+?)\](?:\{([^]+?)\})?/g;
-    let reformattedText = text.replace(regexAtTags, async (match, atTagType, identifier, customText) => {
+    let reformattedText = text.replace(regexAtTags, (match, atTagType, identifier, customText) => {
         let toReplace = "";
         let document;
-
+        
         let isId = true;
         if (identifier.length !== 16) {
             isId = false;
@@ -451,10 +451,10 @@ async function replaceGenericAtTags(text) {
                 toReplace = replaceGenericAtTags(game.i18n.localize(identifier));
                 break;
             case "UUID":
-                document = await fromUuid(identifier);
+                document = fromUuidSync(identifier);
                 break;
             case "Compendium":
-                document = await fromUuid("Compendium." + identifier);
+                document = fromUuidSync("Compendium." + identifier);
                 break;
             case "Actor":
                 doctype = "actors";
