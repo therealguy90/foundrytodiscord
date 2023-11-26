@@ -107,56 +107,7 @@ export function getRequestParams(message, msgText, embeds) {
             hook = getThisModuleSetting("webHookURL");
         }
     }
-
-    return { hook: hook, params: generateMessageObject(message, msgText, embeds, imgurl) };
-}
-
-function generateMessageObject(message, msgText, embeds, imgurl) {
-    let alias = message.alias;
-    const speakerToken = (message.speaker?.token && message.speaker?.scene)
-        ? game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token)
-        : undefined;
-    let speakerActor = message.speaker?.actor
-        ? game.actors.get(message.speaker.actor)
-        : speakerToken?.actor ? speakerToken.actor : undefined; // This is longer than it should be, but I still like this.
-
-    // POST-PARSE ALIAS VISIBILITY CHECK
-
-    // Get both speakerToken and speakerActor, since we want many fallbacks,
-    // in case a token is declared in the message but not its actor. Good for macros or other modules/systems that don't
-    // rely on a token being on the canvas to create a message.
-    if (anonEnabled() && (speakerToken?.actor || speakerActor)) {
-        const anon = game.modules.get('anonymous').api
-        // First: Check if token has an actor and use Anonymous if it does. 
-        // This uses a fallback for the message actor in case it is needed.
-        if (speakerToken.actor && speakerActor !== speakerToken.actor) {
-            // Fallback possibly not needed? Will keep it in for redundancy.
-            speakerActor = speakerToken.actor;
-        }
-        if (!speakerActor) {
-            // More redundancy. I take metagame visibility seriously.
-            speakerActor = game.actors.find(actor => actor.name === message.alias);
-        }
-        if (speakerActor && !anon.playersSeeName(speakerActor)) {
-            alias = `${anon.getName(speakerActor)} (${censorId(speakerToken ? speakerToken.id : speakerActor.id)})`;
-        }
-    }
-    else if (speakerToken) {
-        // If user doesn't have anonymous, this defaults to the visibility of the token name on the board.
-        // This is similar to the PF2e implementation of token name visibility.
-        switch (speakerToken.displayName) {
-            case CONST.TOKEN_DISPLAY_MODES.NONE:
-            case CONST.TOKEN_DISPLAY_MODES.OWNER:
-            case CONST.TOKEN_DISPLAY_MODES.OWNER_HOVER:
-            case CONST.TOKEN_DISPLAY_MODES.CONTROL:
-                if (!speakerActor?.hasPlayerOwner || !speakerToken.hasPlayerOwner) {
-                    alias = "Unknown" + " (" + censorId(speakerToken.id) + ")";
-                }
-                break;
-            default:
-                break;
-        }
-    }
+    const username = generateDiscordUsername(message);
     if (embeds[0]?.description?.length > 4000) {
         embeds = splitEmbed(embeds[0]);
     }
@@ -174,13 +125,15 @@ function generateMessageObject(message, msgText, embeds, imgurl) {
         }
     })
 
-    const params = {
-        username: alias,
-        avatar_url: imgurl,
-        content: msgText,
-        embeds: embeds
+    return {
+        hook: hook,
+        params: {
+            username: username,
+            avatar_url: imgurl,
+            content: msgText,
+            embeds: embeds
+        }
     };
-    return params;
 }
 
 function generateDiscordAvatar(message) {
@@ -210,6 +163,55 @@ function generateDiscordAvatar(message) {
     }
 
     return generateimglink(message.user?.avatar);
+}
+
+function generateDiscordUsername(message) {
+    let username = message.alias;
+    const speakerToken = (message.speaker?.token && message.speaker?.scene)
+        ? game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token)
+        : undefined;
+    let speakerActor = message.speaker?.actor
+        ? game.actors.get(message.speaker.actor)
+        : speakerToken?.actor ? speakerToken.actor : undefined; // This is longer than it should be, but I still like this.
+
+    // POST-PARSE ALIAS VISIBILITY CHECK
+
+    // Get both speakerToken and speakerActor, since we want many fallbacks,
+    // in case a token is declared in the message but not its actor. Good for macros or other modules/systems that don't
+    // rely on a token being on the canvas to create a message.
+    if (anonEnabled() && (speakerToken?.actor || speakerActor)) {
+        const anon = game.modules.get('anonymous').api
+        // First: Check if token has an actor and use Anonymous if it does. 
+        // This uses a fallback for the message actor in case it is needed.
+        if (speakerToken.actor && speakerActor !== speakerToken.actor) {
+            // Fallback possibly not needed? Will keep it in for redundancy.
+            speakerActor = speakerToken.actor;
+        }
+        if (!speakerActor) {
+            // More redundancy. I take metagame visibility seriously.
+            speakerActor = game.actors.find(actor => actor.name === message.alias);
+        }
+        if (speakerActor && !anon.playersSeeName(speakerActor)) {
+            username = `${anon.getName(speakerActor)} (${censorId(speakerToken ? speakerToken.id : speakerActor.id)})`;
+        }
+    }
+    else if (speakerToken) {
+        // If user doesn't have anonymous, this defaults to the visibility of the token name on the board.
+        // This is similar to the PF2e implementation of token name visibility.
+        switch (speakerToken.displayName) {
+            case CONST.TOKEN_DISPLAY_MODES.NONE:
+            case CONST.TOKEN_DISPLAY_MODES.OWNER:
+            case CONST.TOKEN_DISPLAY_MODES.OWNER_HOVER:
+            case CONST.TOKEN_DISPLAY_MODES.CONTROL:
+                if (!speakerActor?.hasPlayerOwner || !speakerToken.hasPlayerOwner) {
+                    username = "Unknown" + " (" + censorId(speakerToken.id) + ")";
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    return username;
 }
 
 export function createGenericRollEmbed(message) {
