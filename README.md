@@ -37,7 +37,7 @@ While it will work with other systems, the extent of compatibility may vary. Reg
 - Edits Mergecards in real-time.
 
 # WARNING:
-- If any of your modules automatically deletes the chat archive other than you clicking on the flush chat log button (i.e. DF Chat Enhancements Archive function), **DISABLE** Chat Mirroring via config first! Otherwise, your discord messages will be deleted!
+- If any of your modules automatically deletes the chat archive other than you clicking on the flush chat log button (i.e. DF Chat Enhancements Archive function), **DISABLE** Message Deletions via config first! Otherwise, your discord messages will be deleted!
 
 ## Known Issues:
 - Foundry to Discord uses the same enrichers that a system uses for ease of parsing custom inline rolls and the like. This means that notification warnings or console errors may be doubled if the enricher throws them at you. Not a huge issue, but it's something.
