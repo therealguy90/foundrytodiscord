@@ -5,19 +5,10 @@ import { generateimglink } from './helpers/images.mjs';
 import { newEnrichedMessage } from './helpers/enrich.mjs';
 
 export async function messageParserGeneric(msg) {
-    const speakerActor = function () {
-        if (msg.speaker?.actor) {
-            return game.actors.get(msg.speaker.actor);
-        }
-        else return undefined;
-    }();
-    const enrichmentOptions = {
-        rollData: {
-            actor: speakerActor
-        },
-        relativeTo: speakerActor
-    };
-    const enrichedMsg = await newEnrichedMessage(msg, enrichmentOptions);
+    // Make a new ChatMessage object with the content enriched using the TextEditor.
+    // This makes it so that parsing is consistently using HTML instead of using regex for enrichers.
+    // Most messages do not need EnrichmentOptions, but pass it anyways for parity. Spare the effort.
+    const enrichedMsg = await newEnrichedMessage(msg, await getEnrichmentOptions(msg));
     let constructedMessage = '';
     let embeds = [];
     if (game.modules.get('monks-tokenbar')?.active && tokenBar_isTokenBarCard(enrichedMsg.content)) {
@@ -87,6 +78,22 @@ export async function messageParserGeneric(msg) {
     else {
         return false;
     }
+}
+
+// Used for enrichHTML. Using actor as default in the generic parser.
+export async function getEnrichmentOptions(message) {
+    const speakerActor = function () {
+        if (message.speaker?.actor) {
+            return game.actors.get(message.speaker.actor);
+        }
+        else return undefined;
+    }();
+    return {
+        rollData: {
+            actor: speakerActor
+        },
+        relativeTo: speakerActor
+    };
 }
 
 export function getRequestParams(message, msgText, embeds) {
@@ -330,7 +337,8 @@ export async function parseHTMLText(htmlString, customHTMLParser = undefined) {
     let reformattedText = htmlString;
     const htmldoc = document.createElement('div');
     htmldoc.innerHTML = reformattedText;
-    removeElementsBySelector('[style*="display:none"]', htmldoc);
+    removeElementsBySelector('[style*="display:none"]', htmldoc); //remove all display:none
+    // Format tables using the table parser first
     const tables = htmldoc.querySelectorAll('table');
     tables.forEach((table) => {
         const newTable2D = htmlTo2DTable(table);
@@ -613,7 +621,7 @@ export function tokenBar_createTokenBarCard(message) {
                                 break;
                         }
                     }
-                    else{
+                    else {
                         desc += ':game_die: ';
                     }
                     desc += "**" + tokenData.name;
