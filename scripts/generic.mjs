@@ -434,7 +434,8 @@ export function htmlCodeCleanup(htmltext) {
         { selector: "input", replacer: [""] },
         { selector: "div", replacer: ["", "\n"] },
         { selector: "br", replacer: ["\n"] },
-        { selector: "p", replacer: ["", "\n\n"] }
+        { selector: "p", replacer: ["", "\n\n"] },
+        { selector: "button", replacer: [""] }
     ]
     selectorsAndReplacers.forEach(({ selector, replacer }) => {
         doc.querySelectorAll(selector).forEach(element => {
