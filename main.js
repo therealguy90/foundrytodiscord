@@ -1,5 +1,5 @@
 import { isCard } from './scripts/generic.mjs';
-import { dataToBlob, getDefaultAvatarLink } from './scripts/helpers/images.mjs';
+import { dataToBlob, generateimglink, getDefaultAvatarLink } from './scripts/helpers/images.mjs';
 import { initModuleSettings, getThisModuleSetting, getSystemParser } from './scripts/helpers/modulesettings.mjs';
 import { initMenuHooks } from './scripts/apphooks.mjs';
 import * as api from './api.js';
@@ -490,6 +490,9 @@ function addMediaLinks(message) {
             }
             links += src;
         }
+        else if(src){
+            links += generateimglink(src, false);
+        }
     });
     const videos = doc.querySelectorAll('video');
     videos.forEach(videoElement => {
@@ -501,6 +504,9 @@ function addMediaLinks(message) {
             links += src;
         }
     });
+    if(links){
+        console.log(`foundrytodiscord | Links found. Adding media from following sources: ${links}`);
+    }
     return links;
 }
 

@@ -25,17 +25,17 @@ export function dataToBlob(base64String) {
 }
 
 // Image links from server
-export function generateimglink(img) {
+export function generateimglink(imgSrc, requireAvatarCompatible = true) {
     const supportedFormats = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
     let imgUrl;
-    if (!img || (img && img === "")) {
+    if (!imgSrc || (imgSrc && imgSrc === "")) {
         return getDefaultAvatarLink()
     }
-    if (img.includes("http")) {
-        imgUrl = img;
+    if (imgSrc.includes("http")) {
+        imgUrl = imgSrc;
     } else {
         if (getThisModuleSetting('inviteURL') !== "http://") {
-            imgUrl = (getThisModuleSetting('inviteURL') + img);
+            imgUrl = (getThisModuleSetting('inviteURL') + imgSrc);
         }
         else {
             return "";
@@ -46,7 +46,7 @@ export function generateimglink(img) {
     if (fileExtension.split('?').length > 1) {
         fileExtension = fileExtension.split('?')[0];
     }
-    if (supportedFormats.includes(fileExtension)) {
+    if (!requireAvatarCompatible || supportedFormats.includes(fileExtension)) {
         return imgUrl;
     }
     else {
