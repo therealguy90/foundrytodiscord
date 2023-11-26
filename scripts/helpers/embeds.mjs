@@ -66,3 +66,7 @@ export function hexToColor(hex) {
 
     return decimalColor;
 }
+
+export function removeEmptyEmbeds(embeds){
+    return embeds.filter(embed => embed.title || embed.description || !embed.footer);
+}

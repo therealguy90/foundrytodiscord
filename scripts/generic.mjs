@@ -1,6 +1,6 @@
 import { htmlTo2DTable, parse2DTable } from './helpers/tables.mjs';
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
-import { splitEmbed, hexToColor } from './helpers/embeds.mjs';
+import { splitEmbed, hexToColor, removeEmptyEmbeds } from './helpers/embeds.mjs';
 import { generateimglink } from './helpers/images.mjs';
 import { newEnrichedMessage } from './helpers/enrich.mjs';
 
@@ -114,6 +114,7 @@ export function getRequestParams(message, msgText, embeds) {
             hook = getThisModuleSetting("webHookURL");
         }
     }
+    embeds = removeEmptyEmbeds(embeds);
     const username = generateDiscordUsername(message);
     if (embeds[0]?.description?.length > 4000) {
         embeds = splitEmbed(embeds[0]);
