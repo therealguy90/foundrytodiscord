@@ -51,7 +51,7 @@ export async function messageParserGeneric(msg) {
         }
     }
     else {
-        console.log("foundrytodiscord | System \"" + game.system.id + "\" is not supported for special roll embeds.")
+        console.log(`foundrytodiscord | System "${game.system.id}" is not supported for special roll embeds.`)
         embeds = createGenericRollEmbed(enrichedMsg);
     }
 
@@ -497,7 +497,7 @@ export function polyglotize(message) {
                 return getReplacementString();
             }
             catch (e) {
-                console.log("foundrytodiscord | Your system \"" + game.system.id + "\" does not support Polyglot integration with this module due to a different actor structure.")
+                console.log(`foundrytodiscord | Your system "${game.system.id}" does not support Polyglot integration with this module due to a different actor structure.`)
             }
         }
         else {
@@ -509,7 +509,7 @@ export function polyglotize(message) {
                 return getReplacementString(listLanguages);
             }
             catch (e) {
-                console.log("foundrytodiscord | Your system \"" + game.system.id + "\" does not support Polyglot integration with this module due to a different actor structure.")
+                console.log(`foundrytodiscord | Your system "${game.system.id}" does not support Polyglot integration with this module due to a different actor structure.`)
             }
         }
     }

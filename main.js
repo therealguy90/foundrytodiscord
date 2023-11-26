@@ -423,9 +423,9 @@ async function requestOnce(retry = 0, ignoreRescuePartyFor = 0) {
     }
 }
 
-function progressQueue(retry = 0, deleteFor = 0) {
+function progressQueue(retry = 0, ignoreRescuePartyFor = 0) {
     if (requestQueue.length > 0) {
-        requestOnce(retry, deleteFor);
+        requestOnce(retry, ignoreRescuePartyFor);
     } else {
         isProcessing = false;
     }
