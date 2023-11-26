@@ -22,32 +22,6 @@ Hooks.on('deleteScene', async scene => {
     }
 });
 
-
-/* Since the module looks out for message deletions in real time, 
-* messages should not be deleted if the GM clears the chat log.
-* To avoid this, we add two event listeners for two layers of protection.
-* one is for the Clear Chat Log "trash can" button, the other is the "Yes" button on the confirmation dialog.
-*/
-Hooks.on("renderChatLog", (app, html) => {
-    // Add event listener for the "Clear Chat Log" button
-    const clearButton = html.find('a.delete.chat-flush');
-    clearButton.on("click", () => {
-        flushLog = true;
-    });
-});
-
-Hooks.on("renderApplication", (app, html) => {
-    // Check if the 'yes' button was pressed to flush the chat log
-    // This is the most consistent method.
-    const yesButton = html.find('button.dialog-button.yes.bright, button[data-button="yes"]');
-    if (yesButton && yesButton.length > 0) {
-        yesButton.on("click", () => {
-            console.log("foundrytodiscord | Avoiding deleting messages in Discord...");
-            flushLog = true;
-        });
-    }
-});
-
 // For the "Send to Discord" context menu on chat messages.
 // Seldom needed, but if chat mirroring is disabled, this is one way to circumvent it.
 Hooks.on('getChatLogEntryContext', async (html, options) => {
@@ -64,7 +38,6 @@ Hooks.on('getChatLogEntryContext', async (html, options) => {
 
 let requestQueue = [];
 let isProcessing = false;
-let flushLog = false;
 
 Hooks.once("ready", function () {
     // Application and context menu buttons for all users
@@ -134,7 +107,6 @@ async function initSystemStatus() {
 }
 
 Hooks.on('createChatMessage', async (msg) => {
-    flushLog = false;
     if (msg.content === "ftd serveroff" && msg.user.isGM) {
         if (getThisModuleSetting('serverStatusMessage')) {
             if (getThisModuleSetting('messageID') && getThisModuleSetting('messageID') !== "") {
@@ -226,7 +198,6 @@ Hooks.on('updateChatMessage', async (msg, change, options) => {
             }
         }
     };
-    flushLog = false;
     if (!getThisModuleSetting('disableMessages')) {
         if (getThisModuleSetting("ignoreWhispers")) {
             if (change.whisper?.length > 1) {
@@ -254,7 +225,7 @@ Hooks.on('deleteChatMessage', async (msg) => {
     if (!isUserMainGM() && (game.users.activeGM || !(getThisModuleSetting("allowNoGM") && isUserMainNonGM()))) {
         return;
     }
-    if (!flushLog && !getThisModuleSetting('disableDeletions')) {
+    if (!getThisModuleSetting('disableDeletions')) {
         if (getThisModuleSetting('messageList').hasOwnProperty(msg.id) || getThisModuleSetting('clientMessageList').hasOwnProperty(msg.id)) {
             let msgObjects;
             if (game.user.isGM) {
@@ -353,18 +324,41 @@ async function tryRequest(msg, method, hookOverride = undefined) {
     }
 }
 
-async function requestOnce(retry = 0) {
+async function requestOnce(retry = 0, ignoreRescuePartyFor = 0) {
     const { hook, formData, msgID, method, dmsgID } = requestQueue[0];
     if (method === 'PATCH') {
         console.log("foundrytodiscord | Attempting to edit message...");
     }
     else if (method === 'DELETE') {
         console.log("foundrytodiscord | Attempting to delete message...");
+        if (ignoreRescuePartyFor === 0) {
+            // Message flush rescue party!
+            await wait(250); // wait for more requests
+            if (requestQueue.length > 1 && requestQueue[1].method === "DELETE" && requestQueue[0].msgID !== requestQueue[1].msgID) {
+                console.log("foundrytodiscord | You're trying to delete two or more messages in quick succession. Thinking...");
+                await wait(1000);
+                const countedDeletions = countSuccessiveDeletions();
+                if (countedDeletions > 10) {
+                    console.group('foundrytodiscord | Rescue party!');
+                    console.log("foundrytodiscord | Deletion rescue party triggered! More than 10 simultaneous deletions detected.");
+                    console.log("foundrytodiscord | ඞඞඞඞඞ You called? We're going to clean the message queue! ඞඞඞඞඞ");
+                    console.log("foundrytodiscord | Request queue cleared. Next request in 5 seconds...");
+                    console.groupEnd();
+                    requestQueue = [];
+                    await wait(5000);
+                    progressQueue();
+                    return;
+                }
+                else {
+                    console.log("foundrytodiscord | Deletion rescue party not triggered. Moving along...")
+                    ignoreRescuePartyFor = 10;
+                }
+            }
+        }
     }
     else {
         console.log("foundrytodiscord | Attempting to send message to webhook...");
     }
-
     let requestOptions = {
         method: method,
         body: formData
@@ -384,17 +378,23 @@ async function requestOnce(retry = 0) {
             }
             if (method === 'DELETE') {
                 if (dmsgID) {
+                    if (ignoreRescuePartyFor > 0) {
+                        ignoreRescuePartyFor--;
+                    }
                     deleteSentMessage(msgID, dmsgID);
                 }
             }
+            else{
+                ignoreRescuePartyFor = 0;
+            }
             requestQueue.shift();
-            console.log("foundrytodiscord | " + method + " request succeeded.");
-            progressQueue();
+            console.log(`foundrytodiscord | ${method} request succeeded.`);
+            progressQueue(retry, ignoreRescuePartyFor);
         } else if (response.status === 429) {
             const retryAfter = Number(response.headers.get("Retry-After")) || 1;
-            console.log("foundrytodiscord | Rate Limit exceeded! Next request in " + retryAfter / 100 + " seconds.");
+            console.log(`foundrytodiscord | Rate Limit exceeded! Next request in ${retryAfter / 100} seconds.`);
             await wait(retryAfter * 10);
-            progressQueue();
+            progressQueue(retry, ignoreRescuePartyFor);
         }
         else {
             throw new Error(response.status);
@@ -403,8 +403,14 @@ async function requestOnce(retry = 0) {
         console.error('foundrytodiscord | Fetch error:', error);
         if (retry >= 2) {
             console.log("foundrytodiscord | Request discarded from the queue after retrying 2 times.");
-            if (method === "DELETE" && error.message === "404") {
+            if (method === "DELETE") {
+                if (ignoreRescuePartyFor > 0) {
+                    ignoreRescuePartyFor--;
+                }
                 deleteSentMessage(msgID, dmsgID);
+            }
+            else{
+                ignoreRescuePartyFor = 0;
             }
             requestQueue.shift();
             retry = 0;
@@ -413,13 +419,13 @@ async function requestOnce(retry = 0) {
             retry++;
         }
         console.log("foundrytodiscord | Retrying...");
-        progressQueue(retry);
+        progressQueue(retry, ignoreRescuePartyFor);
     }
 }
 
-function progressQueue(retry = 0) {
+function progressQueue(retry = 0, deleteFor = 0) {
     if (requestQueue.length > 0) {
-        requestOnce(retry);
+        requestOnce(retry, deleteFor);
     } else {
         isProcessing = false;
     }
@@ -490,7 +496,7 @@ function addMediaLinks(message) {
             }
             links += src;
         }
-        else if(src){
+        else if (src) {
             links += generateimglink(src, false);
         }
     });
@@ -504,7 +510,7 @@ function addMediaLinks(message) {
             links += src;
         }
     });
-    if(links){
+    if (links) {
         console.log(`foundrytodiscord | Links found. Adding media from following sources: ${links}`);
     }
     return links;
@@ -576,4 +582,24 @@ function isUserMainGM() {
 
 function isUserMainNonGM() {
     return game.user === game.users.filter(user => user.active && !user.isGM).sort((a, b) => a.name.localeCompare(b.name))[0];
+}
+
+function countSuccessiveDeletions() {
+    let deletions = 0;
+    let currentMessageID = "";
+    for (const request of requestQueue) {
+        if (request.method === "DELETE") {
+            if (request.msgID !== currentMessageID) {
+                currentMessageID = request.msgID;
+                deletions++;
+            }
+            if (deletions > 10) {
+                break;
+            }
+        }
+        else {
+            break;
+        }
+    }
+    return deletions;
 }
