@@ -355,12 +355,15 @@ function PF2e_createActionCardEmbed(message) {
     }
     if (descVisible) {
         if (message.flags?.pf2e?.context?.item) {
-            desc += game.actors.get(message.speaker.actor).items.get(message.flags.pf2e.context.item).system.description.value;
+            const itemDesc = game.actors.get(message.speaker.actor).items.get(message.flags.pf2e.context.item).system.description.value;
+            const actionCardDesc = div.querySelector(".description, .action-content");
+            actionCardDesc.outerHTML = itemDesc;
+            desc += div.innerHTML;
         }
         else {
-            const actionContent = div.querySelector(".action-content");
-            if (actionContent) {
-                desc += actionContent.innerHTML;
+            const actionDesc = div.querySelector(".description, .action-content");
+            if (actionDesc) {
+                desc += actionDesc.innerHTML;
             }
         }
     }
