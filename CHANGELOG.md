@@ -1,4 +1,14 @@
-# 1.7.2
+# 1.7.3
+
+- Parsing now uses the native `enrichHTML`. This will hopefully make compatibility with other systems better.
+- Improve flavor text detection in regular rolls.
+- Improve `<img>` link handling on messages that only contain media.
+- Small improvement to queueing by removing requests that only contain empty embeds.
+- (pf2e) show "Effect Applied" text on actions.
+- (monks-tokenbar) Fix showing of success/fail on gmroll requests.
+- Other small bug fixes and improvements.
+
+## 1.7.2
 
 - (dnd5e) Support 2.4.0's custom enricher format.
 - (pf2e) Use system enrichers
