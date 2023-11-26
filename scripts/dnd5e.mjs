@@ -402,9 +402,7 @@ async function DnD5e_getEnrichmentOptions(message) {
         originActor = game.actors.get(message.speaker.actor); //Fallback to speaker in case it's needed.
     }
     return {
-        rollData: {
-            actor: originActor
-        },
+        rollData: originActor.system,
         relativeTo: originActor
     }
 }
