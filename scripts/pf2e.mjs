@@ -106,11 +106,12 @@ export async function PF2e_reformatMessage(text) {
     return reformattedText.trim();
 }
 
-function PF2e_parseHTMLText(htmlString) {
+async function PF2e_parseHTMLText(htmlString) {
     let reformattedText = htmlString;
     const htmldoc = document.createElement('div');
     htmldoc.innerHTML = reformattedText;
     // Format various elements
+    generic.removeElementsBySelector('[data-visibility="gm"], [data-visibility="owner"],[data-visibility="none"]', htmldoc);
     generic.formatTextBySelector('.inline-check, span[data-pf2-check]', text => `:game_die:\`${text}\``, htmldoc);
     reformattedText = htmldoc.innerHTML;
     htmldoc.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(header => {
