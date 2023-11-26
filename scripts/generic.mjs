@@ -589,26 +589,31 @@ export function tokenBar_createTokenBarCard(message) {
             if (actorData.length > 0) {
                 for (let i = 0; i < actorData.length; i++) {
                     const tokenID = actorData[i].getAttribute('data-item-id');
-                    const tokenData = message.flags["monks-tokenbar"]["token" + tokenID]
-                    switch (tokenData.passed) {
-                        case 'waiting':
-                            desc += ':game_die: ';
-                            break;
-                        case true:
-                            desc += ":white_check_mark: ";
-                            break;
-                        case false:
-                            desc += ":negative_squared_cross_mark: ";
-                            break;
-                        case 'success':
-                            desc += ":white_check_mark::white_check_mark: ";
-                            break;
-                        case 'failed':
-                            desc += ":no_entry_sign: ";
-                            break;
-                        default:
-                            desc += ':game_die: ';
-                            break;
+                    const tokenData = message.flags["monks-tokenbar"]["token" + tokenID];
+                    if (message.flags["monks-tokenbar"].rollmode !== "gmroll") {
+                        switch (tokenData.passed) {
+                            case 'waiting':
+                                desc += ':game_die: ';
+                                break;
+                            case true:
+                                desc += ":white_check_mark: ";
+                                break;
+                            case false:
+                                desc += ":negative_squared_cross_mark: ";
+                                break;
+                            case 'success':
+                                desc += ":white_check_mark::white_check_mark: ";
+                                break;
+                            case 'failed':
+                                desc += ":no_entry_sign: ";
+                                break;
+                            default:
+                                desc += ':game_die: ';
+                                break;
+                        }
+                    }
+                    else{
+                        desc += ':game_die: ';
                     }
                     desc += "**" + tokenData.name;
                     if (tokenData.total || tokenData.total === 0) {
