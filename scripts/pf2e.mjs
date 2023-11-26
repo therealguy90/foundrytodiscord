@@ -1,5 +1,6 @@
 import * as generic from './generic.mjs';
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
+import { newEnrichedMessage, toHTML } from './helpers/enrich.mjs';
 
 const DAMAGE_EMOJI = {
     "bludgeoning": ':hammer:',
@@ -39,168 +40,69 @@ const TEMPLATE_EMOJI = {
 const DamageRoll = CONFIG.Dice.rolls.find(r => r.name === "DamageRoll");
 
 export async function messageParserPF2e(msg) {
+    const enrichedMsg = await newEnrichedMessage(msg, await PF2e_getEnrichmentOptions(msg));
     let constructedMessage = '';
     let embeds = [];
-    if (PF2e_isActionCard(msg) && msg.rolls?.length < 1) {
+    if (PF2e_isActionCard(enrichedMsg) && enrichedMsg.rolls?.length < 1) {
         if (getThisModuleSetting('sendEmbeds')) {
-            embeds = PF2e_createActionCardEmbed(msg);
+            embeds = PF2e_createActionCardEmbed(enrichedMsg);
         }
     }
-    else if (PF2e_isConditionCard(msg)) {
-        embeds = PF2e_createConditionCard(msg);
+    else if (PF2e_isConditionCard(enrichedMsg)) {
+        embeds = PF2e_createConditionCard(enrichedMsg);
     }
-    else if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)) {
-        embeds = generic.tokenBar_createTokenBarCard(msg);
+    else if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(enrichedMsg.content)) {
+        embeds = generic.tokenBar_createTokenBarCard(enrichedMsg);
     }
-    else if (generic.isCard(msg.content) && msg.rolls?.length < 1) {
+    else if (generic.isCard(enrichedMsg.content) && enrichedMsg.rolls?.length < 1) {
         constructedMessage = "";
         if (getThisModuleSetting('sendEmbeds')) {
-            embeds = PF2e_createCardEmbed(msg);
+            embeds = PF2e_createCardEmbed(enrichedMsg);
         }
     }
-    else if (!msg.isRoll || (msg.isRoll && msg.rolls.length < 1)) {
+    else if (!enrichedMsg.isRoll || (enrichedMsg.isRoll && enrichedMsg.rolls.length < 1)) {
         /*Attempt polyglot support. This will ONLY work if the structure is similar:
         * actor.system.traits.languages.value
         */
-        if (game.modules.get("polyglot")?.active && getThisModuleSetting('enablePolyglot') && msg.flags?.polyglot?.language) {
-            constructedMessage = generic.polyglotize(msg);
+        if (game.modules.get("polyglot")?.active && getThisModuleSetting('enablePolyglot') && enrichedMsg.flags?.polyglot?.language) {
+            constructedMessage = generic.polyglotize(enrichedMsg);
         }
         if (constructedMessage === '') {
-            constructedMessage = msg.content;
+            constructedMessage = enrichedMsg.content;
         }
     }
     else {
-        if ((msg.flavor !== null && msg.flavor.length > 0) || (msg.isDamageRoll && PF2e_containsDamageDieOnly(msg.rolls))) {
-            embeds = PF2e_createRollEmbed(msg);
+        if ((enrichedMsg.flavor !== null && enrichedMsg.flavor.length > 0) || (enrichedMsg.isDamageRoll && PF2e_containsDamageDieOnly(enrichedMsg.rolls))) {
+            embeds = PF2e_createRollEmbed(enrichedMsg);
         }
         else {
-            embeds = generic.createGenericRollEmbed(msg);
+            embeds = generic.createGenericRollEmbed(enrichedMsg);
         }
     }
     // Document of origin is important in the PF2e parser, as some of the labels require it to be passed to scale correctly.
     // Removing this would break parity between foundry and discord, as some damage roll values will not stay the same without
     // an actor, especially scaling abilities and spells.
-    let originDoc;
-    if (msg.flags?.pf2e?.origin?.uuid) {
-        originDoc = await fromUuid(msg.flags.pf2e.origin.uuid);
-    }
-    else if (msg.speaker?.actor) {
-        originDoc = game.actors.get(msg.speaker.actor); //Fallback to speaker in case it's needed.
-    }
     if (embeds && embeds.length > 0) {
-        embeds[0].description = await PF2e_reformatMessage(embeds[0].description, originDoc);
-        constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === embeds[0].title) ? "" : msg.flavor;
+        embeds[0].description = await PF2e_reformatMessage(await toHTML(embeds[0].description, PF2e_getEnrichmentOptions(msg)));
+        constructedMessage = (/<[a-z][\s\S]*>/i.test(enrichedMsg.flavor) || enrichedMsg.flavor === embeds[0].title) ? "" : enrichedMsg.flavor;
         // use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         // we have to mimic this behavior here, since visibility is client-sided, and we are parsing raw message content.
         if (anonEnabled()) {
             for (let i = 0; i < embeds.length; i++) {
-                embeds[i].title = generic.anonymizeText(embeds[i].title, msg);
-                embeds[i].description = generic.anonymizeText(embeds[i].description, msg);
+                embeds[i].title = generic.anonymizeText(embeds[i].title, enrichedMsg);
+                embeds[i].description = generic.anonymizeText(embeds[i].description, enrichedMsg);
             }
         }
     }
     if (anonEnabled()) {
-        constructedMessage = generic.anonymizeText(constructedMessage, msg);
+        constructedMessage = generic.anonymizeText(constructedMessage, enrichedMsg);
     }
-    constructedMessage = await PF2e_reformatMessage(constructedMessage, originDoc);
-    return generic.getRequestParams(msg, constructedMessage, embeds);
+    constructedMessage = await PF2e_reformatMessage(constructedMessage);
+    return generic.getRequestParams(enrichedMsg, constructedMessage, embeds);
 }
 
-export async function PF2e_reformatMessage(text, originDoc = undefined) {
+export async function PF2e_reformatMessage(text) {
     let reformattedText = await generic.reformatMessage(text, PF2e_parseHTMLText);
-    let rollData;
-    switch (true) {
-        case originDoc instanceof Actor:
-            rollData = { actor: originDoc };
-            break;
-        case originDoc instanceof Item:
-            rollData = { item: originDoc };
-            break;
-        default:
-            rollData = {};
-            break;
-    }
-    let options = { rollData: (rollData ? rollData : {}) };
-    let match;
-    let allMatches = [];
-    let enricherRegex = /@Localize\[([^\]]+)\](?:{([^}]+)})?/g;
-    while ((match = enricherRegex.exec(reformattedText)) !== null) {
-        const [_match, identifier] = match;
-        const replacement = await PF2e_reformatMessage(game.i18n.localize(identifier), originDoc);
-        allMatches.push({
-            original: _match,
-            replacement: replacement
-        });
-    }
-    for (const replacement of allMatches) {
-        reformattedText = reformattedText.replace(replacement.original, replacement.replacement);
-    }
-    // Converts them to @Damage, so that the enricher can take care of parsing the roll.
-    allMatches = [];
-    // Trust me, even I don't know how this regex works.
-    // matches [[/r or /br xxxx #flavor]]{label} for legacy rolls.
-    enricherRegex = /\[\[\/b?r\s*((?:\d+d\d+(?:\[[^\[\]]*\])?|\d+(?:\[[^\[\]]*\])?)(?:\s*[-+]\s*\d+d\d+(?:\[[^\[\]]*\])?|\s*[-+]\s*\d+(?:\[[^\[\]]*\])?)*)(?:\s*#\s*([^{}\[\]]+))?[^{}]*?\]\](?:{([^{}]*)})?/g;
-
-    while ((match = enricherRegex.exec(reformattedText)) !== null) {
-        const [_match, params, flavor, label] = match;
-        allMatches.push({
-            original: _match,
-            replacement: `@Damage[${params}]${label ? `{${label}}` : ""}`
-        });
-    }
-
-    for (const replacement of allMatches) {
-        reformattedText = reformattedText.replace(replacement.original, replacement.replacement);
-    }
-
-    allMatches = [];
-    enricherRegex = /@(Check|Template)\[([^\]]+)\](?:{([^}]+)})?/g
-    while ((match = enricherRegex.exec(reformattedText)) !== null) {
-        if (match) {
-            const inlineButton = await game.pf2e.TextEditor.enrichString(match, options);
-            console.log(inlineButton);
-            const dataSpan = inlineButton.querySelector("[data-visibility]");
-            const visibility = dataSpan.getAttribute('data-visibility');
-            if(visibility){
-                switch(visibility){
-                    case "gm":
-                    case "none":
-                    case "owner":
-                        dataSpan.remove();
-                        break;
-                }
-            }
-            if (inlineButton) {
-                let label = "";
-                const [_match, inlineType, paramString, inlineLabel] = match;
-                const params = PF2e_parseInlineString(paramString);
-                label += `${TEMPLATE_EMOJI.hasOwnProperty(params.type) ? TEMPLATE_EMOJI[params.type] : ":game_die:"}\`${inlineButton.textContent.trim()}\``;
-                allMatches.push({
-                    original: _match,
-                    replacement: label
-                });
-            }
-        }
-    }
-
-    enricherRegex = /@(Damage)\[((?:[^[\]]*|\[[^[\]]*\])*)\](?:{([^}]+)})?/g
-    while ((match = enricherRegex.exec(reformattedText)) !== null) {
-        if (match) {
-            const inlineButton = await game.pf2e.TextEditor.enrichString(match, options);
-            if (inlineButton) {
-                const _match = match[0];
-                const label = `:game_die:\`${inlineButton.textContent}\``;
-                allMatches.push({
-                    original: _match,
-                    replacement: label
-                });
-            }
-        }
-    }
-    // Perform replacements after finding all matches
-    for (const replacement of allMatches) {
-        reformattedText = reformattedText.replace(replacement.original, replacement.replacement);
-    }
     return reformattedText.trim();
 }
 
@@ -651,4 +553,36 @@ function PF2e_isConditionCard(message) {
 
 function PF2e_containsDamageDieOnly(rolls) {
     return rolls.every(roll => !/(d20|d2|dc)/.test(roll.formula));
+}
+
+async function PF2e_getEnrichmentOptions(message) {
+    let originDoc;
+    if (message.flags?.pf2e?.origin?.uuid) {
+        originDoc = await fromUuid(message.flags.pf2e.origin.uuid);
+    }
+    else if (message.speaker?.actor) {
+        originDoc = game.actors.get(message.speaker.actor); //Fallback to speaker in case it's needed.
+    }
+    switch (true) {
+        case originDoc instanceof Item:
+            return {
+                rollData: {
+                    actor: originDoc.actor ? originDoc.actor : undefined,
+                    item: originDoc
+                },
+                relativeTo: originDoc.actor
+            };
+            break;
+        case originDoc instanceof Actor:
+            return {
+                rollData: {
+                    actor: originDoc
+                },
+                relativeTo: originDoc
+            };
+            break;
+        default:
+            return {};
+            break;
+    }
 }

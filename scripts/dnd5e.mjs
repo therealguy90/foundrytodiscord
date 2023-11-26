@@ -1,129 +1,79 @@
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
 import { parse2DTable } from './helpers/tables.mjs';
 import * as generic from './generic.mjs';
+import { newEnrichedMessage } from './helpers/enrich.mjs';
 
 export async function messageParserDnD5e(msg) {
+    const enrichedMsg = await newEnrichedMessage(msg, await DnD5e_getEnrichmentOptions(msg));
     let constructedMessage = '';
     let embeds = [];
-    if (game.modules.get('midi-qol')?.active && midiqol_isMergeCard(msg.content)) {
-        embeds = midiqol_createMergeCard(msg);
+    if (game.modules.get('midi-qol')?.active && midiqol_isMergeCard(enrichedMsg.content)) {
+        embeds = midiqol_createMergeCard(enrichedMsg);
     }
-    else if (game.modules.get('midi-qol')?.active && msg.flags?.midiqol?.undoDamage && midiqol_isDamageTable(msg.content)) {
-        embeds = midiqol_createDamageTable(msg);
+    else if (game.modules.get('midi-qol')?.active && enrichedMsg.flags?.midiqol?.undoDamage && midiqol_isDamageTable(enrichedMsg.content)) {
+        embeds = midiqol_createDamageTable(enrichedMsg);
     }
-    else if (game.modules.get('midi-qol')?.active && midiqol_isSingleHitCard(msg.content)) {
-        embeds = midiqol_createSingleHitCard(msg);
+    else if (game.modules.get('midi-qol')?.active && midiqol_isSingleHitCard(enrichedMsg.content)) {
+        embeds = midiqol_createSingleHitCard(enrichedMsg);
     }
-    else if (game.modules.get('midi-qol')?.active && midiqol_isSavesDisplayCard(msg.content)) {
-        embeds = midiqol_createSavesDisplayCard(msg);
+    else if (game.modules.get('midi-qol')?.active && midiqol_isSavesDisplayCard(enrichedMsg.content)) {
+        embeds = midiqol_createSavesDisplayCard(enrichedMsg);
     }
-    else if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)) {
-        embeds = generic.tokenBar_createTokenBarCard(msg);
+    else if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(enrichedMsg.content)) {
+        embeds = generic.tokenBar_createTokenBarCard(enrichedMsg);
     }
-    else if (generic.isCard(msg.content) && msg.rolls?.length < 1) {
+    else if (generic.isCard(enrichedMsg.content) && enrichedMsg.rolls?.length < 1) {
         constructedMessage = "";
         if (getThisModuleSetting('sendEmbeds')) {
-            embeds = generic.createCardEmbed(msg);
+            embeds = generic.createCardEmbed(enrichedMsg);
         }
     }
-    else if (!msg.isRoll) {
-        if (generic.hasDiceRolls(msg.content)) {
-            embeds = generic.createHTMLDiceRollEmbed(msg);
+    else if (!enrichedMsg.isRoll) {
+        if (generic.hasDiceRolls(enrichedMsg.content)) {
+            embeds = generic.createHTMLDiceRollEmbed(enrichedMsg);
             const elements = document.createElement('div');
-            elements.innerHTML = msg.content;
+            elements.innerHTML = enrichedMsg.content;
             const diceRolls = elements.querySelectorAll('.dice-roll');
             for (const div of diceRolls) {
                 div.parentNode.removeChild(div);
             }
-            msg.content = elements.innerHTML;
+            enrichedMsg.content = elements.innerHTML;
         }
-        if (game.modules.get("polyglot")?.active && getThisModuleSetting('enablePolyglot') && msg.flags?.polyglot?.language) {
-            constructedMessage = generic.polyglotize(msg);
+        if (game.modules.get("polyglot")?.active && getThisModuleSetting('enablePolyglot') && enrichedMsg.flags?.polyglot?.language) {
+            constructedMessage = generic.polyglotize(enrichedMsg);
         }
         if (constructedMessage === '') {
-            constructedMessage = msg.content;
+            constructedMessage = enrichedMsg.content;
         }
     }
     else {
-        embeds = generic.createGenericRollEmbed(msg);
-    }
-    // DnD5e's enricher needs a CharacterData input to parse string such as @actor.level.
-    // To ensure this happens, there's a few fallbacks that we can use. These may be redundant, but it's better to be
-    // on the safe side.
-    let originActor;
-    if (msg.flags?.dnd5e?.use?.itemUuid) {
-        originActor = await fromUuid(msg.flags.dnd5e.use.itemUuid).actor;
-    }
-    else if(game.modules.get('midi-qol')?.active && (msg.flags["midi-qol"]?.itemUuid || msg.flags["midi-qol"]?.actorUuid)){
-        if(msg.flags["midi-qol"]?.itemUuid){
-            originActor = await fromUuid(msg.flags["midi-qol"].itemUuid).actor;
-        }
-        else if(msg.flags["midi-qol"]?.actorUuid){
-            originActor = await fromUuid(msg.flags["midi-qol"].actorUuid);
-        }
-    }
-    else if (msg.speaker?.actor) {
-        originActor = game.actors.get(msg.speaker.actor); //Fallback to speaker in case it's needed.
-    }
-    let rollData;
-    if(originActor?.system){
-        rollData = originActor.system;
+        embeds = generic.createGenericRollEmbed(enrichedMsg);
     }
     if (embeds != [] && embeds.length > 0) {
-        embeds[0].description = await DnD5e_reformatMessage(embeds[0].description, rollData);
-        constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === embeds[0].title) ? "" : msg.flavor;
+        embeds[0].description = await DnD5e_reformatMessage(embeds[0].description);
+        constructedMessage = (/<[a-z][\s\S]*>/i.test(enrichedMsg.flavor) || enrichedMsg.flavor === embeds[0].title) ? "" : enrichedMsg.flavor;
         // use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         // we have to mimic this behavior here, since visibility is client-sided, and we are parsing raw message content.
         if (anonEnabled()) {
             for (let i = 0; i < embeds.length; i++) {
-                embeds[i].title = generic.anonymizeText(embeds[i].title, msg);
-                embeds[i].description = generic.anonymizeText(embeds[i].description, msg);
+                embeds[i].title = generic.anonymizeText(embeds[i].title, enrichedMsg);
+                embeds[i].description = generic.anonymizeText(embeds[i].description, enrichedMsg);
             }
         }
     }
     if (anonEnabled()) {
-        constructedMessage = generic.anonymizeText(constructedMessage, msg);
+        constructedMessage = generic.anonymizeText(constructedMessage, enrichedMsg);
     }
-    constructedMessage = await DnD5e_reformatMessage(constructedMessage, rollData);
-    return generic.getRequestParams(msg, constructedMessage, embeds);
+    constructedMessage = await DnD5e_reformatMessage(constructedMessage);
+    return generic.getRequestParams(enrichedMsg, constructedMessage, embeds);
 }
 
-export async function DnD5e_reformatMessage(text, rollData = undefined) {
-    let reformattedText = await generic.reformatMessage(text, DnD5E_parseHTMLText);
-    const options = {rollData: rollData};
-    const inlineRollEnricher = CONFIG.TextEditor.enrichers.find(enricher => enricher.enricher.name === "enrichString");
-    let enricher = inlineRollEnricher.enricher;
-    let enricherRegex = inlineRollEnricher.pattern;
-    let allMatches = [];
-    let match;
-    while((match = enricherRegex.exec(reformattedText)) !== null){
-        const enrichedRoll = await enricher(match, options);
-        if(enrichedRoll){
-            const inlineButtons = enrichedRoll.querySelectorAll('a.roll-link');
-            inlineButtons.forEach(inlineButton => {
-                inlineButton.replaceWith(`:game_die:\`${inlineButton.textContent.trim()}\``);
-            });
-            const _match = match[0]
-            const label = `${enrichedRoll.textContent.trim()}`;
-            allMatches.push({
-                original: _match,
-                replacement: label
-            });
-        }
-    }
-    for (const replacement of allMatches) {
-        reformattedText = reformattedText.replace(replacement.original, replacement.replacement);
-    }
-    //reformattedText = reformattedText.replace(regex,);
-    //replace Inline Roll Commands
-    enricherRegex = /\[\[[^\]]+\]\]\{([^}]+)\}/g;
-    reformattedText = reformattedText.replace(enricherRegex, ':game_die:`$1`');
-    enricherRegex = /\[\[\/(.*?) (.*?)\]\]/g;
-    reformattedText = reformattedText.replace(enricherRegex, ':game_die:`$2`');
+export async function DnD5e_reformatMessage(text) {
+    let reformattedText = await generic.reformatMessage(text, DnD5e_parseHTMLText);
     return reformattedText;
 }
 
-function DnD5E_parseHTMLText(htmlString) {
+async function DnD5e_parseHTMLText(htmlString) {
     let reformattedText = htmlString;
     const htmldoc = document.createElement('div');
     htmldoc.innerHTML = reformattedText;
@@ -435,3 +385,26 @@ function midiqol_isSavesDisplayCard(htmlString) {
     }
 }
 
+async function DnD5e_getEnrichmentOptions(message) {
+    let originActor;
+    if (message.flags?.dnd5e?.use?.itemUuid) {
+        originActor = await fromUuid(message.flags.dnd5e.use.itemUuid).actor;
+    }
+    else if (game.modules.get('midi-qol')?.active && (message.flags["midi-qol"]?.itemUuid || message.flags["midi-qol"]?.actorUuid)) {
+        if (message.flags["midi-qol"]?.itemUuid) {
+            originActor = await fromUuid(message.flags["midi-qol"].itemUuid).actor;
+        }
+        else if (message.flags["midi-qol"]?.actorUuid) {
+            originActor = await fromUuid(message.flags["midi-qol"].actorUuid);
+        }
+    }
+    else if (message.speaker?.actor) {
+        originActor = game.actors.get(message.speaker.actor); //Fallback to speaker in case it's needed.
+    }
+    return {
+        rollData: {
+            actor: originActor
+        },
+        relativeTo: originActor
+    }
+}

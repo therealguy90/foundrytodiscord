@@ -2,58 +2,72 @@ import { htmlTo2DTable, parse2DTable } from './helpers/tables.mjs';
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
 import { splitEmbed, hexToColor } from './helpers/embeds.mjs';
 import { generateimglink } from './helpers/images.mjs';
+import { newEnrichedMessage } from './helpers/enrich.mjs';
 
 export async function messageParserGeneric(msg) {
+    const speakerActor = function () {
+        if (msg.speaker?.actor) {
+            return game.actors.get(msg.speaker.actor);
+        }
+        else return undefined;
+    }();
+    const enrichmentOptions = {
+        rollData: {
+            actor: speakerActor
+        },
+        relativeTo: speakerActor
+    };
+    const enrichedMsg = await newEnrichedMessage(msg, enrichmentOptions);
     let constructedMessage = '';
     let embeds = [];
-    if (game.modules.get('monks-tokenbar')?.active && tokenBar_isTokenBarCard(msg.content)) {
-        embeds = tokenBar_createTokenBarCard(msg);
+    if (game.modules.get('monks-tokenbar')?.active && tokenBar_isTokenBarCard(enrichedMsg.content)) {
+        embeds = tokenBar_createTokenBarCard(enrichedMsg);
     }
-    else if (isCard(msg.content) && msg.rolls?.length < 1) {
+    else if (isCard(enrichedMsg.content) && enrichedMsg.rolls?.length < 1) {
         constructedMessage = "";
         if (getThisModuleSetting('sendEmbeds')) {
-            embeds = createCardEmbed(msg);
+            embeds = createCardEmbed(enrichedMsg);
         }
     }
-    else if (!msg.isRoll) {
-        if (hasDiceRolls(msg.content)) {
-            embeds = createHTMLDiceRollEmbed(msg);
+    else if (!enrichedMsg.isRoll) {
+        if (hasDiceRolls(enrichedMsg.content)) {
+            embeds = createHTMLDiceRollEmbed(enrichedMsg);
             const elements = document.createElement('div');
-            elements.innerHTML = msg.content;
+            elements.innerHTML = enrichedMsg.content;
             const diceRolls = elements.querySelectorAll('.dice-roll');
             for (const div of diceRolls) {
                 div.parentNode.removeChild(div);
             }
-            msg.content = elements.innerHTML;
+            enrichedMsg.content = elements.innerHTML;
         }
         /*Attempt polyglot support. This will ONLY work if the structure is similar:
         * for PF2e and DnD5e, this would be actor.system.traits.languages.value
         * the polyglotize() function should be edited for other systems
         */
-        if (game.modules.get("polyglot")?.active && getThisModuleSetting('enablePolyglot') && msg.flags?.polyglot?.language) {
-            constructedMessage = polyglotize(msg);
+        if (game.modules.get("polyglot")?.active && getThisModuleSetting('enablePolyglot') && enrichedMsg.flags?.polyglot?.language) {
+            constructedMessage = polyglotize(enrichedMsg);
         }
         if (constructedMessage === '') {
-            constructedMessage = msg.content;
+            constructedMessage = enrichedMsg.content;
         }
     }
-    else if (msg.rolls.length === 0) {
-        if (msg.flavor) {
-            embeds = [{ title: msg.flavor, description: msg.content }];
+    else if (enrichedMsg.rolls.length === 0) {
+        if (enrichedMsg.flavor) {
+            embeds = [{ title: enrichedMsg.flavor, description: enrichedMsg.content }];
         }
         else {
-            constructedMessage = msg.content;
+            constructedMessage = enrichedMsg.content;
         }
     }
     else {
         console.log("foundrytodiscord | System \"" + game.system.id + "\" is not supported for special roll embeds.")
-        embeds = createGenericRollEmbed(msg);
+        embeds = createGenericRollEmbed(enrichedMsg);
     }
 
     //Fix formatting before sending
     if (embeds != [] && embeds.length > 0) {
         embeds[0].description = await reformatMessage(embeds[0].description);
-        constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === embeds[0].title) ? "" : msg.flavor;
+        constructedMessage = (/<[a-z][\s\S]*>/i.test(enrichedMsg.flavor) || enrichedMsg.flavor === embeds[0].title) ? "" : enrichedMsg.flavor;
         // use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         // we have to mimic this behavior here, since visibility is client-sided, and we are parsing raw message content.
         if (anonEnabled()) {
@@ -64,11 +78,11 @@ export async function messageParserGeneric(msg) {
         }
     }
     if (anonEnabled()) {
-        constructedMessage = anonymizeText(constructedMessage, msg)
+        constructedMessage = anonymizeText(constructedMessage, enrichedMsg)
     }
     constructedMessage = await reformatMessage(constructedMessage);
     if (constructedMessage !== "" || embeds.length > 0) { //avoid sending empty messages
-        return getRequestParams(msg, constructedMessage, embeds);
+        return getRequestParams(enrichedMsg, constructedMessage, embeds);
     }
     else {
         return false;
@@ -306,45 +320,15 @@ export function getCardFooter(card) {
 */
 export async function reformatMessage(text, customHTMLParser = undefined) {
     let reformattedText = text;
-    const isHtmlFormatted = /<[a-z][\s\S]*>/i.test(reformattedText);
-    if (isHtmlFormatted) {
-        reformattedText = parseHTMLText(reformattedText, customHTMLParser);
-    }
-    reformattedText = await replaceGenericAtTags(reformattedText);
-    if (game.modules.get('monks-tokenbar')?.active) {
-        const tokenBarRequestEnricher = CONFIG.TextEditor.enrichers.find(enricher => enricher.hasOwnProperty('id') && enricher.id === "MonksTokenBarRequest");
-        const enricherRegex = tokenBarRequestEnricher.pattern;
-        const enricher = tokenBarRequestEnricher.enricher;
-        let match;
-        let allMatches = [];
-        while ((match = enricherRegex.exec(reformattedText)) !== null) {
-            let inlineButton = enricher(match);
-            if (inlineButton) {
-                const _match = match[0];
-                const label = `:game_die:\`${inlineButton.textContent}\``;
-                allMatches.push({
-                    original: _match,
-                    replacement: label
-                });
-            }
-        }
-        for (const replacement of allMatches) {
-            reformattedText = reformattedText.replace(replacement.original, replacement.replacement);
-        }
-    }
+    reformattedText = await parseHTMLText(reformattedText, customHTMLParser);
     return reformattedText;
 }
 
-export function parseHTMLText(htmlString, customHTMLParser = undefined) {
+export async function parseHTMLText(htmlString, customHTMLParser = undefined) {
     let reformattedText = htmlString;
     const htmldoc = document.createElement('div');
     htmldoc.innerHTML = reformattedText;
-
-    // Remove elements with data-visibility attribute and hidden styles
-    ['[data-visibility="gm"]', '[data-visibility="owner"]','[data-visibility="none"]', '[style*="display:none"]'].forEach(selector => {
-        const elements = htmldoc.querySelectorAll(selector);
-        elements.forEach(element => element.parentNode.removeChild(element));
-    });
+    removeElementsBySelector('[style*="display:none"]', htmldoc);
     const tables = htmldoc.querySelectorAll('table');
     tables.forEach((table) => {
         const newTable2D = htmlTo2DTable(table);
@@ -353,23 +337,54 @@ export function parseHTMLText(htmlString, customHTMLParser = undefined) {
 
     // Remove <img> tags
     removeElementsBySelector('img', htmldoc);
-    // Format various elements
-    formatTextBySelector('.inline-roll', text => `:game_die:\`${text}\``, htmldoc);
+    // Format inline-request-roll for Monk's TokenBar
+    formatTextBySelector('.inline-roll, .inline-request-roll', text => `:game_die:\`${text}\``, htmldoc);
+
 
     reformattedText = htmldoc.innerHTML;
     if (customHTMLParser) {
-        reformattedText = customHTMLParser(reformattedText);
+        reformattedText = await customHTMLParser(reformattedText);
     }
     htmldoc.innerHTML = reformattedText;
 
     const dataLinks = htmldoc.querySelectorAll('a[data-uuid]');
     if (dataLinks.length > 0) {
-        dataLinks.forEach(link => {
+        for (const link of dataLinks) {
             const newLink = link.cloneNode(true);
             const uuid = newLink.getAttribute('data-uuid');
-            newLink.textContent = "@UUID[" + uuid + "]" + "{" + newLink.textContent + "}"; // Can be formatted later
+            const document = await fromUuid(uuid);
+            let emoji = "";
+            if (document) {
+                switch (true) {
+                    case document instanceof Actor:
+                        emoji = ":bust_in_silhouette:";
+                        break;
+                    case document instanceof Scene:
+                        emoji = ":map:";
+                        break;
+                    case document instanceof Macro:
+                        emoji = ":link:";
+                        break;
+                    case document instanceof JournalEntry:
+                        emoji = ":book:";
+                        break;
+                    case document instanceof RollTable:
+                        emoji = ":page_facing_up:";
+                        break;
+                    case document instanceof Folder:
+                        emoji = ":file_folder:";
+                        break;
+                    default:
+                        emoji = ":baggage_claim:";
+                        break;
+                }
+            }
+            else {
+                emoji = ":x:";
+            }
+            newLink.innerHTML = `${emoji}\`${newLink.textContent}\``;
             link.parentNode.replaceChild(newLink, link);
-        });
+        }
     }
     reformattedText = htmldoc.innerHTML;
 
@@ -433,95 +448,6 @@ export function htmlCodeCleanup(htmltext) {
         .replace(/\n*----+\n*/g, '\n-----------------------\n') // Cleanup line breaks before and after horizontal lines
         .replace(/ {2,}/g, ' ') // Clean up excess whitespace
         .replaceAll(" ", ' ').trim(); // Remove placeholder table filler
-}
-
-function replaceGenericAtTags(text) {
-    const regexAtTags = /@([^]+?)\[([^]+?)\](?:\{([^]+?)\})?/g;
-    let reformattedText = text.replace(regexAtTags, (match, atTagType, identifier, customText) => {
-        let toReplace = "";
-        let document;
-        
-        let isId = true;
-        if (identifier.length !== 16) {
-            isId = false;
-        }
-        let doctype = "";
-        switch (atTagType) {
-            case "UUID":
-                document = fromUuidSync(identifier);
-                break;
-            case "Compendium":
-                document = fromUuidSync("Compendium." + identifier);
-                break;
-            case "Actor":
-                doctype = "actors";
-                break;
-            case "Item":
-                doctype = "items";
-                break;
-            case "Scene":
-                doctype = "scenes";
-                break;
-            case "Macro":
-                doctype = "macros";
-                break;
-            case "JournalEntry":
-                doctype = "journals";
-                break;
-            case "RollTable":
-                doctype = "tables";
-                break;
-            default:
-                document = undefined;
-                break;
-        }
-        if (doctype !== "") {
-            if (isId) {
-                document = game[doctype].get(identifier);
-            }
-            else {
-                document = game[doctype].find(document => document.name === identifier);
-            }
-        }
-        if (document) {
-            switch (true) {
-                case document instanceof Actor:
-                    toReplace += ":bust_in_silhouette:";
-                    break;
-                case document instanceof Scene:
-                    toReplace += ":map:";
-                    break;
-                case document instanceof Macro:
-                    toReplace += ":link:";
-                    break;
-                case document instanceof JournalEntry:
-                    toReplace += ":book:";
-                    break;
-                case document instanceof RollTable:
-                    toReplace += ":page_facing_up:";
-                    break;
-                case document instanceof Folder:
-                    toReplace += ":file_folder:";
-                    break;
-                default:
-                    toReplace += ":baggage_claim:";
-                    break;
-            }
-        }
-        if (toReplace !== "") {
-            if (customText && customText !== "") {
-                toReplace += "`" + customText + "`";
-            }
-            else if (document) {
-                toReplace += "`" + document.name + "`";
-            }
-        }
-        else {
-            toReplace = match;
-        }
-        return toReplace;
-    });
-    return reformattedText;
 }
 
 export function polyglotize(message) {
