@@ -229,7 +229,15 @@ export function createGenericRollEmbed(message) {
         title = message.flavor;
     }
     else {
-        title = message.alias + "\'s Rolls";
+        const elements = document.createElement('div');
+        elements.innerHTML = message.content;
+        const flavor = elements.querySelector(".flavor-text");
+        if (flavor) {
+            title = flavor.textContent;
+        }
+        else {
+            title = message.alias + "\'s Rolls";
+        }
     }
     const speakerActor = game.actors.get(message.speaker.actor);
     message.rolls.forEach(roll => {
