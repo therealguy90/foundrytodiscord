@@ -83,7 +83,7 @@ export async function messageParserPF2e(msg) {
     // Removing this would break parity between foundry and discord, as some damage roll values will not stay the same without
     // an actor, especially scaling abilities and spells.
     if (embeds && embeds.length > 0) {
-        embeds[0].description = await PF2e_reformatMessage(await toHTML(embeds[0].description, PF2e_getEnrichmentOptions(msg)));
+        embeds[0].description = await PF2e_reformatMessage(await toHTML(embeds[0].description, await PF2e_getEnrichmentOptions(msg)));
         constructedMessage = (/<[a-z][\s\S]*>/i.test(enrichedMsg.flavor) || enrichedMsg.flavor === embeds[0].title) ? "" : enrichedMsg.flavor;
         // use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         // we have to mimic this behavior here, since visibility is client-sided, and we are parsing raw message content.
