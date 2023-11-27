@@ -37,6 +37,19 @@ const TEMPLATE_EMOJI = {
     "line": ":straight_ruler:"
 }
 
+const ACTIONGLYPH_EMOJIS = {
+    "1": "<:1_action:1069514877384786001>",
+    "2": "<:2_actions:1069514879431606282>",
+    "3": "<:3_actions:1069514884204736532>",
+    "4": "<:free_action:1069514889279840317>",
+    "5": "<:reaction:1069514873559592981>",
+    "a": "<:1_action:1069514877384786001>",
+    "d": "<:2_actions:1069514879431606282>",
+    "t": "<:3_actions:1069514884204736532>",
+    "f": "<:free_action:1069514889279840317>",
+    "r": "<:reaction:1069514873559592981>"
+}
+
 const DamageRoll = CONFIG.Dice.rolls.find(r => r.name === "DamageRoll");
 
 export async function messageParserPF2e(msg) {
@@ -113,6 +126,7 @@ async function PF2e_parseHTMLText(htmlString) {
     // Format various elements
     generic.removeElementsBySelector('[data-visibility="gm"], [data-visibility="owner"],[data-visibility="none"]', htmldoc);
     generic.formatTextBySelector('.inline-check, span[data-pf2-check]', text => `:game_die:\`${text}\``, htmldoc);
+    generic.formatTextBySelector('.action-glyph', text => `${ACTIONGLYPH_EMOJIS[text.toLowerCase().trim()] ? ACTIONGLYPH_EMOJIS[text.toLowerCase().trim()] : ""}`, htmldoc);
     reformattedText = htmldoc.innerHTML;
     htmldoc.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(header => {
         header.querySelectorAll('span[style="float:right"]').forEach(floatright => {
@@ -166,7 +180,12 @@ function PF2e_createCardEmbed(message) {
     const h3Element = div.querySelector("h3");
     const actionGlyphElement = h3Element.querySelector(".action-glyph");
     if (actionGlyphElement) {
-        actionGlyphElement.remove();
+        if (getThisModuleSetting('prettierEmojis') && ACTIONGLYPH_EMOJIS[actionGlyphElement.textContent.toLowerCase().trim()]) {
+            actionGlyphElement.innerHTML = ACTIONGLYPH_EMOJIS[actionGlyphElement.textContent.toLowerCase().trim()];
+        }
+        else {
+            actionGlyphElement.remove();
+        }
     }
     title = h3Element.textContent.trim();
     desc = PF2e_parseTraits(message.content);
@@ -518,18 +537,6 @@ function PF2e_parseDegree(degree) {
             return undefined;
     }
 }
-
-function PF2e_parseInlineString(checkString) {
-    let check = {};
-    // Split the string into an array of key-value pairs
-    let pairs = checkString.split("|");
-    for (let i = 0; i < pairs.length; i++) {
-        let [key, value] = pairs[i].split(":");
-        check[key] = value === "true" ? true : value === "false" ? false : value;
-    }
-    return check;
-}
-
 function PF2e_isActionCard(message) {
     const flavor = message.flavor;
     const parser = new DOMParser();
