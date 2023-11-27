@@ -94,6 +94,14 @@ export function initModuleSettings() {
             default: true
         });
     }
+    game.settings.register('foundrytodiscord', 'prettierEmojis', {
+        name: "Use External Emojis",
+        hint: "Enhance your experience by allowing the module to use external emojis from other discord servers! Make sure that @everyone permissions in your channel/server are set to enable external emojis.",
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean
+    });
     game.settings.register('foundrytodiscord', 'ignoreWhispers', {
         name: "Ignore Whispers & Private Rolls",
         hint: "Turning this off will allow Foundry to Discord to detect whispers and private rolls, and send them to your webhook like any other message.",
