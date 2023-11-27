@@ -298,10 +298,10 @@ function PF2e_createRollEmbed(message) {
             desc += `:game_die:**Result: __${roll.total}__**`;
             if (speakerActor?.hasPlayerOwner && roll.dice[0]?.faces === 20) {
                 if (roll.result.startsWith('20 ')) {
-                    desc += " __(Nat 20!)__";
+                    desc += ` ${swapOrNot("(Nat 20!)", `(${getDieEmoji(20, 20)}!)`)}`;
                 }
                 else if (roll.result.startsWith('1 ')) {
-                    desc += " __(Nat 1)__";
+                    desc += ` ${swapOrNot("(Nat 1)", `(${getDieEmoji(20, 1)})`)}`;
                 }
                 desc += `||(${rollBreakdown})||`;
             }
@@ -356,7 +356,12 @@ function PF2e_createActionCardEmbed(message) {
     const actionDiv = document.createElement('div');
     actionDiv.innerHTML = message.flavor;
     const h4Element = actionDiv.querySelector("h4.action");
-    title = `${h4Element.querySelector("strong").textContent} ${actionDiv.querySelector(".subtitle") ? actionDiv.querySelector(".subtitle").textContent : ""}`;
+    const subtitle = actionDiv.querySelector(".subtitle");
+    const actionGlyph = actionDiv.querySelector(".action-glyph");
+    title = `${h4Element.querySelector("strong").textContent} ${subtitle ? subtitle.textContent : ""}`;
+    if(getThisModuleSetting("prettierEmojis") && title && actionGlyph && ACTIONGLYPH_EMOJIS.hasOwnProperty(actionGlyph.textContent.trim().toLowerCase())){
+        title += ACTIONGLYPH_EMOJIS[actionGlyph.textContent.trim().toLowerCase()];
+    }
     desc = `${PF2e_parseTraits(message.flavor)}\n`;
     let speakerActor;
     if (message.speaker?.actor) {
