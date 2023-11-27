@@ -1,6 +1,7 @@
 import * as generic from './generic.mjs';
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
 import { newEnrichedMessage, toHTML } from './helpers/enrich.mjs';
+import { getDieEmoji } from './helpers/emojis/global.mjs';
 
 const DAMAGE_EMOJI = {
     "bludgeoning": ':hammer:',
@@ -301,8 +302,10 @@ function PF2e_createRollEmbed(message) {
         //Add roll information to embed:
         const speakerActor = game.actors.get(message.speaker.actor);
         message.rolls.forEach(roll => {
+            let rollBreakdown = ""
             if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))) {
                 desc += `:game_die:**\`${roll.formula}\`**\n`
+                rollBreakdown = PF2e_generateRollBreakdown(roll);
             }
             desc += `:game_die:**Result: __${roll.total}__**`;
             if (speakerActor?.hasPlayerOwner && roll.dice[0]?.faces === 20) {
@@ -312,7 +315,7 @@ function PF2e_createRollEmbed(message) {
                 else if (roll.result.startsWith('1 ')) {
                     desc += " __(Nat 1)__";
                 }
-                desc += `||(${roll.result})||`;
+                desc += `||(${rollBreakdown})||`;
             }
             if (roll instanceof DamageRoll) {
                 desc += PF2e_parseDamageTypes(roll);
@@ -323,16 +326,21 @@ function PF2e_createRollEmbed(message) {
             else if (PF2e_parseDegree(message.flags.pf2e?.context?.outcome)) {
                 desc += `\`(${PF2e_parseDegree(message.flags.pf2e.context.outcome)})\``; // Assumes only one roll as normal
             }
+            if (rollBreakdown && roll instanceof DamageRoll && speakerActor?.hasPlayerOwner) {
+                desc += `\n||(${rollBreakdown})||`;
+            }
             desc += "\n\n";
         });
     }
     else {
+        let rollBreakdown = ""
+        const speakerActor = game.actors.get(message.speaker.actor);
         if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))) {
             desc += `:game_die:**\`${roll.formula}\`**\n`
+            rollBreakdown = PF2e_generateRollBreakdown(roll);
         }
         desc += `~~:game_die:Result: __${PF2e_getDiscardedRoll(message)}__~~\n`;
         desc += `:game_die:**Result: __${message.rolls[0].total}__**`;
-        const speakerActor = game.actors.get(message.speaker.actor);
         if (speakerActor?.hasPlayerOwner && message.rolls[0].dice[0].faces === 20) {
             if (message.rolls[0].result.startsWith('20 ')) {
                 desc += " __(Nat 20!)__";
@@ -340,7 +348,7 @@ function PF2e_createRollEmbed(message) {
             else if (message.rolls[0].result.startsWith('1 ')) {
                 desc += " __(Nat 1)__";
             }
-            desc += `||(${message.rolls[0].result})||`;
+            desc += `||(${PF2e_generateRollBreakdown(message.rolls[0])})||`;
         }
         if (PF2e_parseDegree(message.flags.pf2e.context.outcome)) {
             desc += `\`(${PF2e_parseDegree(message.flags.pf2e.context.outcome)})\``;
@@ -596,4 +604,78 @@ async function PF2e_getEnrichmentOptions(message) {
             return {};
             break;
     }
+}
+
+//Complex recursion to find die terms and add them all together in one breakdown
+function PF2e_generateRollBreakdown(roll, add = false) {
+    let rollBreakdown = ""
+    let termcount = 1;
+    roll.terms.forEach((term) => {
+        console.log(term)
+        let currentTermString = "";
+        switch (true) {
+            case term instanceof DiceTerm:
+                let i = 1;
+                if (!term.flavor.includes("persistent")) {
+                    term.results.forEach(dieResult => {
+                        if (dieResult.active) {
+                            currentTermString += ` ${getDieEmoji(term.faces, dieResult.result)}`;
+                            if (i < term.number || (add && (roll.terms[termcount] && (!roll.terms[termcount] instanceof OperatorTerm)))) {
+                                currentTermString += " +"
+                            }
+                        }
+                        i++;
+                    });
+                }
+                else {
+                    currentTermString += term.expression;
+                    if (add) {
+                        currentTermString += " +";
+                    }
+                }
+                break;
+            case term instanceof PoolTerm:
+                term.rolls.forEach(poolRoll => {
+                    currentTermString += ` ${PF2e_generateRollBreakdown(poolRoll, true)}`;
+                })
+                break;
+            case term instanceof OperatorTerm:
+                currentTermString += ` ${term.operator}`;
+                break;
+            case term instanceof NumericTerm:
+                currentTermString += ` ${term.number}`
+                break;
+            case term.hasOwnProperty("operands"):
+                const terms = term.operands;
+                const newTerms = [];
+                let j = 1;
+                terms.forEach(operand => {
+                    newTerms.push(operand);
+                    if (j < terms.length) {
+                        j++;
+                        newTerms.push(new OperatorTerm({ operator: term.operator }));
+                    }
+                })
+                currentTermString += ` ${PF2e_generateRollBreakdown({ terms: newTerms }, true)}`;
+                break;
+            case term.hasOwnProperty("term"):
+                currentTermString += ` (${PF2e_generateRollBreakdown({ terms: [term.term] }, true)})`;
+                break;
+            case term.hasOwnProperty("terms"):
+                term.terms.forEach(termTerm => {
+                    if (termTerm.rolls) {
+                        termTerm.rolls.forEach(termTermRoll => {
+                            currentTermString += ` ${PF2e_generateRollBreakdown(termTermRoll, true)}`;
+                        })
+                    }
+                });
+                break;
+        }
+        rollBreakdown += currentTermString;
+        termcount++;
+    });
+    if (!add && rollBreakdown.endsWith(" +")) {
+        rollBreakdown = rollBreakdown.substring(0, rollBreakdown.length - 2);
+    }
+    return rollBreakdown.trim();
 }

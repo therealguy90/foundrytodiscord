@@ -2,6 +2,7 @@ import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs'
 import { parse2DTable } from './helpers/tables.mjs';
 import * as generic from './generic.mjs';
 import { newEnrichedMessage } from './helpers/enrich.mjs';
+import { swapOrNot, getDieEmoji } from './helpers/emojis/global.mjs';
 
 export async function messageParserDnD5e(msg) {
     const enrichedMsg = await newEnrichedMessage(msg, await DnD5e_getEnrichmentOptions(msg));
@@ -118,7 +119,7 @@ function midiqol_createMergeCard(message) {
                         break;
                     case 'd20Only':
                     case 'd20AttackOnly':
-                        rollValue = `:game_die:**(d20) __${message.flags['midi-qol'].d20AttackRoll}__`;
+                        rollValue = `:game_die:**(d20) __${getDieEmoji(20, message.flags['midi-qol'].d20AttackRoll)}__`;
                         break;
                     case 'hitDamage':
                     case 'hitCriticalDamage':
@@ -135,10 +136,10 @@ function midiqol_createMergeCard(message) {
                 }
                 if (['none', 'detailsDSN', 'details', 'hitCriticalDamage', 'd20Only', 'd20AttackOnly'].includes(game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails)) {
                     if (message.flags['midi-qol'].isCritical) {
-                        rollValue += " (Critical!)**";
+                        rollValue += ` ${swapOrNot("(Critical!)", `(${getDieEmoji(20, 20)})`)}**`;
                     }
                     else if (message.flags['midi-qol'].isFumble) {
-                        rollValue += " (Fumble!)**";
+                        rollValue += ` ${swapOrNot("(Fumble!)", `(${getDieEmoji(20, 1)})`)}**`;
                     }
                     else {
                         rollValue += "**";

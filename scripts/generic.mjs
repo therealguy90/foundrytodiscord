@@ -3,6 +3,7 @@ import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs'
 import { splitEmbed, hexToColor, removeEmptyEmbeds } from './helpers/embeds.mjs';
 import { generateimglink } from './helpers/images.mjs';
 import { newEnrichedMessage } from './helpers/enrich.mjs';
+import { getDieEmoji } from './helpers/emojis/global.mjs';
 
 export async function messageParserGeneric(msg) {
     // Make a new ChatMessage object with the content enriched using the TextEditor.
@@ -243,8 +244,15 @@ export function createGenericRollEmbed(message) {
     message.rolls.forEach(roll => {
         if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))) {
             desc += `:game_die:**\`${roll.formula}\`**\n`
+            desc += `**:game_die:Result: __${roll.total}__**`;
+            let rollBreakdown = generateRollBreakdown(roll);
+            if (rollBreakdown) {
+                desc += `||(${rollBreakdown})||`;
+            }
         }
-        desc += `**:game_die:Result: __${roll.total}__**\n\n`;
+        else {
+            desc += `**:game_die:Result: __${roll.total}__**\n\n`;
+        }
     });
     return [{ title: title, description: desc.trim() }];
 }
@@ -687,6 +695,52 @@ export function createHTMLDiceRollEmbed(message) {
         }
     })
     return [{ title: title, description: desc }];
+}
+
+//Complex recursion to find die terms and add them all together in one breakdown
+export function generateRollBreakdown(roll, add = false) {
+    let rollBreakdown = ""
+    let termcount = 1;
+    roll.terms.forEach((term) => {
+        let currentTermString = "";
+        switch (true) {
+            case term instanceof DiceTerm:
+                let i = 1;
+                term.results.forEach(dieResult => {
+                    if (dieResult.active) {
+                        currentTermString += ` ${getDieEmoji(term.faces, dieResult.result)}`;
+                        if (i < term.number || (add && (roll.terms[termcount] && (!roll.terms[termcount] instanceof OperatorTerm)))) {
+                            currentTermString += " +";
+                        }
+                    }
+                    i++;
+                });
+                break;
+            case term instanceof PoolTerm:
+                term.rolls.forEach(poolRoll => {
+                    currentTermString += ` ${generateRollBreakdown(poolRoll, true)}`;
+                })
+                break;
+            case term instanceof OperatorTerm:
+                currentTermString += ` ${term.operator}`;
+                break;
+            case term instanceof NumericTerm:
+                currentTermString += ` ${term.number}`
+                break;
+            case term instanceof RollTerm && term.terms:
+                term.terms.forEach(termTerm => {
+                    if(termTerm.rolls){
+                        termTerm.rolls.forEach(termTermRoll => {
+                            currentTermString += ` ${generateRollBreakdown(termTermRoll, true)}`;
+                        })
+                    }
+                });
+                break;
+        }
+        rollBreakdown += currentTermString;
+        termcount++;
+    });
+    return rollBreakdown.trim();
 }
 
 export function isCard(htmlString) {
