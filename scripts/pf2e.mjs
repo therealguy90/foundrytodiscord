@@ -1,7 +1,8 @@
 import * as generic from './generic.mjs';
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
 import { newEnrichedMessage, toHTML } from './helpers/enrich.mjs';
-import { getDieEmoji } from './helpers/emojis/global.mjs';
+import { swapOrNot, getDieEmoji } from './helpers/emojis/global.mjs';
+import { ACTIONGLYPH_EMOJIS } from './helpers/emojis/pf2e.mjs';
 
 const DAMAGE_EMOJI = {
     "bludgeoning": ':hammer:',
@@ -36,19 +37,6 @@ const TEMPLATE_EMOJI = {
     "burst": ":blue_circle:",
     "cone": ":mega:",
     "line": ":straight_ruler:"
-}
-
-const ACTIONGLYPH_EMOJIS = {
-    "1": "<:1_action:1069514877384786001>",
-    "2": "<:2_actions:1069514879431606282>",
-    "3": "<:3_actions:1069514884204736532>",
-    "4": "<:free_action:1069514889279840317>",
-    "5": "<:reaction:1069514873559592981>",
-    "a": "<:1_action:1069514877384786001>",
-    "d": "<:2_actions:1069514879431606282>",
-    "t": "<:3_actions:1069514884204736532>",
-    "f": "<:free_action:1069514889279840317>",
-    "r": "<:reaction:1069514873559592981>"
 }
 
 const DamageRoll = CONFIG.Dice.rolls.find(r => r.name === "DamageRoll");
