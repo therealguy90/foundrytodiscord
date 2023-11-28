@@ -1,4 +1,11 @@
-# 1.7.3
+# 1.8.0
+
+- Adds a new config toggle to enable using external emojis, as well as new custom emojis for various things, such as PF2e action glyphs (1,2,3,free,reaction), and all types of dice from d4 to d20. By default, this is turned off. Webhooks will use `@everyone` permissions, so make sure you're allowing external emojis in your Discord server before turning this on.
+- Adds a new method of detecting mass deletions of the chatlog, allowing the module to stop functioning momentarily if the chat log is cleared. The threshold is 10 simultaneous deletions.
+- Changed roll results to use a different algorithm that crawls through ChatMessage.rolls to construct a result string. This is done for compatibility with the new die emojis.
+- (pf2e) Fix sending of reroll messages
+
+## 1.7.3
 
 - Parsing now uses the native `enrichHTML`. This will hopefully make compatibility with other systems better.
 - Improve flavor text detection in regular rolls.
