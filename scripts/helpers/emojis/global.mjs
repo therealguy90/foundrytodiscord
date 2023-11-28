@@ -87,15 +87,15 @@ export const documents = {
 }
 
 export function swapOrNot(text, emoji){
-    if(!getThisModuleSetting('prettierEmojis')){
+    if(!getThisModuleSetting('prettierEmojis') || !emoji){
         return text;
     }
     return emoji;
 }
 
-export function getDieEmoji(faces, result){
+export function getDieEmoji(faces, result = "1"){
     if(!getThisModuleSetting('prettierEmojis') || !dice[faces]){
-        return result;
+        return undefined;
     }
     return dice[faces][result];
 }

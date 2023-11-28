@@ -298,10 +298,10 @@ function PF2e_createRollEmbed(message) {
             desc += `:game_die:**Result: __${roll.total}__**`;
             if (speakerActor?.hasPlayerOwner && roll.dice[0]?.faces === 20) {
                 if (roll.result.startsWith('20 ')) {
-                    desc += ` ${swapOrNot("(Nat 20!)", `(${getDieEmoji(20, 20)}!)`)}`;
+                    desc += ` (${swapOrNot("Nat 20", getDieEmoji(20, 20))}!)`;
                 }
                 else if (roll.result.startsWith('1 ')) {
-                    desc += ` ${swapOrNot("(Nat 1)", `(${getDieEmoji(20, 1)})`)}`;
+                    desc += ` (${swapOrNot("Nat 1", getDieEmoji(20, 1))})`;
                 }
                 desc += `||(${rollBreakdown})||`;
             }
@@ -314,8 +314,13 @@ function PF2e_createRollEmbed(message) {
             else if (PF2e_parseDegree(message.flags.pf2e?.context?.outcome)) {
                 desc += `\`(${PF2e_parseDegree(message.flags.pf2e.context.outcome)})\``; // Assumes only one roll as normal
             }
-            if (rollBreakdown && roll instanceof DamageRoll && speakerActor?.hasPlayerOwner) {
-                desc += `\n||(${rollBreakdown})||`;
+            if (rollBreakdown && speakerActor?.hasPlayerOwner) {
+                if (roll instanceof DamageRoll) {
+                    desc += `\n||(${rollBreakdown})||`;
+                }
+                else {
+                    desc += `||(${rollBreakdown})||`;
+                }
             }
             desc += "\n\n";
         });
@@ -329,10 +334,10 @@ function PF2e_createRollEmbed(message) {
         desc += `:game_die:**Result: __${message.rolls[0].total}__**`;
         if (speakerActor?.hasPlayerOwner && message.rolls[0].dice[0].faces === 20) {
             if (message.rolls[0].result.startsWith('20 ')) {
-                desc += ` ${swapOrNot("(Nat 20!)", `(${getDieEmoji(20, 20)}!)`)}`;
+                desc += ` (${swapOrNot("Nat 20", getDieEmoji(20, 20))}!)`;
             }
             else if (message.rolls[0].result.startsWith('1 ')) {
-                desc += ` ${swapOrNot("(Nat 1)", `(${getDieEmoji(20, 1)})`)}`;
+                desc += ` (${swapOrNot("Nat 1", getDieEmoji(20, 1))})`;
             }
             desc += `||(${PF2e_generateRollBreakdown(message.rolls[0])})||`;
         }
@@ -357,7 +362,7 @@ function PF2e_createActionCardEmbed(message) {
     const subtitle = actionDiv.querySelector(".subtitle");
     const actionGlyph = actionDiv.querySelector(".action-glyph");
     title = `${h4Element.querySelector("strong").textContent} ${subtitle ? subtitle.textContent : ""}`;
-    if(getThisModuleSetting("prettierEmojis") && title && actionGlyph && ACTIONGLYPH_EMOJIS.hasOwnProperty(actionGlyph.textContent.trim().toLowerCase())){
+    if (getThisModuleSetting("prettierEmojis") && title && actionGlyph && ACTIONGLYPH_EMOJIS.hasOwnProperty(actionGlyph.textContent.trim().toLowerCase())) {
         title += ACTIONGLYPH_EMOJIS[actionGlyph.textContent.trim().toLowerCase()];
     }
     desc = `${PF2e_parseTraits(message.flavor)}\n`;
@@ -603,21 +608,32 @@ function PF2e_generateRollBreakdown(roll, add = false) {
     let rollBreakdown = ""
     let termcount = 1;
     roll.terms.forEach((term) => {
-        console.log(term)
         let currentTermString = "";
         switch (true) {
             case term instanceof DiceTerm:
                 let i = 1;
                 if (!term.flavor.includes("persistent")) {
+                    const notDieEmoji = function () {
+                        if (getThisModuleSetting("prettierEmojis") && term.faces && getDieEmoji(term.faces)) {
+                            return false;
+                        } else {
+                            return true;
+                        }
+                    }();
+                    currentTermString += " ";
                     term.results.forEach(dieResult => {
                         if (dieResult.active) {
-                            currentTermString += ` ${getDieEmoji(term.faces, dieResult.result)}`;
-                            if (i < term.number || (add && (roll.terms[termcount] && (!roll.terms[termcount] instanceof OperatorTerm)))) {
-                                currentTermString += " +"
+                            currentTermString += `${swapOrNot(` ${dieResult.result}`, getDieEmoji(term.faces, dieResult.result))}`;
+                            if ((notDieEmoji && i < term.results.length) || (add && (roll.terms[termcount] && (!roll.terms[termcount] instanceof OperatorTerm)))) {
+                                currentTermString += " +";
                             }
                         }
                         i++;
+                        console.log(currentTermString);
                     });
+                    if (notDieEmoji) {
+                        currentTermString = ` [${currentTermString.trim()}]`;
+                    }
                 }
                 else {
                     currentTermString += term.expression;
