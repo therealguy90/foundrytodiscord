@@ -3,7 +3,7 @@ import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs'
 import { splitEmbed, hexToColor, removeEmptyEmbeds } from './helpers/embeds.mjs';
 import { generateimglink } from './helpers/images.mjs';
 import { newEnrichedMessage } from './helpers/enrich.mjs';
-import { getDieEmoji } from './helpers/emojis/global.mjs';
+import { getDieEmoji, getDocumentEmoji, swapOrNot } from './helpers/emojis/global.mjs';
 
 export async function messageParserGeneric(msg) {
     // Make a new ChatMessage object with the content enriched using the TextEditor.
@@ -384,30 +384,30 @@ export async function parseHTMLText(htmlString, customHTMLParser = undefined) {
             if (document) {
                 switch (true) {
                     case document instanceof Actor:
-                        emoji = ":bust_in_silhouette:";
+                        emoji = swapOrNot(":bust_in_silhouette:", getDocumentEmoji("actor"));
                         break;
                     case document instanceof Scene:
-                        emoji = ":map:";
+                        emoji = swapOrNot(":map:", getDocumentEmoji("scene"));
                         break;
                     case document instanceof Macro:
-                        emoji = ":link:";
+                        emoji = swapOrNot(":link:", getDocumentEmoji("macro"));
                         break;
                     case document instanceof JournalEntry:
-                        emoji = ":book:";
+                        emoji = swapOrNot(":book:", getDocumentEmoji("journal"));
                         break;
                     case document instanceof RollTable:
-                        emoji = ":page_facing_up:";
+                        emoji = swapOrNot(":page_facing_up:", getDocumentEmoji("rolltable"));
                         break;
                     case document instanceof Folder:
-                        emoji = ":file_folder:";
+                        emoji = swapOrNot(":file_folder:", getDocumentEmoji("folder"));
                         break;
                     default:
-                        emoji = ":baggage_claim:";
+                        emoji = swapOrNot(":baggage_claim:", getDocumentEmoji("item"));
                         break;
                 }
             }
             else {
-                emoji = ":x:";
+                emoji = swapOrNot(":x:", getDocumentEmoji("broken"));
             }
             newLink.innerHTML = `${emoji}\`${newLink.textContent}\``;
             link.parentNode.replaceChild(newLink, link);
@@ -729,7 +729,7 @@ export function generateRollBreakdown(roll, add = false) {
                 break;
             case term instanceof RollTerm && term.terms:
                 term.terms.forEach(termTerm => {
-                    if(termTerm.rolls){
+                    if (termTerm.rolls) {
                         termTerm.rolls.forEach(termTermRoll => {
                             currentTermString += ` ${generateRollBreakdown(termTermRoll, true)}`;
                         })

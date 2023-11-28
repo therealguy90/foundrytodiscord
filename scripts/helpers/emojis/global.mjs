@@ -75,6 +75,17 @@ export const dice = {
     }
 }
 
+export const documents = {
+    "actor": "<:actor:1178859663232606218>",
+    "broken": "<:broken:1178874706657558669>",
+    "folder": "<:folder:1178860988125155368>",
+    "item": "<:item:1178860991585468486>",
+    "macro": "<:macro:1178874376419029054>",
+    "journal": "<:journal:1178860994215280700>",
+    "rolltable": "<:rolltable:1178860998027919430>",
+    "scene": "<:scene:1178861007687389235>"
+}
+
 export function swapOrNot(text, emoji){
     if(!getThisModuleSetting('prettierEmojis')){
         return text;
@@ -87,4 +98,11 @@ export function getDieEmoji(faces, result){
         return result;
     }
     return dice[faces][result];
+}
+
+export function getDocumentEmoji(doctype){
+    if(!getThisModuleSetting('prettierEmojis') || !documents[doctype]){
+        return doctype;
+    }
+    return documents[doctype];
 }
