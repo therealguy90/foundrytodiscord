@@ -112,7 +112,7 @@ export function initModuleSettings() {
     });
     game.settings.register('foundrytodiscord', 'allowNoGM', {
         name: "Allow Chat Mirroring without a GM",
-        hint: "Foundry to Discord will mirror messages when a GM is in the world.",
+        hint: "Foundry to Discord will mirror messages even when a GM is not in the world.",
         scope: "world",
         config: true,
         default: true,
