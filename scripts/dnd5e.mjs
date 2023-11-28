@@ -9,16 +9,16 @@ export async function messageParserDnD5e(msg) {
     let constructedMessage = '';
     let embeds = [];
     if (game.modules.get('midi-qol')?.active && midiqol_isMergeCard(enrichedMsg.content)) {
-        embeds = midiqol_createMergeCard(enrichedMsg);
+        embeds = await midiqol_createMergeCard(enrichedMsg);
     }
     else if (game.modules.get('midi-qol')?.active && enrichedMsg.flags?.midiqol?.undoDamage && midiqol_isDamageTable(enrichedMsg.content)) {
-        embeds = midiqol_createDamageTable(enrichedMsg);
+        embeds = await midiqol_createDamageTable(enrichedMsg);
     }
     else if (game.modules.get('midi-qol')?.active && midiqol_isSingleHitCard(enrichedMsg.content)) {
-        embeds = midiqol_createSingleHitCard(enrichedMsg);
+        embeds = await midiqol_createSingleHitCard(enrichedMsg);
     }
     else if (game.modules.get('midi-qol')?.active && midiqol_isSavesDisplayCard(enrichedMsg.content)) {
-        embeds = midiqol_createSavesDisplayCard(enrichedMsg);
+        embeds = await midiqol_createSavesDisplayCard(enrichedMsg);
     }
     else if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(enrichedMsg.content)) {
         embeds = generic.tokenBar_createTokenBarCard(enrichedMsg);
@@ -66,6 +66,7 @@ export async function messageParserDnD5e(msg) {
         constructedMessage = generic.anonymizeText(constructedMessage, enrichedMsg);
     }
     constructedMessage = await DnD5e_reformatMessage(constructedMessage);
+    console.log(generic.getRequestParams(enrichedMsg, constructedMessage, embeds));
     return generic.getRequestParams(enrichedMsg, constructedMessage, embeds);
 }
 
@@ -86,7 +87,7 @@ async function DnD5e_parseHTMLText(htmlString) {
 }
 
 // midi might as well be part of the system at this point.
-function midiqol_createMergeCard(message) {
+async function midiqol_createMergeCard(message) {
     let embeds = generic.createCardEmbed(message);
     const divs = document.createElement('div');
     divs.innerHTML = message.content;
@@ -134,15 +135,23 @@ function midiqol_createMergeCard(message) {
                         rollValue = ':game_die:**Rolled';
                         break;
                 }
-                if (['none', 'detailsDSN', 'details', 'hitCriticalDamage', 'd20Only', 'd20AttackOnly'].includes(game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails)) {
+                if (['none', 'detailsDSN', 'details', 'hitCriticalDamage'].includes(game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails)) {
                     if (message.flags['midi-qol'].isCritical) {
-                        rollValue += ` ${swapOrNot("(Critical!)", `(${getDieEmoji(20, 20)})`)}**`;
+                        rollValue += ` ${swapOrNot("(Critical!)", `(${getDieEmoji(20, message.flags["midi-qol"].d20AttackRoll)})`)}**`;
                     }
                     else if (message.flags['midi-qol'].isFumble) {
-                        rollValue += ` ${swapOrNot("(Fumble!)", `(${getDieEmoji(20, 1)})`)}**`;
+                        rollValue += ` ${swapOrNot("(Fumble!)", `(${getDieEmoji(20, message.flags["midi-qol"].d20AttackRoll)})`)}**`;
                     }
                     else {
                         rollValue += "**";
+                    }
+                }
+                else if(['d20Only', 'd20AttackOnly'].includes(game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails)){
+                    if (message.flags['midi-qol'].isCritical) {
+                        rollValue += " (Critical!)**";
+                    }
+                    else if (message.flags['midi-qol'].isFumble) {
+                        rollValue += " (Fumble!)**";
                     }
                 }
                 else {
@@ -184,7 +193,7 @@ function midiqol_createMergeCard(message) {
     let title = "";
     let desc = "";
     if (element && element.textContent) {
-        embeds = embeds.concat(midiqol_createSavesDisplayCard(message));
+        embeds = embeds.concat(await midiqol_createSavesDisplayCard(message));
         return embeds;
     }
     element = divs.querySelector('.midi-qol-hits-display');
@@ -213,7 +222,7 @@ function midiqol_createMergeCard(message) {
     return embeds;
 }
 
-function midiqol_createDamageTable(message) {
+async function midiqol_createDamageTable(message) {
     const divs = document.createElement('div');
     divs.innerHTML = message.content;
     // Instead of parsing from the table itself, create a card with a table using flags
@@ -274,7 +283,7 @@ function midiqol_createDamageTable(message) {
     }
 }
 
-function midiqol_createSingleHitCard(message) {
+async function midiqol_createSingleHitCard(message) {
     const divs = document.createElement('div');
     divs.innerHTML = message.content;
     let element = divs.querySelector('.midi-qol-single-hit-card');
@@ -296,7 +305,7 @@ function midiqol_createSingleHitCard(message) {
     return [{ title: title, description: desc }];
 }
 
-function midiqol_createSavesDisplayCard(message) {
+async function midiqol_createSavesDisplayCard(message) {
     const divs = document.createElement('div');
     divs.innerHTML = message.content;
     let element = divs.querySelector('.midi-qol-saves-display');
@@ -332,7 +341,7 @@ function midiqol_createSavesDisplayCard(message) {
             desc += parsedTarget + "\n";
         });
         if (title) {
-            return [{ title: title ? generic.parseHTMLText(title) : "", description: desc }];
+            return [{ title: title ? await generic.parseHTMLText(title) : "", description: desc }];
         }
         else if (desc !== "") {
             return [{ description: desc }];
