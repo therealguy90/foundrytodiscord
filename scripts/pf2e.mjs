@@ -629,7 +629,6 @@ function PF2e_generateRollBreakdown(roll, add = false) {
                             }
                         }
                         i++;
-                        console.log(currentTermString);
                     });
                     if (notDieEmoji) {
                         currentTermString = ` [${currentTermString.trim()}]`;
