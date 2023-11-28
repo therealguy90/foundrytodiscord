@@ -324,8 +324,7 @@ function PF2e_createRollEmbed(message) {
         let rollBreakdown = ""
         const speakerActor = game.actors.get(message.speaker.actor);
         if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))) {
-            desc += `:game_die:**\`${roll.formula}\`**\n`
-            rollBreakdown = PF2e_generateRollBreakdown(roll);
+            desc += `:game_die:**\`${message.rolls[0].formula}\`**\n`
         }
         desc += `~~:game_die:Result: __${PF2e_getDiscardedRoll(message)}__~~\n`;
         desc += `:game_die:**Result: __${message.rolls[0].total}__**`;
