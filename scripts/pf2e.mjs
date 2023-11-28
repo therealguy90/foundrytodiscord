@@ -320,8 +320,7 @@ function PF2e_createRollEmbed(message) {
             desc += "\n\n";
         });
     }
-    else {
-        let rollBreakdown = ""
+    else { // isReroll typically only consists of one Roll object.
         const speakerActor = game.actors.get(message.speaker.actor);
         if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))) {
             desc += `:game_die:**\`${message.rolls[0].formula}\`**\n`
@@ -330,10 +329,10 @@ function PF2e_createRollEmbed(message) {
         desc += `:game_die:**Result: __${message.rolls[0].total}__**`;
         if (speakerActor?.hasPlayerOwner && message.rolls[0].dice[0].faces === 20) {
             if (message.rolls[0].result.startsWith('20 ')) {
-                desc += " __(Nat 20!)__";
+                desc += ` ${swapOrNot("(Nat 20!)", `(${getDieEmoji(20, 20)}!)`)}`;
             }
             else if (message.rolls[0].result.startsWith('1 ')) {
-                desc += " __(Nat 1)__";
+                desc += ` ${swapOrNot("(Nat 1)", `(${getDieEmoji(20, 1)})`)}`;
             }
             desc += `||(${PF2e_generateRollBreakdown(message.rolls[0])})||`;
         }
@@ -598,7 +597,8 @@ async function PF2e_getEnrichmentOptions(message) {
     }
 }
 
-//Complex recursion to find die terms and add them all together in one breakdown
+// Complex recursion to find die terms and add them all together in one breakdown
+// This is probably unique to PF2e because of the complex roll structures.
 function PF2e_generateRollBreakdown(roll, add = false) {
     let rollBreakdown = ""
     let termcount = 1;
