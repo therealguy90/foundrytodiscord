@@ -66,7 +66,6 @@ export async function messageParserDnD5e(msg) {
         constructedMessage = generic.anonymizeText(constructedMessage, enrichedMsg);
     }
     constructedMessage = await DnD5e_reformatMessage(constructedMessage);
-    console.log(generic.getRequestParams(enrichedMsg, constructedMessage, embeds));
     return generic.getRequestParams(enrichedMsg, constructedMessage, embeds);
 }
 
@@ -137,10 +136,10 @@ async function midiqol_createMergeCard(message) {
                 }
                 if (['none', 'detailsDSN', 'details', 'hitCriticalDamage'].includes(game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails)) {
                     if (message.flags['midi-qol'].isCritical) {
-                        rollValue += ` ${swapOrNot("(Critical!)", `(${getDieEmoji(20, message.flags["midi-qol"].d20AttackRoll)})`)}**`;
+                        rollValue += ` (${swapOrNot("Critical!", getDieEmoji(20, message.flags["midi-qol"].d20AttackRoll))})**`;
                     }
                     else if (message.flags['midi-qol'].isFumble) {
-                        rollValue += ` ${swapOrNot("(Fumble!)", `(${getDieEmoji(20, message.flags["midi-qol"].d20AttackRoll)})`)}**`;
+                        rollValue += ` (${swapOrNot("Fumble!", getDieEmoji(20, message.flags["midi-qol"].d20AttackRoll))})**`;
                     }
                     else {
                         rollValue += "**";
