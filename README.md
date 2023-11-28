@@ -90,6 +90,8 @@ Do note that this follows message deletions as well. If a message is deleted in 
 
 There is currently no config to disable the hiding of metagame information (except for Anonymous), and it is currently not in consideration. 
 
+**Enhance your chat mirroring experience by enabling custom emojis! Go to the config and turn on "Use External Emojis". Webhooks use `@everyone` permissions, so make sure to enable `@everyone` to use external emojis on your server.**
+
 ![Chat Mirroring Example](https://github.com/therealguy90/foundrytodiscord/assets/100253440/b7eb9ebd-e64d-4f1e-9ffc-5fd85f025a99)
 ![Chat Mirroring Example](https://github.com/therealguy90/foundrytodiscord/assets/100253440/caaa5350-fdf2-4aeb-a697-41f59551b506)
 
