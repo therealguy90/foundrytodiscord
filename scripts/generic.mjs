@@ -698,65 +698,67 @@ export function createHTMLDiceRollEmbed(message) {
 }
 
 //Complex recursion to find die terms and add them all together in one breakdown
-export function generateRollBreakdown(roll, add = false) {
-    if (getThisModuleSetting("prettierEmojis")) {
-        let rollBreakdown = ""
-        let termcount = 1;
-        roll.terms.forEach((term) => {
-            let currentTermString = "";
-            switch (true) {
-                case term instanceof DiceTerm:
-                    let i = 1;
-                    const notDieEmoji = function () {
-                        if (term.faces && getDieEmoji(term.faces)) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }();
-                    currentTermString += " ";
-                    term.results.forEach(dieResult => {
-                        if (dieResult.active) {
-                            currentTermString += `${swapOrNot(` ${dieResult.result}`, getDieEmoji(term.faces, dieResult.result))}`;
-                            if ((notDieEmoji && i < term.results.length) || (add && (roll.terms[termcount] && (!roll.terms[termcount] instanceof OperatorTerm)))) {
-                                currentTermString += " +";
-                            }
-                        }
-                        i++;
-                    });
-                    if (notDieEmoji) {
-                        currentTermString = ` \`d${term.faces}[${currentTermString.trim()}]\``;
+export function generateRollBreakdown(roll, nextTerm = false) {
+    let rollBreakdown = ""
+    let termcount = 1;
+    roll.terms.forEach((term) => {
+        let currentTermString = "";
+        switch (true) {
+            case term instanceof DiceTerm:
+                let i = 1;
+                const notDieEmoji = function () {
+                    if (term.faces && getDieEmoji(term.faces)) {
+                        return false;
+                    } else {
+                        return true;
                     }
-                    break;
-                case term instanceof PoolTerm:
-                    term.rolls.forEach(poolRoll => {
-                        currentTermString += ` ${generateRollBreakdown(poolRoll, true)}`;
-                    })
-                    break;
-                case term instanceof OperatorTerm:
-                    currentTermString += ` ${term.operator}`;
-                    break;
-                case term instanceof NumericTerm:
-                    currentTermString += ` ${term.number}`
-                    break;
-                case term.hasOwnProperty("terms"):
-                    term.terms.forEach(termTerm => {
-                        if (termTerm.rolls) {
-                            termTerm.rolls.forEach(termTermRoll => {
-                                currentTermString += ` ${generateRollBreakdown(termTermRoll, true)}`;
-                            })
+                }();
+                currentTermString += " ";
+                term.results.forEach(dieResult => {
+                    if (dieResult.active) {
+                        currentTermString += `${swapOrNot(` ${dieResult.result}`, getDieEmoji(term.faces, dieResult.result))}`;
+                        if ((notDieEmoji && i < term.results.length) || (nextTerm && (roll.terms[termcount] && (!roll.terms[termcount] instanceof OperatorTerm)))) {
+                            currentTermString += " +";
                         }
-                    });
-                    break;
-            }
-            rollBreakdown += currentTermString;
-            termcount++;
-        });
-        return rollBreakdown.trim();
-    }
-    else {
+                    }
+                    i++;
+                });
+                if (notDieEmoji) {
+                    currentTermString = ` \`${term.faces ? `d${term.faces}` : ""}[${currentTermString.trim()}]\``;
+                }
+                break;
+            case term instanceof PoolTerm:
+                term.rolls.forEach(poolRoll => {
+                    currentTermString += ` ${generateRollBreakdown(poolRoll, true)}`;
+                })
+                break;
+            case term instanceof OperatorTerm:
+                currentTermString += ` ${term.operator}`;
+                break;
+            case term instanceof NumericTerm:
+                currentTermString += ` ${term.number}`
+                break;
+            case term.hasOwnProperty("terms"):
+                term.terms.forEach(termTerm => {
+                    if (termTerm.rolls) {
+                        termTerm.rolls.forEach(termTermRoll => {
+                            currentTermString += ` ${generateRollBreakdown(termTermRoll, true)}`;
+                        })
+                    }
+                });
+                break;
+            default:
+                currentTermString += "error";
+                break;
+        }
+        rollBreakdown += currentTermString;
+        termcount++;
+    });
+    if (!nextTerm && !rollBreakdown.includes("error")) {
+        console.error("foundrytodiscord | Could not parse dice emojis due to your system having a different roll structure.");
         return roll.result;
     }
+    return rollBreakdown.trim();
 }
 
 export function isCard(htmlString) {
