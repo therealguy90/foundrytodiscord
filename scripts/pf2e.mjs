@@ -631,7 +631,7 @@ function PF2e_generateRollBreakdown(roll, add = false) {
                         i++;
                     });
                     if (notDieEmoji) {
-                        currentTermString = ` \`d${term.faces}[${currentTermString.trim()}]\``;
+                        currentTermString = ` \`${term.faces ? `d${term.faces}`: ""}[${currentTermString.trim()}]\``;
                     }
                 }
                 else {
