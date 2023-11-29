@@ -708,7 +708,7 @@ export function generateRollBreakdown(roll, add = false) {
                 case term instanceof DiceTerm:
                     let i = 1;
                     const notDieEmoji = function () {
-                        if (getThisModuleSetting("prettierEmojis") && term.faces && getDieEmoji(term.faces)) {
+                        if (term.faces && getDieEmoji(term.faces)) {
                             return false;
                         } else {
                             return true;
@@ -725,7 +725,7 @@ export function generateRollBreakdown(roll, add = false) {
                         i++;
                     });
                     if (notDieEmoji) {
-                        currentTermString = ` [${currentTermString.trim()}]`;
+                        currentTermString = ` \`d${term.faces}[${currentTermString.trim()}]\``;
                     }
                     break;
                 case term instanceof PoolTerm:

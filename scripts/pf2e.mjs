@@ -614,7 +614,7 @@ function PF2e_generateRollBreakdown(roll, add = false) {
                 let i = 1;
                 if (!term.flavor.includes("persistent")) {
                     const notDieEmoji = function () {
-                        if (getThisModuleSetting("prettierEmojis") && term.faces && getDieEmoji(term.faces)) {
+                        if (term.faces && getDieEmoji(term.faces)) {
                             return false;
                         } else {
                             return true;
@@ -631,7 +631,7 @@ function PF2e_generateRollBreakdown(roll, add = false) {
                         i++;
                     });
                     if (notDieEmoji) {
-                        currentTermString = ` [${currentTermString.trim()}]`;
+                        currentTermString = ` \`d${term.faces}[${currentTermString.trim()}]\``;
                     }
                 }
                 else {
