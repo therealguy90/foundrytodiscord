@@ -531,7 +531,7 @@ function PF2e_isConditionCard(message) {
 }
 
 function PF2e_containsDamageDieOnly(rolls) {
-    return rolls.every(roll => !/(d20|d2|dc)/.test(roll.formula));
+    return rolls.every(roll => /(d4|d6|d8|d10|d12)(?![0-9])/.test(roll.formula));
 }
 
 async function PF2e_getEnrichmentOptions(message) {
