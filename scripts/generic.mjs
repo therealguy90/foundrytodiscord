@@ -192,7 +192,7 @@ function generateDiscordUsername(message) {
         const anon = game.modules.get('anonymous').api
         // First: Check if token has an actor and use Anonymous if it does. 
         // This uses a fallback for the message actor in case it is needed.
-        if (speakerToken.actor && speakerActor !== speakerToken.actor) {
+        if (speakerToken?.actor && speakerActor !== speakerToken.actor) {
             // Fallback possibly not needed? Will keep it in for redundancy.
             speakerActor = speakerToken.actor;
         }
