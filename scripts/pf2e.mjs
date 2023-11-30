@@ -2,42 +2,7 @@ import * as generic from './generic.mjs';
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
 import { newEnrichedMessage, toHTML } from './helpers/enrich.mjs';
 import { swapOrNot, getDieEmoji } from './helpers/emojis/global.mjs';
-import { ACTIONGLYPH_EMOJIS } from './helpers/emojis/pf2e.mjs';
-
-const DAMAGE_EMOJI = {
-    "bludgeoning": ':hammer:',
-    "slashing": ':axe:',
-    "piercing": ':bow_and_arrow:',
-    "acid": ':test_tube:',
-    "cold": ':snowflake:',
-    "electricity": ':zap:',
-    "fire": ':fire:',
-    "sonic": ':loud_sound:',
-    "chaotic": ':cyclone:',
-    "evil": ':smiling_imp:',
-    "good": ':angel:',
-    "lawful": ':scales:',
-    "mental": ':brain:',
-    "poison": ':spider:',
-    "bleed": ':drop_of_blood:',
-    "precision": 'dart',
-    "negative": ':skull:',
-    "void": ':skull:',
-    "positive": ':sparkling_heart:',
-    "vitality": ':sparkling_heart:',
-    "force": ':sparkles:',
-    "precision": ':dart:',
-    "persistent": ':hourglass:',
-    "splash": ':boom:',
-    "untyped": ":grey_question:"
-}
-
-const TEMPLATE_EMOJI = {
-    "emanation": ":radio_button:",
-    "burst": ":blue_circle:",
-    "cone": ":mega:",
-    "line": ":straight_ruler:"
-}
+import { ACTIONGLYPH_EMOJIS, DAMAGE_EMOJI, TEMPLATE_EMOJI } from './helpers/emojis/pf2e.mjs';
 
 const DamageRoll = CONFIG.Dice.rolls.find(r => r.name === "DamageRoll");
 
