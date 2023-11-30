@@ -268,22 +268,21 @@ function PF2e_createRollEmbed(message) {
                 else if (roll.result.startsWith('1 ')) {
                     desc += ` (${swapOrNot("Nat 1", getDieEmoji(20, 1))})`;
                 }
-                desc += `||(${rollBreakdown})||`;
             }
             if (roll instanceof DamageRoll) {
                 desc += PF2e_parseDamageTypes(roll);
-            }
-            else if (PF2e_parseDegree(roll.options?.degreeOfSuccess)) {
-                desc += `\`(${PF2e_parseDegree(roll.options.degreeOfSuccess)})\``;
-            }
-            else if (PF2e_parseDegree(message.flags.pf2e?.context?.outcome)) {
-                desc += `\`(${PF2e_parseDegree(message.flags.pf2e.context.outcome)})\``; // Assumes only one roll as normal
-            }
-            if (rollBreakdown && speakerActor?.hasPlayerOwner) {
-                if (roll instanceof DamageRoll) {
+                if (rollBreakdown && speakerActor?.hasPlayerOwner) {
                     desc += `\n||(${rollBreakdown})||`;
                 }
-                else {
+            }
+            else {
+                if (PF2e_parseDegree(roll.options?.degreeOfSuccess)) {
+                    desc += `\`(${PF2e_parseDegree(roll.options.degreeOfSuccess)})\``;
+                }
+                else if (PF2e_parseDegree(message.flags.pf2e?.context?.outcome)) {
+                    desc += `\`(${PF2e_parseDegree(message.flags.pf2e.context.outcome)})\``;
+                }
+                if (rollBreakdown && speakerActor?.hasPlayerOwner) {
                     desc += `||(${rollBreakdown})||`;
                 }
             }
