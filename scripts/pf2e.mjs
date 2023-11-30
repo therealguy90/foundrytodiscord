@@ -568,7 +568,8 @@ async function PF2e_getEnrichmentOptions(message) {
 
 // Complex recursion to find die terms and add them all together in one breakdown
 // This is probably unique to PF2e because of the complex roll structures.
-function PF2e_generateRollBreakdown(roll, add = false) {
+// To generate a proper roll breakdown with emojis, we have to find each DiceTerm.
+function PF2e_generateRollBreakdown(roll, nextTerm = false) {
     let rollBreakdown = ""
     let termcount = 1;
     roll.terms.forEach((term) => {
@@ -588,24 +589,24 @@ function PF2e_generateRollBreakdown(roll, add = false) {
                     term.results.forEach(dieResult => {
                         if (dieResult.active) {
                             currentTermString += `${swapOrNot(` ${dieResult.result}`, getDieEmoji(term.faces, dieResult.result))}`;
-                            if ((notDieEmoji && i < term.results.length) || (add && (roll.terms[termcount] && (!roll.terms[termcount] instanceof OperatorTerm)))) {
+                            if ((notDieEmoji && i < term.results.length) || (nextTerm && (roll.terms[termcount] && (!roll.terms[termcount] instanceof OperatorTerm)))) {
                                 currentTermString += " +";
                             }
                         }
                         i++;
                     });
                     if (notDieEmoji) {
-                        currentTermString = ` \`${term.faces ? `d${term.faces}`: ""}[${currentTermString.trim()}]\``;
+                        currentTermString = ` \`${term.faces ? `d${term.faces}` : ""}[${currentTermString.trim()}]\``;
                     }
                 }
                 else {
-                    currentTermString += term.expression;
-                    if (add) {
+                    currentTermString += `\`term.expression\``;
+                    if (nextTerm) {
                         currentTermString += " +";
                     }
                 }
                 break;
-            case term instanceof PoolTerm:
+            case term instanceof PoolTerm || term.hasOwnProperty("rolls"):
                 term.rolls.forEach(poolRoll => {
                     currentTermString += ` ${PF2e_generateRollBreakdown(poolRoll, true)}`;
                 })
@@ -632,6 +633,9 @@ function PF2e_generateRollBreakdown(roll, add = false) {
             case term.hasOwnProperty("term"):
                 currentTermString += ` (${PF2e_generateRollBreakdown({ terms: [term.term] }, true)})`;
                 break;
+            case term.hasOwnProperty("roll"):
+                currentTermString += ` ${PF2e_generateRollBreakdown(term.roll, true)}`;
+                break;
             case term.hasOwnProperty("terms"):
                 term.terms.forEach(termTerm => {
                     if (termTerm.rolls) {
@@ -645,7 +649,7 @@ function PF2e_generateRollBreakdown(roll, add = false) {
         rollBreakdown += currentTermString;
         termcount++;
     });
-    if (!add && rollBreakdown.endsWith(" +")) {
+    if (!nextTerm && rollBreakdown.endsWith(" +")) {
         rollBreakdown = rollBreakdown.substring(0, rollBreakdown.length - 2);
     }
     return rollBreakdown.trim();

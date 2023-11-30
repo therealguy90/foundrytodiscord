@@ -727,7 +727,7 @@ export function generateRollBreakdown(roll, nextTerm = false) {
                     currentTermString = ` \`${term.faces ? `d${term.faces}` : ""}[${currentTermString.trim()}]\``;
                 }
                 break;
-            case term instanceof PoolTerm:
+            case term instanceof PoolTerm || term.hasOwnProperty("rolls"):
                 term.rolls.forEach(poolRoll => {
                     currentTermString += ` ${generateRollBreakdown(poolRoll, true)}`;
                 })
@@ -737,6 +737,12 @@ export function generateRollBreakdown(roll, nextTerm = false) {
                 break;
             case term instanceof NumericTerm:
                 currentTermString += ` ${term.number}`
+                break;
+            case term.hasOwnProperty("term"):
+                currentTermString += ` (${generateRollBreakdown({ terms: [term.term] }, true)})`;
+                break;
+            case term.hasOwnProperty("roll"):
+                currentTermString += ` ${generateRollBreakdown(term.roll, true)}`;
                 break;
             case term.hasOwnProperty("terms"):
                 term.terms.forEach(termTerm => {
@@ -748,14 +754,15 @@ export function generateRollBreakdown(roll, nextTerm = false) {
                 });
                 break;
             default:
+                console.log(term);
                 currentTermString += "error";
                 break;
         }
         rollBreakdown += currentTermString;
         termcount++;
     });
-    if (!nextTerm && !rollBreakdown.includes("error")) {
-        console.error("foundrytodiscord | Could not parse dice emojis due to your system having a different roll structure.");
+    if (!nextTerm && rollBreakdown.includes("error")) {
+        console.error("foundrytodiscord | Could not parse dice emojis due to a unique roll structure.");
         return roll.result;
     }
     return rollBreakdown.trim();
