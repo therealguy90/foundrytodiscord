@@ -1,4 +1,11 @@
-# 1.8.0
+# 1.8.1
+
+- Added a few new emojis.
+- Improved the roll parsing algorithm to hopefully cover more systems, and skip parsing if it's not supported.
+- Better visibility of roll breakdown dice emojis by grouping up dice that are part of the same roll, ex. 2d4, 3d6
+- (midi-qol) fixed saving throw success/fail cards not sending
+
+## 1.8.0
 
 - Adds a new config toggle to enable using external emojis, as well as new custom emojis for various things, such as PF2e action glyphs (1,2,3,free,reaction), and all types of dice from d4 to d20. By default, this is turned off. Webhooks will use `@everyone` permissions, so make sure you're allowing external emojis in your Discord server before turning this on.
 - Adds a new method of detecting mass deletions of the chatlog, allowing the module to stop functioning momentarily if the chat log is cleared. The threshold is 10 simultaneous deletions.
