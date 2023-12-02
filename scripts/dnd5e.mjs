@@ -2,7 +2,7 @@ import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs'
 import { parse2DTable } from './helpers/tables.mjs';
 import * as generic from './generic.mjs';
 import { newEnrichedMessage } from './helpers/enrich.mjs';
-import { swapOrNot, getDieEmoji } from './helpers/emojis/global.mjs';
+import { swapOrNot, getDieEmoji, dieIcon } from './helpers/emojis/global.mjs';
 
 export async function messageParserDnD5e(msg) {
     const enrichedMsg = await newEnrichedMessage(msg, await DnD5e_getEnrichmentOptions(msg));
@@ -79,7 +79,7 @@ async function DnD5e_parseHTMLText(htmlString) {
     const htmldoc = document.createElement('div');
     htmldoc.innerHTML = reformattedText;
     // Format various elements
-    generic.formatTextBySelector('a.roll-link', text => `:game_die:\`${text}\``, htmldoc);
+    generic.formatTextBySelector('a.roll-link', text => `${dieIcon()}\`${text}\``, htmldoc);
     reformattedText = htmldoc.innerHTML;
 
     return reformattedText;
@@ -105,21 +105,21 @@ async function midiqol_createMergeCard(message) {
                     case 'none':
                         const rollFormula = element.querySelector(".dice-formula");
                         if (getThisModuleSetting('showFormula')) {
-                            rollValue = `:game_die:**\`${rollFormula.textContent}\`**\n:game_die:**Result: __${result}__`;
+                            rollValue = `${dieIcon()}**\`${rollFormula.textContent}\`**\n${dieIcon()}**Result: __${result}__`;
                         }
                         else {
-                            rollValue = `:game_die:**Result: __${result}__`;
+                            rollValue = `${dieIcon()}**Result: __${result}__`;
                         }
                         break;
                     case 'detailsDSN':
                     case 'details':
                         if (result !== "") {
-                            rollValue = `:game_die:**Result: __${result}__`;
+                            rollValue = `${dieIcon()}**Result: __${result}__`;
                         }
                         break;
                     case 'd20Only':
                     case 'd20AttackOnly':
-                        rollValue = `:game_die:**(d20) __${getDieEmoji(20, message.flags['midi-qol'].d20AttackRoll)}__`;
+                        rollValue = `${dieIcon()}**(d20) __${getDieEmoji(20, message.flags['midi-qol'].d20AttackRoll)}__`;
                         break;
                     case 'hitDamage':
                     case 'hitCriticalDamage':
@@ -131,7 +131,7 @@ async function midiqol_createMergeCard(message) {
                         }
                         break;
                     case 'all':
-                        rollValue = ':game_die:**Rolled';
+                        rollValue = `${dieIcon()}**Rolled`;
                         break;
                 }
                 if (['none', 'detailsDSN', 'details', 'hitCriticalDamage'].includes(game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails)) {
@@ -167,15 +167,15 @@ async function midiqol_createMergeCard(message) {
             let rollValue = "";
             rollValue = element.querySelector('h4.dice-total').textContent;
             if (rollValue !== "" && ['all', 'd20AttackOnly'].includes(game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails)) {
-                rollValue = ":game_die:**Rolled**";
+                rollValue = `${dieIcon()}**Rolled**`;
             }
             else {
                 if (getThisModuleSetting('showFormula') && game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails === 'none') {
                     const rollFormula = element.querySelector(".dice-formula");
-                    rollValue = `:game_die:**\`${rollFormula.textContent}\`**\n:game_die:**Result: __${rollValue}__**`;
+                    rollValue = `${dieIcon()}**\`${rollFormula.textContent}\`**\n${dieIcon()}**Result: __${rollValue}__**`;
                 }
                 else {
-                    rollValue = `:game_die:**Result: __${rollValue}__**`;
+                    rollValue = `${dieIcon()}**Result: __${rollValue}__**`;
                 }
             }
             fields.push({ name: damageTitle, value: rollValue, inline: true })
@@ -333,7 +333,7 @@ async function midiqol_createSavesDisplayCard(message) {
             if (game.settings.get('midi-qol', 'ConfigSettings').autoCheckSaves !== 'allNoRoll') {
                 const savetotal = container.querySelector('.midi-qol-tooltip.midi-qol-save-total')
                 if (savetotal) {
-                    parsedTarget += `: :game_die: **__${savetotal.firstChild.textContent.split(" ")[1]}__**`;
+                    parsedTarget += `: ${dieIcon()} **__${savetotal.firstChild.textContent.split(" ")[1]}__**`;
                 }
             }
             parsedTarget = parsedTarget.replace(/\s+/g, ' ').trim();

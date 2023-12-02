@@ -1,7 +1,7 @@
 import * as generic from './generic.mjs';
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
 import { newEnrichedMessage, toHTML } from './helpers/enrich.mjs';
-import { swapOrNot, getDieEmoji } from './helpers/emojis/global.mjs';
+import { swapOrNot, getDieEmoji, dieIcon } from './helpers/emojis/global.mjs';
 import { ACTIONGLYPH_EMOJIS, DAMAGE_EMOJI, TEMPLATE_EMOJI } from './helpers/emojis/pf2e.mjs';
 
 const DamageRoll = CONFIG.Dice.rolls.find(r => r.name === "DamageRoll");
@@ -39,7 +39,7 @@ export async function messageParserPF2e(msg) {
         }
     }
     else {
-        if ((enrichedMsg.flavor !== null && enrichedMsg.flavor.length > 0) || (enrichedMsg.isDamageRoll && PF2e_containsDamageDieOnly(enrichedMsg.rolls))) {
+        if ((enrichedMsg.flavor !== null && enrichedMsg.flavor.length > 0) || (enrichedMsg.isDamageRoll && PF2e_containsDamageDie(enrichedMsg.rolls))) {
             embeds = PF2e_createRollEmbed(enrichedMsg);
         }
         else {
@@ -79,7 +79,7 @@ async function PF2e_parseHTMLText(htmlString) {
     htmldoc.innerHTML = reformattedText;
     // Format various elements
     generic.removeElementsBySelector('[data-visibility="gm"], [data-visibility="owner"],[data-visibility="none"]', htmldoc);
-    generic.formatTextBySelector('.inline-check, span[data-pf2-check]', text => `:game_die:\`${text}\``, htmldoc);
+    generic.formatTextBySelector('.inline-check, span[data-pf2-check]', text => `${dieIcon(20)}\`${text}\``, htmldoc);
     generic.formatTextBySelector('.action-glyph', text => `${ACTIONGLYPH_EMOJIS[text.toLowerCase().trim()] ? ACTIONGLYPH_EMOJIS[text.toLowerCase().trim()] : ""}`, htmldoc);
     reformattedText = htmldoc.innerHTML;
     htmldoc.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(header => {
@@ -231,8 +231,7 @@ function PF2e_createRollEmbed(message) {
     else {
         if (message.flags?.pf2e?.context?.target?.token) {
             desc += "**:dart:Target: **";
-            const targetTokenId = message.flags.pf2e.context.target.token.split(".")[3];
-            const targetToken = game.scenes.get(message.speaker.scene).tokens.get(targetTokenId);
+            const targetToken = fromUuidSync(message.flags.pf2e.context.target.token);
             if (targetToken) {
                 if (anonEnabled()) {
                     if (!anon.playersSeeName(targetToken.actor)) {
@@ -257,10 +256,10 @@ function PF2e_createRollEmbed(message) {
         message.rolls.forEach(roll => {
             let rollBreakdown = ""
             if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))) {
-                desc += `:game_die:**\`${roll.formula}\`**\n`
+                desc += `${dieIcon()}**\`${roll.formula}\`**\n`
                 rollBreakdown = PF2e_generateRollBreakdown(roll);
             }
-            desc += `:game_die:**Result: __${roll.total}__**`;
+            desc += `${dieIcon()}**Result: __${roll.total}__**`;
             if (speakerActor?.hasPlayerOwner && roll.dice[0]?.faces === 20) {
                 if (roll.result.startsWith('20 ')) {
                     desc += ` (${swapOrNot("Nat 20", getDieEmoji(20, 20))}!)`;
@@ -292,10 +291,10 @@ function PF2e_createRollEmbed(message) {
     else { // isReroll typically only consists of one Roll object.
         const speakerActor = game.actors.get(message.speaker.actor);
         if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))) {
-            desc += `:game_die:**\`${message.rolls[0].formula}\`**\n`
+            desc += `${dieIcon()}**\`${message.rolls[0].formula}\`**\n`
         }
-        desc += `~~:game_die:Result: __${PF2e_getDiscardedRoll(message)}__~~\n`;
-        desc += `:game_die:**Result: __${message.rolls[0].total}__**`;
+        desc += `~~${dieIcon()}Result: __${PF2e_getDiscardedRoll(message)}__~~\n`;
+        desc += `${dieIcon()}**Result: __${message.rolls[0].total}__**`;
         if (speakerActor?.hasPlayerOwner && message.rolls[0].dice[0].faces === 20) {
             if (message.rolls[0].result.startsWith('20 ')) {
                 desc += ` (${swapOrNot("Nat 20", getDieEmoji(20, 20))}!)`;
@@ -530,7 +529,7 @@ function PF2e_isConditionCard(message) {
     }
 }
 
-function PF2e_containsDamageDieOnly(rolls) {
+function PF2e_containsDamageDie(rolls) {
     return rolls.every(roll => /(d4|d6|d8|d10|d12)(?![0-9])/.test(roll.formula));
 }
 
@@ -567,7 +566,7 @@ async function PF2e_getEnrichmentOptions(message) {
 }
 
 // Complex recursion to find die terms and add them all together in one breakdown
-// This is probably unique to PF2e because of the complex roll structures.
+// A custom one is needed for pf2e because of the unique roll structure, as well as persistent damage existing.
 // To generate a proper roll breakdown with emojis, we have to find each DiceTerm.
 function PF2e_generateRollBreakdown(roll, nextTerm = false) {
     let rollBreakdown = ""

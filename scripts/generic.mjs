@@ -3,7 +3,7 @@ import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs'
 import { splitEmbed, hexToColor, removeEmptyEmbeds } from './helpers/embeds.mjs';
 import { generateimglink } from './helpers/images.mjs';
 import { newEnrichedMessage } from './helpers/enrich.mjs';
-import { getDieEmoji, getDocumentEmoji, swapOrNot } from './helpers/emojis/global.mjs';
+import { getDieEmoji, getDocumentEmoji, swapOrNot, dieIcon } from './helpers/emojis/global.mjs';
 
 export async function messageParserGeneric(msg) {
     // Make a new ChatMessage object with the content enriched using the TextEditor.
@@ -243,15 +243,15 @@ export function createGenericRollEmbed(message) {
     const speakerActor = game.actors.get(message.speaker.actor);
     message.rolls.forEach(roll => {
         if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))) {
-            desc += `:game_die:**\`${roll.formula}\`**\n`
-            desc += `**:game_die:Result: __${roll.total}__**`;
+            desc += `${dieIcon()}**\`${roll.formula}\`**\n`
+            desc += `**${dieIcon()}Result: __${roll.total}__**`;
             let rollBreakdown = generateRollBreakdown(roll);
             if (rollBreakdown) {
                 desc += `||(${rollBreakdown})||`;
             }
         }
         else {
-            desc += `**:game_die:Result: __${roll.total}__**\n\n`;
+            desc += `**${dieIcon()}Result: __${roll.total}__**\n\n`;
         }
     });
     return [{ title: title, description: desc.trim() }];
@@ -365,7 +365,7 @@ export async function parseHTMLText(htmlString, customHTMLParser = undefined) {
     // Remove <img> tags
     removeElementsBySelector('img', htmldoc);
     // Format inline-request-roll for Monk's TokenBar
-    formatTextBySelector('.inline-roll, .inline-request-roll', text => `:game_die:\`${text}\``, htmldoc);
+    formatTextBySelector('.inline-roll, .inline-request-roll', text => `${dieIcon()}\`${text}\``, htmldoc);
 
 
     reformattedText = htmldoc.innerHTML;
@@ -574,7 +574,7 @@ export function tokenBar_createTokenBarCard(message) {
                     const tokenData = message.flags["monks-tokenbar"]["token" + tokenID]
                     switch (tokenData.passed) {
                         case 'waiting':
-                            desc += ':game_die: ';
+                            desc += `${dieIcon()} `;
                             break;
                         case 'won':
                             desc += ":white_check_mark: ";
@@ -583,7 +583,7 @@ export function tokenBar_createTokenBarCard(message) {
                             desc += ":negative_squared_cross_mark: ";
                             break;
                         default:
-                            desc += ':game_die: ';
+                            desc += `${dieIcon()} `;
                             break;
                     }
                     desc += "**" + (tokenData.passed === 'won' ? "__" : "") + tokenData.name;
@@ -619,7 +619,7 @@ export function tokenBar_createTokenBarCard(message) {
                     if (message.flags["monks-tokenbar"].rollmode !== "gmroll") {
                         switch (tokenData.passed) {
                             case 'waiting':
-                                desc += ':game_die: ';
+                                desc += `${dieIcon()} `;
                                 break;
                             case true:
                                 desc += ":white_check_mark: ";
@@ -634,12 +634,12 @@ export function tokenBar_createTokenBarCard(message) {
                                 desc += ":no_entry_sign: ";
                                 break;
                             default:
-                                desc += ':game_die: ';
+                                desc += `${dieIcon()} `;
                                 break;
                         }
                     }
                     else {
-                        desc += ':game_die: ';
+                        desc += `${dieIcon()} `;
                     }
                     desc += "**" + tokenData.name;
                     if (tokenData.total || tokenData.total === 0) {
@@ -688,7 +688,7 @@ export function createHTMLDiceRollEmbed(message) {
     const diceResults = elements.querySelectorAll('.dice-total');
     diceResults.forEach((total) => {
         if (Number(total.textContent)) {
-            desc += ":game_die: **Result: __" + total.textContent + "__**\n";
+            desc += `${dieIcon()} **Result: __${total.textContent}__**\n`;
         }
         else {
             desc += "**" + total.textContent + "**\n";
