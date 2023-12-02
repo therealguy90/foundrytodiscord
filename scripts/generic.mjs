@@ -754,7 +754,6 @@ export function generateRollBreakdown(roll, nextTerm = false) {
                 });
                 break;
             default:
-                console.log(term);
                 currentTermString += "error";
                 break;
         }
