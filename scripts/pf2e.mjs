@@ -2,7 +2,7 @@ import * as generic from './generic.mjs';
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
 import { newEnrichedMessage, toHTML } from './helpers/enrich.mjs';
 import { swapOrNot, getDieEmoji, dieIcon } from './helpers/emojis/global.mjs';
-import { ACTIONGLYPH_EMOJIS, DAMAGE_EMOJI, TEMPLATE_EMOJI } from './helpers/emojis/pf2e.mjs';
+import { ACTIONGLYPH_EMOJIS, DAMAGE_EMOJI, TEMPLATE_EMOJI, targetEmoji } from './helpers/emojis/pf2e.mjs';
 
 const DamageRoll = CONFIG.Dice.rolls.find(r => r.name === "DamageRoll");
 
@@ -203,10 +203,10 @@ function PF2e_createRollEmbed(message) {
     //Add targets to embed:
     if (game.modules.get("pf2e-target-damage")?.active) { //optional implementation for "pf2e-target-damage" module
         if (message.flags['pf2e-target-damage'].targets.length === 1) {
-            desc += "**:dart:Target: **";
+            desc += `**${swapOrNot(":dart:", targetEmoji)}Target: **`;
         }
         else if (message.flags['pf2e-target-damage'].targets.length > 1) {
-            desc += "**:dart:Targets: **";
+            desc += `**${swapOrNot(":dart:", targetEmoji)}Targets: **`;
         }
 
         message.flags['pf2e-target-damage'].targets.forEach(target => {
@@ -230,7 +230,7 @@ function PF2e_createRollEmbed(message) {
     }
     else {
         if (message.flags?.pf2e?.context?.target?.token) {
-            desc += "**:dart:Target: **";
+            desc += `**${swapOrNot(":dart:", targetEmoji)}Target: **`;
             const targetToken = fromUuidSync(message.flags.pf2e.context.target.token);
             if (targetToken) {
                 if (anonEnabled()) {

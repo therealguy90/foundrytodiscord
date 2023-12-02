@@ -45,3 +45,5 @@ export const TEMPLATE_EMOJI = {
     "cone": ":mega:",
     "line": ":straight_ruler:"
 }
+
+export const targetEmoji = "<:target:1180380227403259975>"
