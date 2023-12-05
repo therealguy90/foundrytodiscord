@@ -188,8 +188,14 @@ function PF2e_createRollEmbed(message) {
             }
         }
     }
-    else if (message.flavor) {
-        title = message.flavor;
+    else if (div.textContent) {
+        const strong = div.querySelector("strong");
+        if (strong) {
+            title = strong.textContent
+        }
+        else {
+            title = div.textContent;
+        }
     }
     else if (message.isDamageRoll) {
         title = "Damage Roll";
@@ -202,15 +208,54 @@ function PF2e_createRollEmbed(message) {
     }
 
     //Add targets to embed:
-    if (game.modules.get("pf2e-target-damage")?.active) { //optional implementation for "pf2e-target-damage" module
-        if (message.flags['pf2e-target-damage'].targets.length === 1) {
-            desc += `**${swapOrNot(":dart:", targetEmoji)}Target: **`;
-        }
-        else if (message.flags['pf2e-target-damage'].targets.length > 1) {
-            desc += `**${swapOrNot(":dart:", targetEmoji)}Targets: **`;
-        }
+    let targetPlayerTokens = [];
+    if (game.modules.get("pf2e-toolbelt")?.active && message.flags["pf2e-toolbelt"]?.target?.targets?.length > 0) {
+        const targets = message.flags["pf2e-toolbelt"].target.targets;
+        let targetString = "";
+        targets.forEach(target => {
+            const targetActor = fromUuidSync(target.actor);
+            const targetToken = fromUuidSync(target.token);
+            if (targetToken.hidden === true) {
+                return;
+            }
+            if (targetToken.hasPlayerOwner) {
+                targetString += `\`${targetToken.name}\` `;
+                targetPlayerTokens.push({name: targetToken.name, id: targetToken.id});
+            }
+            else {
+                if (targetActor) {
+                    if (anonEnabled()) {
+                        if (!anon.playersSeeName(targetActor)) {
+                            targetString += `\`${anon.getName(targetActor)}\` `;
+                        }
+                        else {
+                            targetString += `\`${targetToken.name}\` `;
+                        }
+                    }
+                    else {
+                        targetString += `\`${targetToken.name}\` `;
+                    }
+                }
+                else {
+                    if (targetToken.displayName === CONST.TOKEN_DISPLAY_MODES.ALWAYS ||
+                        targetToken.displayName === CONST.TOKEN_DISPLAY_MODES.HOVER) {
+                        targetString += `\`${targetToken.name}\` `;
+                    }
+                    else {
+                        targetString += "`Unknown` ";
+                    }
+                }
+            }
+        });
 
-        message.flags['pf2e-target-damage'].targets.forEach(target => {
+        if (targetString) {
+            desc += `**${swapOrNot(":dart:", targetEmoji)}Target${targets.length > 1 ? "s" : ""}: **${targetString}\n`;
+        }
+    }
+    else if (game.modules.get("pf2e-target-damage")?.active && message.flags['pf2e-target-damage']?.targets) { //optional implementation for "pf2e-target-damage" module
+        const targets = message.flags['pf2e-target-damage'].targets;
+        desc += `**${swapOrNot(":dart:", targetEmoji)}Target${targets.length > 1 ? "s" : ""}: **`;
+        targets.forEach(target => {
             const curScene = game.scenes.get(message.speaker.scene);
             const curToken = curScene.tokens.get(target.id);
             if (anonEnabled()) {
@@ -225,7 +270,7 @@ function PF2e_createRollEmbed(message) {
                 desc += `\`${curToken.name}\` `;
             }
         });
-        if (message.flags['pf2e-target-damage'].targets.length >= 1) {
+        if (targets.length >= 1) {
             desc += "\n";
         }
     }
@@ -310,8 +355,12 @@ function PF2e_createRollEmbed(message) {
         }
         desc += "\n";
     }
-
-    return [{ title: title, description: desc }];
+    let rollEmbeds = [{ title: title, description: desc }]
+    if(message.isDamageRoll && game.modules.get("pf2e-toolbelt")?.active && message.flags["pf2e-toolbelt"]?.target?.saves && targetPlayerTokens){
+        rollEmbeds = rollEmbeds.concat(PF2e_createToolbeltSavesEmbed(message, targetPlayerTokens));
+    }
+    
+    return rollEmbeds
 
 }
 
@@ -326,8 +375,8 @@ function PF2e_createActionCardEmbed(message) {
     const subtitle = actionDiv.querySelector(".subtitle");
     const actionGlyph = actionDiv.querySelector(".action-glyph");
     title = `${h4Element.querySelector("strong").textContent} ${subtitle ? subtitle.textContent : ""}`;
-    if (getThisModuleSetting("prettierEmojis") && title && actionGlyph && ACTIONGLYPH_EMOJIS.hasOwnProperty(actionGlyph.textContent.trim().toLowerCase())) {
-        title += ACTIONGLYPH_EMOJIS[actionGlyph.textContent.trim().toLowerCase()];
+    if (getThisModuleSetting("prettierEmojis") && title && actionGlyph && actionGlyphEmojis.hasOwnProperty(actionGlyph.textContent.trim().toLowerCase())) {
+        title += actionGlyphEmojis[actionGlyph.textContent.trim().toLowerCase()];
     }
     desc = `${PF2e_parseTraits(message.flavor)}\n`;
     let speakerActor;
@@ -564,6 +613,34 @@ async function PF2e_getEnrichmentOptions(message) {
             return {};
             break;
     }
+}
+
+function PF2e_createToolbeltSavesEmbed(message, tokens){
+    if(!tokens){
+        return [];
+    }
+    const title = function () {
+        const save = message.flags["pf2e-toolbelt"].target.save;
+        const savecheck = game.i18n.localize(CONFIG.PF2E.saves[save.statistic]);
+        return `${save.basic ? game.i18n.format("PF2E.InlineCheck.BasicWithSave", { save: savecheck }) : savecheck} Save (Players)`;
+    }();
+    let desc = "";
+    const saves = message.flags["pf2e-toolbelt"].target.saves
+    tokens.forEach(token => {
+        if(!saves[token.id]){
+            return;
+        }
+        const tokenSave = saves[token.id];
+        desc += `${dieIcon(20)}**${token.name}: __${tokenSave.value}__**`;
+        if (tokenSave.die === 20) {
+            desc += ` (${swapOrNot("Nat 20", getDieEmoji(20, 20))}!)`;
+        }
+        else if (tokenSave.die === 1) {
+            desc += ` (${swapOrNot("Nat 1", getDieEmoji(20, 1))})`;
+        }
+        desc += `\`(${PF2e_parseDegree(tokenSave.success)})\``;
+    })
+    return [{title: title, description: desc}];
 }
 
 // Complex recursion to find die terms and add them all together in one breakdown
