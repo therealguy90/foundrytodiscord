@@ -2,7 +2,7 @@ import * as generic from './generic.mjs';
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
 import { newEnrichedMessage, toHTML } from './helpers/enrich.mjs';
 import { swapOrNot, getDieEmoji, dieIcon } from './helpers/emojis/global.mjs';
-import { ACTIONGLYPH_EMOJIS, DAMAGE_EMOJI, TEMPLATE_EMOJI, targetEmoji } from './helpers/emojis/pf2e.mjs';
+import { actionGlyphEmojis, damageEmojis, templateEmojis, targetEmoji } from './helpers/emojis/pf2e.mjs';
 
 const DamageRoll = CONFIG.Dice.rolls.find(r => r.name === "DamageRoll");
 
@@ -34,6 +34,7 @@ export async function messageParserPF2e(msg) {
         if (game.modules.get("polyglot")?.active && getThisModuleSetting('enablePolyglot') && enrichedMsg.flags?.polyglot?.language) {
             constructedMessage = generic.polyglotize(enrichedMsg);
         }
+
         if (constructedMessage === '') {
             constructedMessage = enrichedMsg.content;
         }
@@ -46,9 +47,7 @@ export async function messageParserPF2e(msg) {
             embeds = generic.createGenericRollEmbed(enrichedMsg);
         }
     }
-    // Document of origin is important in the PF2e parser, as some of the labels require it to be passed to scale correctly.
-    // Removing this would break parity between foundry and discord, as some damage roll values will not stay the same without
-    // an actor, especially scaling abilities and spells.
+
     if (embeds && embeds.length > 0) {
         embeds[0].description = await PF2e_reformatMessage(await toHTML(embeds[0].description, await PF2e_getEnrichmentOptions(msg)));
         constructedMessage = (/<[a-z][\s\S]*>/i.test(enrichedMsg.flavor) || enrichedMsg.flavor === embeds[0].title) ? "" : enrichedMsg.flavor;
@@ -61,6 +60,7 @@ export async function messageParserPF2e(msg) {
             }
         }
     }
+
     if (anonEnabled()) {
         constructedMessage = generic.anonymizeText(constructedMessage, enrichedMsg);
     }
@@ -80,7 +80,7 @@ async function PF2e_parseHTMLText(htmlString) {
     // Format various elements
     generic.removeElementsBySelector('[data-visibility="gm"], [data-visibility="owner"],[data-visibility="none"]', htmldoc);
     generic.formatTextBySelector('.inline-check, span[data-pf2-check]', text => `${dieIcon(20)}\`${text}\``, htmldoc);
-    generic.formatTextBySelector('.action-glyph', text => `${ACTIONGLYPH_EMOJIS[text.toLowerCase().trim()] ? ACTIONGLYPH_EMOJIS[text.toLowerCase().trim()] : ""}`, htmldoc);
+    generic.formatTextBySelector('.action-glyph', text => `${actionGlyphEmojis[text.toLowerCase().trim()] ? actionGlyphEmojis[text.toLowerCase().trim()] : ""}`, htmldoc);
     reformattedText = htmldoc.innerHTML;
     htmldoc.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(header => {
         header.querySelectorAll('span[style="float:right"]').forEach(floatright => {
@@ -94,8 +94,8 @@ async function PF2e_parseHTMLText(htmlString) {
         templateButtons.forEach(template => {
             const type = template.getAttribute('data-pf2-effect-area');
             let tempTemplate = ""
-            if (TEMPLATE_EMOJI.hasOwnProperty(type)) {
-                tempTemplate += TEMPLATE_EMOJI[type];
+            if (templateEmojis.hasOwnProperty(type)) {
+                tempTemplate += templateEmojis[type];
             }
             tempTemplate += "`" + template.textContent + "`";
             template.outerHTML = tempTemplate;
@@ -134,8 +134,9 @@ function PF2e_createCardEmbed(message) {
     const h3Element = div.querySelector("h3");
     const actionGlyphElement = h3Element.querySelector(".action-glyph");
     if (actionGlyphElement) {
-        if (getThisModuleSetting('prettierEmojis') && ACTIONGLYPH_EMOJIS[actionGlyphElement.textContent.toLowerCase().trim()]) {
-            actionGlyphElement.innerHTML = ACTIONGLYPH_EMOJIS[actionGlyphElement.textContent.toLowerCase().trim()];
+        const glyphCharacter = actionGlyphElement.textContent.toLowerCase().trim();
+        if (getThisModuleSetting('prettierEmojis') && actionGlyphEmojis[glyphCharacter]) {
+            actionGlyphElement.innerHTML = actionGlyphEmojis[glyphCharacter];
         }
         else {
             actionGlyphElement.remove();
@@ -444,12 +445,12 @@ function PF2e_parseDamageTypes(baserolls) {
                     persFormula = persFormula.replace(regex, '');
                     damages += persFormula.trim();
                 }
-                damages += `${(roll.persistent ? DAMAGE_EMOJI["persistent"] : "")}${(precision ? DAMAGE_EMOJI["precision"] : "")}${(splash ? DAMAGE_EMOJI["splash"] : "")}`;
-                if (!DAMAGE_EMOJI[roll.type]) {
+                damages += `${(roll.persistent ? damageEmojis["persistent"] : "")}${(precision ? damageEmojis["precision"] : "")}${(splash ? damageEmojis["splash"] : "")}`;
+                if (!damageEmojis[roll.type]) {
                     damages += `[${roll.type}]`;
                 }
                 else {
-                    damages += DAMAGE_EMOJI[roll.type];
+                    damages += damageEmojis[roll.type];
                 }
                 if (j != term.rolls.length - 1) {
                     damages += " + ";
@@ -460,9 +461,9 @@ function PF2e_parseDamageTypes(baserolls) {
     else {
         baserolls.terms.forEach((term, i) => {
             term.rolls.forEach((roll, j) => {
-                damages += roll.total + DAMAGE_EMOJI["splash"];
-                if (DAMAGE_EMOJI[roll.type]) {
-                    damages += DAMAGE_EMOJI[roll.type];
+                damages += roll.total + damageEmojis["splash"];
+                if (damageEmojis[roll.type]) {
+                    damages += damageEmojis[roll.type];
                 }
                 else {
                     damages += `[${roll.type}]`;

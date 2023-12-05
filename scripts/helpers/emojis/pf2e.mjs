@@ -1,4 +1,4 @@
-export const ACTIONGLYPH_EMOJIS = {
+export const actionGlyphEmojis = {
     "1": "<:1_action:1069514877384786001>",
     "2": "<:2_actions:1069514879431606282>",
     "3": "<:3_actions:1069514884204736532>",
@@ -11,7 +11,7 @@ export const ACTIONGLYPH_EMOJIS = {
     "r": "<:reaction:1069514873559592981>"
 }
 
-export const DAMAGE_EMOJI = {
+export const damageEmojis = {
     "bludgeoning": ':hammer:',
     "slashing": ':axe:',
     "piercing": ':bow_and_arrow:',
@@ -39,7 +39,7 @@ export const DAMAGE_EMOJI = {
     "untyped": ":grey_question:"
 }
 
-export const TEMPLATE_EMOJI = {
+export const templateEmojis = {
     "emanation": ":radio_button:",
     "burst": ":blue_circle:",
     "cone": ":mega:",
