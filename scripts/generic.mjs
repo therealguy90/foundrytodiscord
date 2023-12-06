@@ -454,6 +454,8 @@ export function htmlCodeCleanup(htmltext) {
         { selector: "h5, h6", replacer: ["### ", "\n"] },
         { selector: "strong, b", replacer: ["**", "**"] },
         { selector: "em, i", replacer: ["*", "*"] },
+        { selector: "s", replacer: ["~~", "~~"]},
+        { selector: "code", replacer: ["`", "`"]},
         { selector: "hr", replacer: ["-----------------------"] },
         { selector: "li", replacer: ["- ", "\n"] },
         { selector: "input", replacer: [""] },
