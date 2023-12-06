@@ -730,9 +730,14 @@ export function generateRollBreakdown(roll, nextTerm = false) {
                 }
                 break;
             case term instanceof PoolTerm || term.hasOwnProperty("rolls"):
+                let poolRollCnt = 1;
                 term.rolls.forEach(poolRoll => {
-                    currentTermString += ` ${generateRollBreakdown(poolRoll, true)}`;
-                })
+                    currentTermString += ` ${PF2e_generateRollBreakdown(poolRoll, true)}`;
+                    if (poolRollCnt <= term.rolls.length) {
+                        currentTermString += " +";
+                    }
+                    poolRollCnt++;
+                });
                 break;
             case term instanceof OperatorTerm:
                 currentTermString += ` ${term.operator}`;

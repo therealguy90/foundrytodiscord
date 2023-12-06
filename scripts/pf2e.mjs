@@ -220,7 +220,7 @@ function PF2e_createRollEmbed(message) {
             }
             if (targetToken.hasPlayerOwner) {
                 targetString += `\`${targetToken.name}\` `;
-                targetPlayerTokens.push({name: targetToken.name, id: targetToken.id});
+                targetPlayerTokens.push({ name: targetToken.name, id: targetToken.id });
             }
             else {
                 if (targetActor) {
@@ -356,11 +356,11 @@ function PF2e_createRollEmbed(message) {
         desc += "\n";
     }
     let rollEmbeds = [{ title: title, description: desc }]
-    if(message.isDamageRoll && game.modules.get("pf2e-toolbelt")?.active && message.flags["pf2e-toolbelt"]?.target?.saves && targetPlayerTokens){
+    if (message.isDamageRoll && game.modules.get("pf2e-toolbelt")?.active && message.flags["pf2e-toolbelt"]?.target?.saves && targetPlayerTokens) {
         rollEmbeds = rollEmbeds.concat(PF2e_createToolbeltSavesEmbed(message, targetPlayerTokens));
     }
-    
-    return rollEmbeds
+
+    return rollEmbeds;
 
 }
 
@@ -619,8 +619,8 @@ async function PF2e_getEnrichmentOptions(message) {
     }
 }
 
-function PF2e_createToolbeltSavesEmbed(message, tokens){
-    if(!tokens){
+function PF2e_createToolbeltSavesEmbed(message, tokens) {
+    if (!tokens) {
         return [];
     }
     const title = function () {
@@ -631,7 +631,7 @@ function PF2e_createToolbeltSavesEmbed(message, tokens){
     let desc = "";
     const saves = message.flags["pf2e-toolbelt"].target.saves
     tokens.forEach(token => {
-        if(!saves[token.id]){
+        if (!saves[token.id]) {
             return;
         }
         const tokenSave = saves[token.id];
@@ -644,7 +644,7 @@ function PF2e_createToolbeltSavesEmbed(message, tokens){
         }
         desc += `\`(${PF2e_parseDegree(tokenSave.success)})\``;
     })
-    return [{title: title, description: desc}];
+    return [{ title: title, description: desc }];
 }
 
 // Complex recursion to find die terms and add them all together in one breakdown
@@ -688,9 +688,14 @@ function PF2e_generateRollBreakdown(roll, nextTerm = false) {
                 }
                 break;
             case term instanceof PoolTerm || term.hasOwnProperty("rolls"):
+                let poolRollCnt = 1;
                 term.rolls.forEach(poolRoll => {
                     currentTermString += ` ${PF2e_generateRollBreakdown(poolRoll, true)}`;
-                })
+                    if (poolRollCnt <= term.rolls.length) {
+                        currentTermString += " +";
+                    }
+                    poolRollCnt++;
+                });
                 break;
             case term instanceof OperatorTerm:
                 currentTermString += ` ${term.operator}`;
