@@ -484,15 +484,18 @@ function PF2e_parseDamageTypes(baserolls) {
                     }
 
                 });
+                console.log(damages);
                 if (!roll.persistent) {
                     damages += roll._total.toString();
 
                 }
                 else {
-                    let persFormula = roll.formula;
-                    const regex = /[^\d+d\d+\s*+-]/g;
+                    let persFormula = roll._formula;
+                    console.log(persFormula);
+                    const regex = /\[([^\]]*)\]/g;
                     persFormula = persFormula.replace(regex, '');
                     damages += persFormula.trim();
+                    console.log(damages);
                 }
                 damages += `${(roll.persistent ? damageEmojis["persistent"] : "")}${(precision ? damageEmojis["precision"] : "")}${(splash ? damageEmojis["splash"] : "")}`;
                 if (!damageEmojis[roll.type]) {
@@ -501,6 +504,7 @@ function PF2e_parseDamageTypes(baserolls) {
                 else {
                     damages += damageEmojis[roll.type];
                 }
+                console.log(damages);
                 if (j != term.rolls.length - 1) {
                     damages += " + ";
                 }
@@ -677,7 +681,7 @@ function PF2e_generateRollBreakdown(roll, nextTerm = false) {
                     }
                 }
                 else {
-                    currentTermString += `\`term.expression\``;
+                    currentTermString += `\`${term.expression}\``;
                     if (nextTerm) {
                         currentTermString += " +";
                     }
