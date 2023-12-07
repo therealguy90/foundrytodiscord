@@ -348,10 +348,12 @@ function PF2e_createRollEmbed(message) {
             else if (message.rolls[0].result.startsWith('1 ')) {
                 desc += ` (${swapOrNot("Nat 1", getDieEmoji(20, 1))})`;
             }
-            desc += `||(${PF2e_generateRollBreakdown(message.rolls[0])})||`;
         }
         if (PF2e_parseDegree(message.flags.pf2e.context.outcome)) {
             desc += `\`(${PF2e_parseDegree(message.flags.pf2e.context.outcome)})\``;
+        }
+        if(speakerActor?.hasPlayerOwner ){
+            desc += `||(${PF2e_generateRollBreakdown(message.rolls[0])})||`;
         }
         desc += "\n";
     }
