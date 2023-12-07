@@ -33,6 +33,9 @@ While it will work with other systems, the extent of compatibility may vary. Reg
 **Pf2e Target Damage:**
 - Multiple targets are also sent to Discord.
 
+**Pf2e Toolbelt:**
+- Target damage helper save results are displayed if they're from a player.
+
 **Midi QOL:**
 - Edits Mergecards in real-time.
 

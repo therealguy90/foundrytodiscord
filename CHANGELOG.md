@@ -1,4 +1,9 @@
-# 1.8.1
+# 1.8.2
+
+- Added support for PF2e Toolbelt target damage helper, showing damage targets, and players' save results.
+- Minor bug fixes.
+
+## 1.8.1
 
 - Added a few new emojis.
 - Improved the roll parsing algorithm to hopefully cover more systems, and skip parsing if it's not supported.
