@@ -454,8 +454,8 @@ export function htmlCodeCleanup(htmltext) {
         { selector: "h5, h6", replacer: ["### ", "\n"] },
         { selector: "strong, b", replacer: ["**", "**"] },
         { selector: "em, i", replacer: ["*", "*"] },
-        { selector: "s", replacer: ["~~", "~~"]},
-        { selector: "code", replacer: ["`", "`"]},
+        { selector: "s", replacer: ["~~", "~~"] },
+        { selector: "code", replacer: ["`", "`"] },
         { selector: "hr", replacer: ["-----------------------"] },
         { selector: "li", replacer: ["- ", "\n"] },
         { selector: "input", replacer: [""] },
@@ -481,23 +481,33 @@ export function htmlCodeCleanup(htmltext) {
 }
 
 export function polyglotize(message) {
-    const getReplacementString = function (languages = []) {
-        if (languages.length === 0) {
+    const getReplacementString = function (listLanguages = []) {
+        if (listLanguages.length === 0) {
+            let languages = new Set();
             //get a list of all PCs and player-controlled actors
             let playerActors = game.actors.filter(a => a.hasPlayerOwner);
-            let languages = new Set();
             for (let actor of playerActors) {
                 let characterLanguages = actor.system.traits.languages.value;
+                console.log(characterLanguages);
                 for (let language of characterLanguages) {
                     languages.add(language);
                 }
             }
-        }
-        if (languages.includes(message.flags.polyglot.language)) {
-            return message.content;
+            console.log(languages);
+            if (languages.has(message.flags.polyglot.language)) {
+                return message.content;
+            }
+            else {
+                return "*Unintelligible*";
+            }
         }
         else {
-            return "*Unintelligible*"
+            if (listLanguages.includes(message.flags.polyglot.language)) {
+                return message.content;
+            }
+            else {
+                return "*Unintelligible*";
+            }
         }
     };
     let listLanguages = [];
@@ -519,7 +529,7 @@ export function polyglotize(message) {
                 return getReplacementString(listLanguages);
             }
             catch (e) {
-                console.log(`foundrytodiscord | Your system "${game.system.id}" does not support Polyglot integration with this module due to a different actor structure.`)
+                console.log(`foundrytodiscord | Your system "${game.system.id}" does not support Polyglot integration with this module due to a different actor structure.`);
             }
         }
     }
