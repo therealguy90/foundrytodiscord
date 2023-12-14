@@ -252,7 +252,7 @@ function PF2e_createRollEmbed(message) {
             desc += `**${swapOrNot(":dart:", targetEmoji)}Target${targets.length > 1 ? "s" : ""}: **${targetString}\n`;
         }
     }
-    else if (game.modules.get("pf2e-target-damage")?.active && message.flags['pf2e-target-damage']?.targets) { //optional implementation for "pf2e-target-damage" module
+    else if (game.modules.get("pf2e-target-damage")?.active && message.flags['pf2e-target-damage']?.targets?.length > 0) { //optional implementation for "pf2e-target-damage" module
         const targets = message.flags['pf2e-target-damage'].targets;
         desc += `**${swapOrNot(":dart:", targetEmoji)}Target${targets.length > 1 ? "s" : ""}: **`;
         targets.forEach(target => {
