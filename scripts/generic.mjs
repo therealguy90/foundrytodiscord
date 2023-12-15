@@ -543,23 +543,15 @@ export function anonymizeText(text, message) {
     const curScene = game.scenes.get(message.speaker.scene);
     const speakerActor = message.actor;
     let anonymizedText = text;
-    if (speakerActor) {
-        if (curScene) {
-            const speakerToken = curScene.tokens.get(message.speaker.token);
-            if (text && speakerToken && !anon.playersSeeName(speakerToken.actor)) {
-                anonymizedText = anonymizedText
-                    .replace(new RegExp(`\\b${speakerToken.name}\\b`, 'gi'), anon.getName(speakerActor));
-            }
+    if (curScene) {
+        const speakerToken = curScene.tokens.get(message.speaker.token);
+        if (text && speakerToken && !anon.playersSeeName(speakerToken.actor)) {
+            anonymizedText = anonymizedText
+                .replace(new RegExp(`\\b${speakerToken.name}\\b`, 'gi'), anon.getName(speakerToken.name));
         }
-        anonymizedText = anonymizedText.replace(new RegExp(`\\b${speakerActor.name}\\b`, 'gi'), anon.getName(speakerActor));
     }
-    if (message.speaker.alias) {
-        if (speakerActor) {
-            anonymizedText = anonymizedText.replace(new RegExp(`\\b${message.speaker.alias}\\b`, 'gi'), anon.getName(speakerActor));
-        }
-        else{
-            anonymizedText = anonymizedText.replace(new RegExp(`\\b${message.speaker.alias}\\b`, 'gi'), "Unknown");
-        }
+    else if (speakerActor && !anon.playersSeeName(speakerActor)) {
+        anonymizedText = anonymizedText.replace(new RegExp(`\\b${speakerActor.name}\\b`, 'gi'), anon.getName(speakerActor));
     }
     return anonymizedText;
 }
