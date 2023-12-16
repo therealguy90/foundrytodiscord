@@ -1,4 +1,9 @@
-# 1.8.2
+# 1.8.3
+
+- Small bug fixes, including the "Target" text still being displayed for no targets on PF2e target damage, and Polyglot sending "undefined" messages.
+- Improves Anonymous replacement name hiding.
+
+## 1.8.2
 
 - Added support for PF2e Toolbelt target damage helper, showing damage targets, and players' save results.
 - Minor bug fixes.
