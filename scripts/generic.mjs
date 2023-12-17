@@ -176,6 +176,9 @@ function generateDiscordAvatar(message) {
 
 function generateDiscordUsername(message) {
     let username = message.alias;
+    if(getThisModuleSetting("forceShowNames")){
+        return username;
+    }
     const speakerToken = (message.speaker?.token && message.speaker?.scene)
         ? game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token)
         : undefined;

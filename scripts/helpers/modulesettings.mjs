@@ -199,6 +199,14 @@ export function initModuleSettings() {
         default: true,
         type: Boolean
     });
+    game.settings.register('foundrytodiscord', 'forceShowNames', {
+        name: "Force show names on Discord",
+        hint: "Turn this on to disable hiding token names on Discord regardless of token name visibility. The default behavior is to show only token names if the name on the token is visible to players.",
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean
+    });
     game.settings.register('foundrytodiscord', 'disableDeletions', {
         name: "Disable message deletions",
         hint: "If this is turned ON, deleted messages in Foundry won't be synced with your Discord webhook.",
