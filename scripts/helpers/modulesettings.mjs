@@ -173,13 +173,21 @@ export function initModuleSettings() {
     if (game.modules.get("anonymous")?.active) {
         game.settings.register('foundrytodiscord', 'enableAnon', {
             name: "(anonymous) Use Replacement Names",
-            hint: "Use Anonymous in Discord messages, such as replacing names, removing descriptions and footers. Do not turn this off if you want to limit metagame information as usual.",
+            hint: "Use Anonymous in Discord messages, such as replacing names, removing them in descriptions and footers. Do not turn this off if you want to limit metagame information as usual.",
             scope: "world",
             config: true,
             default: true,
             type: Boolean
         });
     }
+    game.settings.register('foundrytodiscord', 'forceShowNames', {
+        name: "Force show names on Discord",
+        hint: "Turn this on to show token names on Discord regardless of token name visibility. The default behavior is to show only token names if the name on the token is visible to players. This overrides Anonymous.",
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean
+    });
     /*if (SYSTEM_ID === 'PLACEHOLDER') {
         game.settings.register('foundrytodiscord', 'experimentalFeatures', {
             name: "(PLACEHOLDER) Experimental Parser",
@@ -197,14 +205,6 @@ export function initModuleSettings() {
         scope: "world",
         config: true,
         default: true,
-        type: Boolean
-    });
-    game.settings.register('foundrytodiscord', 'forceShowNames', {
-        name: "Force show names on Discord",
-        hint: "Turn this on to disable hiding token names on Discord regardless of token name visibility. The default behavior is to show only token names if the name on the token is visible to players.",
-        scope: "world",
-        config: true,
-        default: false,
         type: Boolean
     });
     game.settings.register('foundrytodiscord', 'disableDeletions', {
@@ -229,7 +229,7 @@ export function getThisModuleSetting(settingName) {
     try {
         return game.settings.get('foundrytodiscord', settingName);
     }
-    catch(e){
+    catch (e) {
         return undefined;
     }
 }
