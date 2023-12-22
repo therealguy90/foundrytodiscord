@@ -154,7 +154,7 @@ export function initModuleSettings() {
         if (getThisModuleSetting("enablePolyglot")) {
             game.settings.register('foundrytodiscord', "commonLanguages", {
                 name: "(Polyglot) Override common languages: ",
-                hint: "A list of languages that are \"common\" to your world. By default, this is \"common\", but this can be replaced by a list of language ids, separated by commas. Homebrew languages might use a different language id, such as 'hb_english'",
+                hint: "A comma-separated list of languages that are \"common\" to your world. By default, this is \"common\", but this can be replaced by a list of language ids, separated by commas. Homebrew languages might use a different language id, such as 'hb_english'",
                 scope: "world",
                 config: true,
                 default: "common",
@@ -162,7 +162,7 @@ export function initModuleSettings() {
             });
             game.settings.register('foundrytodiscord', 'includeOnly', {
                 name: "(Polyglot) Understand only these languages:",
-                hint: "A list of languages that you wish to ONLY be understood to be sent in Discord, separated by commas. Leave blank for normal Polyglot behavior.",
+                hint: "A comma-separated list of languages that you wish to ONLY be understood to be sent in Discord, separated by commas. Leave blank for normal Polyglot behavior.",
                 scope: "world",
                 config: true,
                 default: "",
