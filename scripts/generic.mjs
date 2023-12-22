@@ -491,12 +491,10 @@ export function polyglotize(message) {
             let playerActors = game.actors.filter(a => a.hasPlayerOwner);
             for (let actor of playerActors) {
                 let characterLanguages = actor.system.traits.languages.value;
-                console.log(characterLanguages);
                 for (let language of characterLanguages) {
                     languages.add(language);
                 }
             }
-            console.log(languages);
             if (languages.has(message.flags.polyglot.language)) {
                 return message.content;
             }
