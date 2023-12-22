@@ -680,7 +680,7 @@ function PF2e_generateRollBreakdown(roll, nextTerm = false) {
                 }
                 else {
                     currentTermString += `\`${term.expression}\``;
-                    if (nextTerm) {
+                    if (nextTerm && (roll.terms[termcount] && (!roll.terms[termcount] instanceof OperatorTerm))) {
                         currentTermString += " +";
                     }
                 }
