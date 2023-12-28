@@ -487,9 +487,8 @@ function PF2e_parseDamageTypes(baserolls) {
                     }
 
                 });
-                if (!roll.persistent) {
+                if (!roll.persistent || baserolls.options?.evaluatePersistent) {
                     damages += roll._total.toString();
-
                 }
                 else {
                     let persFormula = roll._formula;
