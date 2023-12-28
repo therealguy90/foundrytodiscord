@@ -81,6 +81,7 @@ async function PF2e_parseHTMLText(htmlString) {
     generic.removeElementsBySelector('[data-visibility="gm"], [data-visibility="owner"],[data-visibility="none"]', htmldoc);
     generic.formatTextBySelector('.inline-check, span[data-pf2-check]', text => `${dieIcon(20)}\`${text}\``, htmldoc);
     generic.formatTextBySelector('.action-glyph', text => `${actionGlyphEmojis[text.toLowerCase().trim()] ? actionGlyphEmojis[text.toLowerCase().trim()] : ""}`, htmldoc);
+    generic.formatTextBySelector('.statements.reverted', text => `~~${text}~~`, htmldoc);
     reformattedText = htmldoc.innerHTML;
     htmldoc.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(header => {
         header.querySelectorAll('span[style="float:right"]').forEach(floatright => {
