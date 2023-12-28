@@ -546,9 +546,9 @@ export function anonymizeText(text, message) {
     let anonymizedText = text;
     if (curScene) {
         const speakerToken = curScene.tokens.get(message.speaker.token);
-        if (text && speakerToken && !anon.playersSeeName(speakerToken.actor)) {
+        if (text && speakerToken?.actor && !anon.playersSeeName(speakerToken.actor)) {
             anonymizedText = anonymizedText
-                .replace(new RegExp(`\\b${speakerToken.name}\\b`, 'gi'), anon.getName(speakerToken.name));
+                .replace(new RegExp(`\\b${speakerToken.name}\\b`, 'gi'), anon.getName(speakerToken.actor));
         }
     }
     else if (speakerActor && !anon.playersSeeName(speakerActor)) {
