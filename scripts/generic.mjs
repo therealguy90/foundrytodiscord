@@ -519,6 +519,7 @@ export function polyglotize(message) {
             }
             catch (e) {
                 console.log(`foundrytodiscord | Your system "${game.system.id}" does not support Polyglot integration with this module due to a different actor structure.`)
+                return message.content;
             }
         }
         else {
@@ -531,6 +532,7 @@ export function polyglotize(message) {
             }
             catch (e) {
                 console.log(`foundrytodiscord | Your system "${game.system.id}" does not support Polyglot integration with this module due to a different actor structure.`);
+                return message.content;
             }
         }
     }
