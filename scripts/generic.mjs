@@ -171,7 +171,7 @@ function generateDiscordAvatar(message) {
         return generateimglink(aliasMatchedActor.prototypeToken.texture.src);
     }
 
-    return generateimglink(message.user?.avatar);
+    return generateimglink(message.user.avatar);
 }
 
 function generateDiscordUsername(message) {
