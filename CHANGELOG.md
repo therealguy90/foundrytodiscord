@@ -1,4 +1,9 @@
-# 1.8.3
+# 1.8.4
+
+- Adds a toggle to force token names to show on Discord regardless of token visibility.
+- Bug fixes.
+
+## 1.8.3
 
 - Small bug fixes, including the "Target" text still being displayed for no targets on PF2e target damage, and Polyglot sending "undefined" messages.
 - Improves Anonymous replacement name hiding.
