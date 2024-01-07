@@ -3,6 +3,7 @@ import { PF2e_reformatMessage } from "./pf2e.mjs";
 import { DnD5e_reformatMessage } from "./dnd5e.mjs";
 import { dataToBlob, generateimglink } from "./helpers/images.mjs";
 import { splitEmbed, hexToColor } from "./helpers/embeds.mjs";
+import { toHTML } from "./helpers/enrich.mjs";
 import * as api from '../api.js';
 
 
@@ -25,7 +26,7 @@ export async function initMenuHooks() {
                         embeds = [{
                             author: { name: "From Journal " + sheet.title },
                             title: pageData.name,
-                            description: await reformat(pageData.text.content)
+                            description: await reformat(await toHTML(pageData.text.content))
                         }];
                         if (embeds[0].description.length > 4000) {
                             embeds = splitEmbed(embeds[0]);
