@@ -176,7 +176,7 @@ function generateDiscordAvatar(message) {
 
 function generateDiscordUsername(message) {
     let username = message.alias;
-    if(getThisModuleSetting("forceShowNames")){
+    if (getThisModuleSetting("forceShowNames")) {
         return username;
     }
     const speakerToken = (message.speaker?.token && message.speaker?.scene)
@@ -483,14 +483,21 @@ export function htmlCodeCleanup(htmltext) {
         .replaceAll(" ", ' ').trim(); // Remove placeholder table filler
 }
 
-export function polyglotize(message) {
+export function polyglotize(message, langPath = "system.traits.languages.value") {
     const getReplacementString = function (listLanguages = []) {
         if (listLanguages.length === 0) {
             let languages = new Set();
             //get a list of all PCs and player-controlled actors
             let playerActors = game.actors.filter(a => a.hasPlayerOwner);
             for (let actor of playerActors) {
-                let characterLanguages = actor.system.traits.languages.value;
+                let characterLanguages = getPropertyByString(actor, langPath);;
+                if (!characterLanguages) {
+                    characterLanguages = getPropertyByString(actor, "system.traits.languages.value");
+                    if (!characterLanguages) {
+                        console.log(`foundrytodiscord | Your system "${game.system.id}" does not support Polyglot integration with this module due to a different actor structure.`)
+                        return message.content;
+                    }
+                }
                 for (let language of characterLanguages) {
                     languages.add(language);
                 }
@@ -512,7 +519,9 @@ export function polyglotize(message) {
         }
     };
     let listLanguages = [];
-    if (!getThisModuleSetting("commonLanguages").toLowerCase().includes(message.flags.polyglot.language)) {
+    const defaultLanguage = game.polyglot.languageProvider.defaultLanguage;
+    const messageLanguage = message.flags.polyglot.language;
+    if (!(defaultLanguage === messageLanguage || game.polyglot.isLanguageUnderstood(messageLanguage))) {
         if (getThisModuleSetting("includeOnly") === "") {
             try {
                 return getReplacementString();
@@ -825,6 +834,21 @@ export function tokenBar_isTokenBarCard(htmlString) {
         return false;
     }
 }
+
+function getPropertyByString(obj, propString) {
+    let props = propString.split('.');
+    let current = obj;
+
+    for (let i = 0; i < props.length; i++) {
+        if (current[props[i]] !== undefined) {
+            current = current[props[i]];
+        } else {
+            return undefined;
+        }
+    }
+    return current;
+}
+
 
 function censorId(docid) {
     // Censors IDs for anonymized names

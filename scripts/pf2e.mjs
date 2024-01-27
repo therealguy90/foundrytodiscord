@@ -32,7 +32,7 @@ export async function messageParserPF2e(msg) {
         * actor.system.traits.languages.value
         */
         if (game.modules.get("polyglot")?.active && getThisModuleSetting('enablePolyglot') && enrichedMsg.flags?.polyglot?.language) {
-            constructedMessage = generic.polyglotize(enrichedMsg);
+            constructedMessage = generic.polyglotize(enrichedMsg, "system.details.languages.value");
         }
 
         if (constructedMessage === '') {
