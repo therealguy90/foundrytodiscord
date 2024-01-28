@@ -28,9 +28,7 @@ export async function messageParserPF2e(msg) {
         }
     }
     else if (!enrichedMsg.isRoll || (enrichedMsg.isRoll && enrichedMsg.rolls.length < 1)) {
-        /*Attempt polyglot support. This will ONLY work if the structure is similar:
-        * actor.system.traits.languages.value
-        */
+
         if (game.modules.get("polyglot")?.active && getThisModuleSetting('enablePolyglot') && enrichedMsg.flags?.polyglot?.language) {
             constructedMessage = generic.polyglotize(enrichedMsg, "system.details.languages.value");
         }
