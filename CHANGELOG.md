@@ -1,4 +1,9 @@
-# 1.8.4
+# 1.8.5
+
+- Use enrichers on journal pages before sending.
+- Remove polyglot common override in favor of using polyglot's omniglot function. The chosen default language(common for dnd5e, taldane for post-5.12 pf2e) is always included.
+
+## 1.8.4
 
 - Adds a toggle to force token names to show on Discord regardless of token visibility.
 - Bug fixes.
