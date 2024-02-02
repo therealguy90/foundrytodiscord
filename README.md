@@ -43,6 +43,7 @@ While it will work with other systems, the extent of compatibility may vary. Reg
 - If any of your modules automatically deletes the chat archive other than you clicking on the flush chat log button (i.e. DF Chat Enhancements Archive function), **DISABLE** Message Deletions via config first! Otherwise, your discord messages will be deleted!
 
 ## Known Issues:
+- The new 3.x version of DnD5e has new formatting, which might not sit well with Foundry to Discord. I will roll out an update as soon as midi-qol decides to update to 3.x, as they might need to cope with the new changes as well, changing formatting around for me to grab.
 - Foundry to Discord uses the same enrichers that a system uses for ease of parsing custom inline rolls and the like. This means that notification warnings or console errors may be doubled if the enricher throws them at you. Not a huge issue, but it's something.
 - There's a very low chance that a midi-qol mergecard might not be parsed properly. I do not know the cause of this, and it is *almost* always the first mergecard the module encounters. Subsequent ones are fine... for some reason. If this ever happens to you, you can try resending the message by right-clicking on the message in Foundry and clicking "Send to Discord".
 
