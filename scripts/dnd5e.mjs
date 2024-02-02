@@ -26,7 +26,7 @@ export async function messageParserDnD5e(msg) {
     else if (generic.isCard(enrichedMsg.content) && enrichedMsg.rolls?.length < 1) {
         constructedMessage = "";
         if (getThisModuleSetting('sendEmbeds')) {
-            embeds = generic.createCardEmbed(enrichedMsg);
+            embeds = DnD5e_createCardEmbed(enrichedMsg);
         }
     }
     else if (!enrichedMsg.isRoll) {
@@ -69,6 +69,55 @@ export async function messageParserDnD5e(msg) {
     return generic.getRequestParams(enrichedMsg, constructedMessage, embeds);
 }
 
+function DnD5e_createCardEmbed(message) {
+    const div = document.createElement("div");
+    div.innerHTML = message.content;
+    // Find the <h3> element and extract its text content, since h3 works for most systems
+    // if not, use the first line it finds
+    let title;
+    const titleElement = div.querySelector("span.title");
+    const h3Element = div.querySelector("h3");
+    if(titleElement?.textContent){
+        title = titleElement.textContent.trim();
+    }
+    else if (h3Element?.textContent) {
+        title = h3Element.textContent.trim();
+    }
+    else {
+        //Use first line of plaintext to title the embed instead
+        const lines = div.textContent.split('\n'); // Split by newline characters
+        title = lines[0].trim(); // Get the first line of plain text
+        const regex = new RegExp('\\b' + title + '\\b', 'i');
+        div.innerHTML = div.innerHTML.replace(regex, "");
+
+    }
+    let desc = "";
+    let speakerActor = undefined;
+    if (message.speaker?.actor) {
+        speakerActor = game.actors.get(message.speaker.actor);
+    }
+
+    //parse card description if source is from a character or actor is owned by a player
+    //this is to limit metagame information and is recommended for most systems.
+    //adding a setting to enable this would be an option, but is not a priority.
+    let descVisible = true;
+
+    if (speakerActor) {
+        if (anonEnabled() && !game.modules.get('anonymous').api.playersSeeName(speakerActor)) {
+            descVisible = false;
+        }
+    }
+    if (descVisible) {
+        let descList = div.querySelectorAll(".card-content");
+        descList.forEach(function (paragraph) {
+            let text = paragraph.innerHTML;
+            desc += text + "\n\n";
+        });
+    }
+
+    return [{ title: title, description: desc, footer: { text: generic.getCardFooter(message.content) } }];
+}
+
 export async function DnD5e_reformatMessage(text) {
     let reformattedText = await generic.reformatMessage(text, DnD5e_parseHTMLText);
     return reformattedText;
@@ -87,7 +136,7 @@ async function DnD5e_parseHTMLText(htmlString) {
 
 // midi might as well be part of the system at this point.
 async function midiqol_createMergeCard(message) {
-    let embeds = generic.createCardEmbed(message);
+    let embeds = DnD5e_createCardEmbed(message);
     const divs = document.createElement('div');
     divs.innerHTML = message.content;
     let attackTitle = "";
