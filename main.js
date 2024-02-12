@@ -240,29 +240,34 @@ Hooks.on('deleteChatMessage', async (msg) => {
 
 function deleteAll(msgObjects, msg) {
     let deleteHook;
-    msgObjects.forEach(msgObject => {
-        const url = msgObject.url;
-        const message = msgObject.message;
-        if (url.split('?').length > 1) {
-            const querysplit = url.split('?');
-            deleteHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
-        } else {
-            deleteHook = url + '/messages/' + message.id;
-        }
-        requestQueue.push(
-            {
-                hook: deleteHook,
-                formData: null,
-                msgID: msg.id,
-                method: 'DELETE',
-                dmsgID: message.id
+    for (const linkedIndex in msgObjects) {
+        const linkedMsgObjects = msgObjects[linkedIndex];
+        for (const msgIndex in linkedMsgObjects) {
+            const msgObject = linkedMsgObjects[msgIndex];
+            const url = msgObject.url;
+            const message = msgObject.message;
+            if (url.split('?').length > 1) {
+                const querysplit = url.split('?');
+                deleteHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
+            } else {
+                deleteHook = url + '/messages/' + message.id;
             }
-        );
-        if (!isProcessing) {
-            isProcessing = true;
-            requestOnce();
+            requestQueue.push(
+                {
+                    hook: deleteHook,
+                    formData: null,
+                    msgID: msg.id,
+                    method: 'DELETE',
+                    dmsgID: message.id,
+                    linkedMsgNum: linkedIndex
+                }
+            );
+            if (!isProcessing) {
+                isProcessing = true;
+                requestOnce();
+            }
         }
-    });
+    }
 }
 
 /* A brief explanation of the queueing system:
@@ -276,56 +281,75 @@ function deleteAll(msgObjects, msg) {
 */
 async function tryRequest(msg, method, hookOverride = undefined) {
     let requestParams = await messageParse(msg);
+
     // do post-parse checks, such as adding images to upload and editing webhook links
-    if (requestParams) {
-        if (requestParams.params.avatar_url === "") {
-            console.warn("foundrytodiscord | Your Invite URL is not set! Avatar images cannot be displayed on Discord.")
-        }
-        let formData = new FormData()
-        if (game.modules.get("chat-media")?.active || game.modules.get("chatgifs")?.active) {
-            const { formDataTemp, contentTemp } = getChatMediaAttachments(formData, requestParams.params.content, msg.content);
-            if (formDataTemp !== formData) {
-                formData = formDataTemp;
-            }
-            requestParams.params.content = contentTemp;
-        }
-        if (requestParams.params.content === "" && requestParams.params.embeds.length === 0 && !formData.get('files[0]')) {
-            if (!msg.content.includes('<img') && !msg.content.includes('<video')) {
-                return;
-            }
-            else {
-                requestParams.params.content += addMediaLinks(msg);
-            }
-            if (requestParams.params.content === "") {
-                return;
-            }
-        }
-        let waitHook;
-        if (requestParams.hook.includes("?")) {
-            waitHook = requestParams.hook + "&wait=true";
+    if (requestParams && requestParams.length > 0) {
+        let messageList;
+        if (game.user.isGM) {
+            messageList = getThisModuleSetting('messageList');
         }
         else {
-            waitHook = requestParams.hook + "?wait=true";
+            messageList = getThisModuleSetting('clientMessageList');
         }
-        formData.append('payload_json', JSON.stringify(requestParams.params));
-        requestQueue.push(
-            {
-                hook: !hookOverride ? waitHook : hookOverride,
-                formData: formData,
-                msgID: msg.id,
-                method: method,
-                dmsgID: null
+        let linkedMsgNum;
+        if (!messageList[msg.id]) {
+            linkedMsgNum = 0;
+        }
+        else {
+            linkedMsgNum = Object.keys(messageList[msg.id]).length;
+        }
+        for (const request of requestParams) {
+            if (request.params.avatar_url === "") {
+                console.warn("foundrytodiscord | Your Invite URL is not set! Avatar images cannot be displayed on Discord.")
             }
-        );
-        if (!isProcessing) {
-            isProcessing = true;
-            requestOnce();
+            let formData = new FormData()
+            if (game.modules.get("chat-media")?.active || game.modules.get("chatgifs")?.active) {
+                const { formDataTemp, contentTemp } = getChatMediaAttachments(formData, request.params.content, msg.content);
+                if (formDataTemp !== formData) {
+                    formData = formDataTemp;
+                }
+                request.params.content = contentTemp;
+            }
+            if (request.params.content === "" && request.params.embeds.length === 0 && !formData.get('files[0]')) {
+                if (!msg.content.includes('<img') && !msg.content.includes('<video')) {
+                    return;
+                }
+                else {
+                    request.params.content += addMediaLinks(msg);
+                }
+                if (request.params.content === "") {
+                    return;
+                }
+            }
+            let waitHook;
+            if (request.hook.includes("?")) {
+                waitHook = request.hook + "&wait=true";
+            }
+            else {
+                waitHook = request.hook + "?wait=true";
+            }
+            formData.append('payload_json', JSON.stringify(request.params));
+            requestQueue.push(
+                {
+                    hook: !hookOverride ? waitHook : hookOverride,
+                    formData: formData,
+                    msgID: msg.id,
+                    method: method,
+                    dmsgID: null,
+                    linkedMsgNum: linkedMsgNum
+                }
+            );
+            if (!isProcessing) {
+                isProcessing = true;
+                requestOnce();
+            }
         }
+
     }
 }
 
 async function requestOnce(retry = 0, ignoreRescuePartyFor = 0) {
-    const { hook, formData, msgID, method, dmsgID } = requestQueue[0];
+    const { hook, formData, msgID, method, dmsgID, linkedMsgNum } = requestQueue[0];
     if (method === 'PATCH') {
         console.log("foundrytodiscord | Attempting to edit message...");
     }
@@ -374,17 +398,17 @@ async function requestOnce(retry = 0, ignoreRescuePartyFor = 0) {
         const response = await fetch(hook, requestOptions);
         if (response.ok) {
             if (method === 'POST') {
-                addSentMessage(msgID, { url: response.url, message: await response.json() });
+                addSentMessage(msgID, { url: response.url, message: await response.json() }, linkedMsgNum);
             }
             if (method === 'DELETE') {
                 if (dmsgID) {
                     if (ignoreRescuePartyFor > 0) {
                         ignoreRescuePartyFor--;
                     }
-                    deleteSentMessage(msgID, dmsgID);
+                    deleteSentMessage(msgID, dmsgID, linkedMsgNum);
                 }
             }
-            else{
+            else {
                 ignoreRescuePartyFor = 0;
             }
             requestQueue.shift();
@@ -407,9 +431,9 @@ async function requestOnce(retry = 0, ignoreRescuePartyFor = 0) {
                 if (ignoreRescuePartyFor > 0) {
                     ignoreRescuePartyFor--;
                 }
-                deleteSentMessage(msgID, dmsgID);
+                deleteSentMessage(msgID, dmsgID, linkedMsgNum);
             }
-            else{
+            else {
                 ignoreRescuePartyFor = 0;
             }
             requestQueue.shift();
@@ -516,7 +540,7 @@ function addMediaLinks(message) {
     return links;
 }
 
-function addSentMessage(msgID, params) {
+function addSentMessage(msgID, params, linkedMsgNum) {
     let messageList;
     if (game.user.isGM) {
         messageList = getThisModuleSetting('messageList');
@@ -525,10 +549,13 @@ function addSentMessage(msgID, params) {
         messageList = getThisModuleSetting('clientMessageList');
     }
     if (!messageList.hasOwnProperty(msgID)) {
-        messageList[msgID] = [params];
+        messageList[msgID] = {}
+    }
+    if (!messageList[msgID][linkedMsgNum]) {
+        messageList[msgID][linkedMsgNum] = { 0: params };
     }
     else {
-        messageList[msgID].push(params);
+        messageList[msgID][linkedMsgNum][Object.keys(messageList[msgID][linkedMsgNum]).length] = params;
     }
 
     const keys = Object.keys(messageList);
@@ -554,13 +581,16 @@ function deleteSentMessage(msgID, dmsgID) {
     }
     if (messageList.hasOwnProperty(msgID)) {
         let index = -1;
-        for (let i = 0; i < messageList[msgID].length; i++) {
-            if (messageList[msgID][i].message.id === dmsgID) {
-                index = i;
-                break;
+        for (let i = 0; i < Object.keys(messageList[msgID]).length; i++) {
+            for (let j = 0; j < Object.keys(messageList[msgID][i]).length; j++) {
+                if (messageList[msgID][i][j] && messageList[msgID][i][j].message.id === dmsgID) {
+                    index = j;
+                    break;
+                }
             }
+            delete messageList[msgID][i][index];
+            break;
         }
-        messageList[msgID].splice(index, 1);
     }
     if (game.user.isGM) {
         game.settings.set('foundrytodiscord', 'messageList', messageList);

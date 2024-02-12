@@ -1,6 +1,6 @@
 import { htmlTo2DTable, parse2DTable } from './helpers/tables.mjs';
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
-import { splitEmbed, hexToColor, removeEmptyEmbeds } from './helpers/embeds.mjs';
+import { splitEmbed, hexToColor, removeEmptyEmbeds, splitText, splitFirstEmbed } from './helpers/messages.mjs';
 import { generateimglink } from './helpers/images.mjs';
 import { newEnrichedMessage } from './helpers/enrich.mjs';
 import { getDieEmoji, getDocumentEmoji, swapOrNot, dieIcon } from './helpers/emojis/global.mjs';
@@ -117,32 +117,93 @@ export function getRequestParams(message, msgText, embeds) {
     }
     embeds = removeEmptyEmbeds(embeds);
     const username = generateDiscordUsername(message);
-    if (embeds[0]?.description?.length > 4000) {
-        embeds = splitEmbed(embeds[0]);
+    const textArray = splitText(msgText, 2000);
+    let allRequests = [];
+    for (const text of textArray) {
+        allRequests.push({
+            hook: hook,
+            params: {
+                username: username,
+                avatar_url: imgurl,
+                content: text,
+                embeds: []
+            }
+        });
     }
-    // Add username to embed
-    if (getThisModuleSetting('showAuthor') && embeds[0] && message.user && message.alias !== message.user.name) {
-        embeds[0].author = {
-            name: message.user.name,
-            icon_url: generateimglink(message.user.avatar)
+    let embedSizeCharCount = 0;
+    let discordSizeLimitedEmbeds = [];
+    for (const embed of embeds) {
+        let descriptionLength = 0;
+        if (embed.description) {
+            descriptionLength = embed.description.length;
+        }
+        if (embed.title) {
+            embedSizeCharCount += embed.title.length;
+        }
+        embedSizeCharCount += descriptionLength;
+        if (descriptionLength > 3900) {
+            discordSizeLimitedEmbeds.push(...splitEmbed(embed, 3900));
+        } else {
+            discordSizeLimitedEmbeds.push(embed);
         }
     }
-    embeds.forEach((embed) => {
-        // Add color to all embeds
-        if (message.user?.color) {
-            embed.color = hexToColor(message.user.color);
+    let embedGroups = [];
+    if (embedSizeCharCount > 4000) {
+        let tempCharCount = 0;
+        let j = 0;
+        for (let i = 0; i < discordSizeLimitedEmbeds.length; i++) {
+            tempCharCount += discordSizeLimitedEmbeds[i].description.length;
+            if (tempCharCount < 4000) {
+                if (!embedGroups[j]) {
+                    embedGroups[j] = [];
+                }
+                embedGroups[j].push(discordSizeLimitedEmbeds[i]);
+            }
+            else {
+                const splitEmbeds = splitFirstEmbed(discordSizeLimitedEmbeds[i], tempCharCount - 4000);
+                embedGroups[j].push(splitEmbeds[0]);
+                discordSizeLimitedEmbeds[i] = splitEmbeds[1];
+                i--;
+                j++;
+                tempCharCount = 0;
+            }
         }
-    })
-
-    return {
-        hook: hook,
-        params: {
-            username: username,
-            avatar_url: imgurl,
-            content: msgText,
-            embeds: embeds
+    }
+    else {
+        embedGroups.push(...[embeds]);
+    }
+    let firstEmbedGroup = true;
+    for (const embedGroup of embedGroups) {
+        embedGroup.forEach((embed) => {
+            // Add color to all embeds
+            if (message.user?.color) {
+                embed.color = hexToColor(message.user.color);
+            }
+        });
+        if (firstEmbedGroup) {
+            if (!embedGroup[0]?.author && getThisModuleSetting('showAuthor') && message.user && message.alias !== message.user.name) {
+                embedGroup[0].author = {
+                    name: message.user.name,
+                    icon_url: generateimglink(message.user.avatar)
+                }
+            }
+            allRequests[allRequests.length - 1].params.embeds = embedGroup;
+            firstEmbedGroup = false;
         }
-    };
+        else {
+            allRequests.push({
+                hook: hook,
+                params: {
+                    username: username,
+                    avatar_url: imgurl,
+                    content: "",
+                    embeds: embedGroup
+                }
+            });
+        }
+    }
+    return allRequests;
+}
 }
 
 function generateDiscordAvatar(message) {
@@ -364,6 +425,7 @@ export async function parseHTMLText(htmlString, customHTMLParser = undefined) {
         const newTable2D = htmlTo2DTable(table);
         table.outerHTML = `\n${parse2DTable(newTable2D)}`;
     });
+
 
     // Remove <img> tags
     removeElementsBySelector('img', htmldoc);
