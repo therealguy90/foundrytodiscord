@@ -467,7 +467,7 @@ function PF2e_parseTraits(text, isRoll = false) {
 function PF2e_getDiscardedRoll(message) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(message.content, "text/html");
-    const rerollDiscardDiv = doc.querySelector(".pf2e-reroll-discard .dice-total");
+    const rerollDiscardDiv = doc.querySelector(".pf2e-reroll-discard .dice-total, .reroll-discard .dice-total");
     return rerollDiscardDiv.textContent;
 }
 
