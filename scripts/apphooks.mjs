@@ -49,7 +49,7 @@ export async function initMenuHooks() {
                             msgText = pageData.src;
                         } else {
                             if (getThisModuleSetting('inviteURL') !== "http://") {
-                                msgText = (getThisModuleSetting('inviteURL') + img);
+                                msgText = (getThisModuleSetting('inviteURL') + pageData.src);
                             }
                             else {
                                 ui.notifications.error("foundrytodiscord | Invite URL not set!");
