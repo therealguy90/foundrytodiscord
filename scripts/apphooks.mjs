@@ -2,8 +2,9 @@ import { reformatMessage } from "./generic.mjs";
 import { PF2e_reformatMessage } from "./pf2e.mjs";
 import { DnD5e_reformatMessage } from "./dnd5e.mjs";
 import { dataToBlob, generateimglink } from "./helpers/images.mjs";
-import { splitEmbed, hexToColor } from "./helpers/embeds.mjs";
+import { splitEmbed, hexToColor } from "./helpers/messages.mjs";
 import { toHTML } from "./helpers/enrich.mjs";
+import { getThisModuleSetting } from "./helpers/modulesettings.mjs";
 import * as api from '../api.js';
 
 
