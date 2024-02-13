@@ -104,7 +104,7 @@ export async function getEnrichmentOptions(message) {
 }
 
 export function getRequestParams(message, msgText, embeds) {
-    let imgurl = generateDiscordAvatar(message);
+    const imgurl = generateDiscordAvatar(message);
     let hook = "";
     if (message.isRoll && (!isCard(message.content) && message.rolls.length > 0)) {
         if (getThisModuleSetting("threadedChatMap").hasOwnProperty(message.user.viewedScene)) {
@@ -136,6 +136,7 @@ export function getRequestParams(message, msgText, embeds) {
             }
         });
     }
+
     let embedSizeCharCount = 0;
     let discordSizeLimitedEmbeds = [];
     for (const embed of embeds) {
@@ -147,8 +148,8 @@ export function getRequestParams(message, msgText, embeds) {
             embedSizeCharCount += embed.title.length;
         }
         embedSizeCharCount += descriptionLength;
-        if (descriptionLength > 3900) {
-            discordSizeLimitedEmbeds.push(...splitEmbed(embed, 3900));
+        if (descriptionLength > 3500) {
+            discordSizeLimitedEmbeds.push(...splitEmbed(embed, 3500));
         } else {
             discordSizeLimitedEmbeds.push(embed);
         }
@@ -179,6 +180,8 @@ export function getRequestParams(message, msgText, embeds) {
         embedGroups.push(...[embeds]);
     }
     let firstEmbedGroup = true;
+    let firstEmbedMessageIndex = undefined;
+    let embedMessagesNum = 0;
     for (const embedGroup of embedGroups) {
         embedGroup.forEach((embed) => {
             // Add color to all embeds
@@ -195,6 +198,8 @@ export function getRequestParams(message, msgText, embeds) {
             }
             allRequests[allRequests.length - 1].params.embeds = embedGroup;
             firstEmbedGroup = false;
+            firstEmbedMessageIndex = allRequests.length - 1;
+            embedMessagesNum++;
         }
         else {
             allRequests.push({
@@ -206,10 +211,76 @@ export function getRequestParams(message, msgText, embeds) {
                     embeds: embedGroup
                 }
             });
+            embedMessagesNum++;
+        }
+    }
+    // For edit requests, we will trim the amount of requests if and only if there are more requests than
+    // linked messages for the edit. This makes it so that we don't need to make new messages to accommodate
+    // for a longer message than what is originally there.
+    // For requests that are shorter than the original number of linked messages, only the needed amount of messages
+    // will be accommodated, and the rest of the messages will be edited to a ".".
+
+    // Grab the messageList object.
+    let messageList;
+    if (game.user.isGM) {
+        messageList = getThisModuleSetting('messageList');
+    }
+    else {
+        messageList = getThisModuleSetting('clientMessageList');
+    }
+    if (messageList.hasOwnProperty(message.id) && messageList[message.id][0]) {
+        let shortestLinkedLength = Infinity;
+        for (const linkedMessageIndex in messageList) {
+            if (shortestLinkedLength > Object.keys(messageList[linkedMessageIndex]).length) {
+                shortestLinkedLength = Object.keys(messageList[linkedMessageIndex]).length;
+            }
+        }
+        if (allRequests.length > shortestLinkedLength) {
+            //Incomplete method to edit only the number of messages that are linked to the message itself and not add any more.
+            /*
+            let lastTextMessageIndex = 0;
+            for (let i = allRequests.length - 1; i <= 0; i--) {
+                if (allRequests[i].params.content === "") {
+                    continue;
+                }
+                else {
+                    lastTextMessageIndex = i;
+                }
+            }
+            if (firstEmbedMessageIndex) {
+                if (shortestLinkedLength < firstEmbedMessageIndex + embedMessagesNum) {
+                    let toMove = firstEmbedMessageIndex + embedMessagesNum - shortestLinkedLength;
+                    if (toMove > shortestLinkedLength) {
+
+                    }
+                }
+                // trim embeds if there are too much
+                if (firstEmbedMessageIndex === 0) {
+                    allRequests.splice(-((firstEmbedMessageIndex + embedMessagesNum) - shortestLinkedLength));
+                }
+            }
+            else if (lastTextMessageIndex > shortestLinkedLength - 1) {
+                allRequests.splice(-(lastTextMessageIndex - (shortestLinkedLength - 1)));
+            }*/
+            // For now, fail the edit.
+            ui.notifications.warn("foundrytodiscord | Foundry to Discord tried to edit a message, but the resulting edit is longer than the amount of discord messages that were linked to the message.");
+            return undefined;
+        }
+        else if (allRequests.length < shortestLinkedLength) {
+            while (allRequests.length < shortestLinkedLength) {
+                allRequests.push({
+                    hook: hook,
+                    params: {
+                        username: username,
+                        avatar_url: imgurl,
+                        content: ".",
+                        embeds: []
+                    }
+                });
+            }
         }
     }
     return allRequests;
-}
 }
 
 function generateDiscordAvatar(message) {

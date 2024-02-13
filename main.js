@@ -31,7 +31,7 @@ Hooks.on('getChatLogEntryContext', async (html, options) => {
         condition: game.user.isGM,
         callback: async li => {
             let message = game.messages.get(li.attr("data-message-id"));
-            await tryRequest(message, 'POST');
+            await tryPOST(message);
         }
     })
 });
@@ -152,7 +152,7 @@ Hooks.on('createChatMessage', async (msg) => {
             return;
         }
 
-        await tryRequest(msg, 'POST');
+        await tryPOST(msg);
     }
 });
 
@@ -171,7 +171,6 @@ Hooks.on('updateChatMessage', async (msg, change, options) => {
                 console.log(`foundrytodiscord | Attempt to ${msgChange} message was unsuccessful due to the message not existing on Discord.`);
             }
         } else {
-            let editHook;
             let msgObjects;
             if (game.user.isGM) {
                 msgObjects = getThisModuleSetting('messageList')[msg.id];
@@ -180,20 +179,51 @@ Hooks.on('updateChatMessage', async (msg, change, options) => {
             }
             if (msgObjects) {
                 if (msgChange === "edit") {
-                    msgObjects.forEach(async (msgObject) => {
-                        const url = msgObject.url;
-                        const message = msgObject.message;
-                        if (url.split('?').length > 1) {
-                            const querysplit = url.split('?');
-                            editHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
-                        } else {
-                            editHook = url + '/messages/' + message.id;
+                    // Edit all linked messages 
+                    let msgObjects;
+                    if (game.user.isGM) {
+                        msgObjects = getThisModuleSetting('messageList')[msg.id];
+                    } else {
+                        msgObjects = getThisModuleSetting('clientMessageList')[msg.id];
+                    }
+                    let editHook;
+                    const requestParams = await messageParse(msg);
+                    if (requestParams) {
+                        for (const request of requestParams) {
+                            for (const linkedIndex in msgObjects) {
+                                const linkedMsgObjects = msgObjects[linkedIndex];
+                                for (const msgIndex in linkedMsgObjects) {
+                                    const msgObject = linkedMsgObjects[msgIndex];
+                                    const url = msgObject.url;
+                                    const message = msgObject.message;
+                                    if (url.split('?').length > 1) {
+                                        const querysplit = url.split('?');
+                                        editHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
+                                    } else {
+                                        editHook = url + '/messages/' + message.id;
+                                    }
+                                    const { waitHook, formData } = await postParse(request);
+                                    requestQueue.push(
+                                        {
+                                            hook: editHook,
+                                            formData: formData,
+                                            msgID: msg.id,
+                                            method: 'PATCH',
+                                            dmsgID: message.id,
+                                            linkedMsgNum: linkedIndex
+                                        }
+                                    );
+                                    if (!isProcessing) {
+                                        isProcessing = true;
+                                        requestOnce();
+                                    }
+                                }
+                            }
                         }
-                        await tryRequest(msg, 'PATCH', editHook);
-                    });
+                    }
                 }
                 else if (msgChange === "delete") {
-                    deleteAll(msgObjects, msg);
+                    deleteAll(msg);
                 }
             }
         }
@@ -211,8 +241,8 @@ Hooks.on('updateChatMessage', async (msg, change, options) => {
                 } else {
                     msgObjects = getThisModuleSetting('clientMessageList')[msg.id];
                 }
-                if (!msgObjects || msgObjects.length === 0) {
-                    await tryRequest(msg, "POST");
+                if (!msgObjects) {
+                    await tryPOST(msg);
                     return;
                 }
             }
@@ -227,19 +257,19 @@ Hooks.on('deleteChatMessage', async (msg) => {
     }
     if (!getThisModuleSetting('disableDeletions')) {
         if (getThisModuleSetting('messageList').hasOwnProperty(msg.id) || getThisModuleSetting('clientMessageList').hasOwnProperty(msg.id)) {
-            let msgObjects;
-            if (game.user.isGM) {
-                msgObjects = getThisModuleSetting('messageList')[msg.id];
-            } else {
-                msgObjects = getThisModuleSetting('clientMessageList')[msg.id];
-            }
-            deleteAll(msgObjects, msg);
+            deleteAll(msg);
         }
     }
 });
 
-function deleteAll(msgObjects, msg) {
-    let deleteHook;
+function deleteAll(msg) {
+    let msgObjects;
+    if (game.user.isGM) {
+        msgObjects = getThisModuleSetting('messageList')[msg.id];
+    } else {
+        msgObjects = getThisModuleSetting('clientMessageList')[msg.id];
+    }
+    let editHook;
     for (const linkedIndex in msgObjects) {
         const linkedMsgObjects = msgObjects[linkedIndex];
         for (const msgIndex in linkedMsgObjects) {
@@ -248,13 +278,13 @@ function deleteAll(msgObjects, msg) {
             const message = msgObject.message;
             if (url.split('?').length > 1) {
                 const querysplit = url.split('?');
-                deleteHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
+                editHook = querysplit[0] + '/messages/' + message.id + '?' + querysplit[1];
             } else {
-                deleteHook = url + '/messages/' + message.id;
+                editHook = url + '/messages/' + message.id;
             }
             requestQueue.push(
                 {
-                    hook: deleteHook,
+                    hook: editHook,
                     formData: null,
                     msgID: msg.id,
                     method: 'DELETE',
@@ -268,6 +298,13 @@ function deleteAll(msgObjects, msg) {
             }
         }
     }
+    delete msgObjects[msg.id];
+    if (game.user.isGM) {
+        game.settings.set('foundrytodiscord', 'messageList', msgObjects);
+    }
+    else {
+        game.settings.set('foundrytodiscord', 'clientMessageList', msgObjects);
+    }
 }
 
 /* A brief explanation of the queueing system:
@@ -279,9 +316,8 @@ function deleteAll(msgObjects, msg) {
 * A successfully sent message is added to the object stored in a hidden module setting (max 100). This allows all clients to access
 * previously-sent messages, and for the messages to not be erased after the client reloads their browser.
 */
-async function tryRequest(msg, method, hookOverride = undefined) {
+async function tryPOST(msg) {
     let requestParams = await messageParse(msg);
-
     // do post-parse checks, such as adding images to upload and editing webhook links
     if (requestParams && requestParams.length > 0) {
         let messageList;
@@ -299,42 +335,13 @@ async function tryRequest(msg, method, hookOverride = undefined) {
             linkedMsgNum = Object.keys(messageList[msg.id]).length;
         }
         for (const request of requestParams) {
-            if (request.params.avatar_url === "") {
-                console.warn("foundrytodiscord | Your Invite URL is not set! Avatar images cannot be displayed on Discord.")
-            }
-            let formData = new FormData()
-            if (game.modules.get("chat-media")?.active || game.modules.get("chatgifs")?.active) {
-                const { formDataTemp, contentTemp } = getChatMediaAttachments(formData, request.params.content, msg.content);
-                if (formDataTemp !== formData) {
-                    formData = formDataTemp;
-                }
-                request.params.content = contentTemp;
-            }
-            if (request.params.content === "" && request.params.embeds.length === 0 && !formData.get('files[0]')) {
-                if (!msg.content.includes('<img') && !msg.content.includes('<video')) {
-                    return;
-                }
-                else {
-                    request.params.content += addMediaLinks(msg);
-                }
-                if (request.params.content === "") {
-                    return;
-                }
-            }
-            let waitHook;
-            if (request.hook.includes("?")) {
-                waitHook = request.hook + "&wait=true";
-            }
-            else {
-                waitHook = request.hook + "?wait=true";
-            }
-            formData.append('payload_json', JSON.stringify(request.params));
+            const { waitHook, formData } = await postParse(request);
             requestQueue.push(
                 {
-                    hook: !hookOverride ? waitHook : hookOverride,
+                    hook: waitHook,
                     formData: formData,
                     msgID: msg.id,
-                    method: method,
+                    method: "POST",
                     dmsgID: null,
                     linkedMsgNum: linkedMsgNum
                 }
@@ -346,6 +353,40 @@ async function tryRequest(msg, method, hookOverride = undefined) {
         }
 
     }
+}
+
+async function postParse(request) {
+    if (request.params.avatar_url === "") {
+        console.warn("foundrytodiscord | Your Invite URL is not set! Avatar images cannot be displayed on Discord.")
+    }
+    let formData = new FormData()
+    if (game.modules.get("chat-media")?.active || game.modules.get("chatgifs")?.active) {
+        const { formDataTemp, contentTemp } = getChatMediaAttachments(formData, request.params.content, msg.content);
+        if (formDataTemp !== formData) {
+            formData = formDataTemp;
+        }
+        request.params.content = contentTemp;
+    }
+    if (request.params.content === "" && request.params.embeds.length === 0 && !formData.get('files[0]')) {
+        if (!msg.content.includes('<img') && !msg.content.includes('<video')) {
+            return;
+        }
+        else {
+            request.params.content += addMediaLinks(msg);
+        }
+        if (request.params.content === "") {
+            return;
+        }
+    }
+    let waitHook;
+    if (request.hook.includes("?")) {
+        waitHook = request.hook + "&wait=true";
+    }
+    else {
+        waitHook = request.hook + "?wait=true";
+    }
+    formData.append('payload_json', JSON.stringify(request.params));
+    return { waitHook: waitHook, formData: formData };
 }
 
 async function requestOnce(retry = 0, ignoreRescuePartyFor = 0) {
