@@ -45,10 +45,17 @@ export async function messageParserPF2e(msg) {
             embeds = generic.createGenericRollEmbed(enrichedMsg);
         }
     }
+    if (embeds.length === 0 && generic.willAutoUUIDEmbed(enrichedMsg.content)) {
+        embeds = await PF2e_generateAutoUUIDEmbeds(enrichedMsg);
+    }
 
     if (embeds && embeds.length > 0) {
-        embeds[0].description = await PF2e_reformatMessage(await toHTML(embeds[0].description, await PF2e_getEnrichmentOptions(msg)));
-        constructedMessage = (/<[a-z][\s\S]*>/i.test(enrichedMsg.flavor) || enrichedMsg.flavor === embeds[0].title) ? "" : enrichedMsg.flavor;
+        for (let embed of embeds) {
+            embed.description = await PF2e_reformatMessage(await toHTML(embed.description, await PF2e_getEnrichmentOptions(msg)));
+        }
+        if (!generic.willAutoUUIDEmbed(enrichedMsg.content)) {
+            constructedMessage = (/<[a-z][\s\S]*>/i.test(enrichedMsg.flavor) || enrichedMsg.flavor === embeds[0].title) ? "" : enrichedMsg.flavor;
+        }
         // use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         // we have to mimic this behavior here, since visibility is client-sided, and we are parsing raw message content.
         if (anonEnabled()) {
@@ -351,7 +358,7 @@ function PF2e_createRollEmbed(message) {
         if (PF2e_parseDegree(message.flags.pf2e.context.outcome)) {
             desc += `\`(${PF2e_parseDegree(message.flags.pf2e.context.outcome)})\``;
         }
-        if(speakerActor?.hasPlayerOwner ){
+        if (speakerActor?.hasPlayerOwner) {
             desc += `||(${PF2e_generateRollBreakdown(message.rolls[0])})||`;
         }
         desc += "\n";
@@ -375,7 +382,7 @@ function PF2e_createActionCardEmbed(message) {
     const h4Element = actionDiv.querySelector("h4.action");
     const subtitle = actionDiv.querySelector(".subtitle");
     const actionGlyph = actionDiv.querySelector(".action-glyph");
-    title = `${h4Element.querySelector("strong").textContent} ${subtitle ? subtitle.textContent : ""}`;
+    title = `${h4Element ? h4Element.querySelector("strong") ? h4Element.querySelector("strong").textContent : h4Element.textContent : ""} ${subtitle ? subtitle.textContent : ""}`;
     if (getThisModuleSetting("prettierEmojis") && title && actionGlyph && actionGlyphEmojis.hasOwnProperty(actionGlyph.textContent.trim().toLowerCase())) {
         title += actionGlyphEmojis[actionGlyph.textContent.trim().toLowerCase()];
     }
@@ -554,6 +561,131 @@ function PF2e_parseDegree(degree) {
             return undefined;
     }
 }
+
+async function PF2e_generateAutoUUIDEmbeds(message) {
+    let embeds = [];
+    const div = document.createElement('div');
+    div.innerHTML = message.content;
+    const links = div.querySelectorAll("a[data-uuid]");
+    for (const link of links) {
+        if (link) {
+            const uuid = link.getAttribute('data-uuid');
+            console.log(link);
+            const originDoc = await fromUuid(uuid);
+            console.log(originDoc);
+            if (originDoc instanceof Item && originDoc.isIdentified !== false) {
+                const itemTraits = originDoc.system.traits;
+                const itemType = originDoc.type;
+                let title = "";
+                let desc = "";
+                title += `${originDoc.name} `;
+                if (itemTraits.rarity && itemTraits.rarity !== "common") {
+                    desc += `[${game.i18n.localize(CONFIG.PF2E.rarityTraits[itemTraits.rarity])}] `;
+                }
+                itemTraits.value.forEach(itemTrait => {
+                    desc += `[${game.i18n.localize(CONFIG.PF2E[`${itemType}Traits`][itemTrait])}] `;
+                });
+                if (desc.length > 0) {
+                    desc = `\`${desc.trim()}\`\n\n`;
+                }
+                let glyph = undefined;
+                if (itemType === "spell") {
+                    if (getThisModuleSetting('prettierEmojis')) {
+                        switch (originDoc.system.time.value) {
+                            case 1:
+                                glyph = 1;
+                                break;
+                            case 2:
+                                glyph = 2;
+                                break;
+                            case 3:
+                                glyph = 3;
+                                break;
+                            case "free":
+                                glyph = "f";
+                                break;
+                            case "reaction":
+                                glyph = "r";
+                                break;
+                            default:
+                                glyph = undefined;
+                                break;
+                        }
+                    }
+                    if (itemTraits.traditions) {
+                        desc += "**Traditions** ";
+                        for (const [i, tradition] of itemTraits.traditions.entries()) {
+                            desc += game.i18n.localize(CONFIG.PF2E.magicTraditions[tradition]);
+                            if (i < itemTraits.traditions.length - 1) {
+                                desc += ", ";
+                            }
+                        }
+                        desc += "\n";
+                    }
+                    if (originDoc.system.range?.value) {
+                        desc += `**Range** ${originDoc.system.range.value}`;
+                        if (originDoc.system.area?.value || originDoc.system.target?.value) {
+                            desc += "; ";
+                        }
+                    }
+                    if (originDoc.system.area?.value) {
+                        desc += `**Area** ${originDoc.area.label} `;
+                    }
+                    if (originDoc.system.target?.value) {
+                        desc += `**Targets** ${originDoc.system.target.value} `;
+                    }
+                    desc += "\n";
+                    if (originDoc.defense) {
+                        desc += `**Defense** ${originDoc.defense.label} `;
+                    }
+                }
+                else {
+                    if (getThisModuleSetting('prettierEmojis') && originDoc.system.actionType) {
+                        switch (originDoc.system.actionType) {
+                            case "action":
+                                glyph = originDoc.system.actions;
+                                break;
+                            case "reaction":
+                                glyph = "r";
+                                break;
+                            case "free":
+                                glyph = "f";
+                                break;
+                            default:
+                                glyph = undefined;
+                                break;
+                        }
+                    }
+                }
+                if (glyph) {
+                    title += actionGlyphEmojis[glyph];
+                }
+                desc += `\n<hr>\n`;
+                desc += await toHTML(originDoc.description, PF2e_generateEnrichmentOptionsUsingOrigin(originDoc));
+                embeds.push({ title: title, description: desc });
+            }
+            else if (originDoc instanceof JournalEntry || originDoc instanceof JournalEntryPage) {
+                let pages;
+                if (originDoc instanceof JournalEntry) {
+                    pages = originDoc.pages;
+                }
+                else if (originDoc instanceof JournalEntryPage) {
+                    pages = [originDoc];
+                }
+                let journalEmbeds = await generic.embedsFromJournalPages(pages, PF2e_reformatMessage);
+                if (journalEmbeds.length > 0) {
+                    journalEmbeds[0].author = { name: "From Journal " + originDoc.name }
+                }
+                embeds.push(...journalEmbeds);
+            }
+        }
+        if (embeds.length > 9) {
+            break;
+        }
+    }
+    return embeds;
+}
+
 function PF2e_isActionCard(message) {
     const flavor = message.flavor;
     const parser = new DOMParser();
@@ -585,12 +717,17 @@ function PF2e_containsDamageDie(rolls) {
 
 async function PF2e_getEnrichmentOptions(message) {
     let originDoc;
+
     if (message.flags?.pf2e?.origin?.uuid) {
         originDoc = await fromUuid(message.flags.pf2e.origin.uuid);
     }
     else if (message.speaker?.actor) {
         originDoc = game.actors.get(message.speaker.actor); //Fallback to speaker in case it's needed.
     }
+    return PF2e_generateEnrichmentOptionsUsingOrigin(originDoc);
+}
+
+function PF2e_generateEnrichmentOptionsUsingOrigin(originDoc) {
     switch (true) {
         case originDoc instanceof Item:
             return {

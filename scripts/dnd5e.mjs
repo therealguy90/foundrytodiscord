@@ -1,7 +1,7 @@
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
 import { parse2DTable } from './helpers/tables.mjs';
 import * as generic from './generic.mjs';
-import { newEnrichedMessage } from './helpers/enrich.mjs';
+import { newEnrichedMessage, toHTML } from './helpers/enrich.mjs';
 import { swapOrNot, getDieEmoji, dieIcon } from './helpers/emojis/global.mjs';
 
 export async function messageParserDnD5e(msg) {
@@ -50,9 +50,16 @@ export async function messageParserDnD5e(msg) {
     else {
         embeds = generic.createGenericRollEmbed(enrichedMsg);
     }
-    if (embeds != [] && embeds.length > 0) {
-        embeds[0].description = await DnD5e_reformatMessage(embeds[0].description);
-        constructedMessage = (/<[a-z][\s\S]*>/i.test(enrichedMsg.flavor) || enrichedMsg.flavor === embeds[0].title) ? "" : enrichedMsg.flavor;
+    if (embeds.length === 0 && generic.willAutoUUIDEmbed(enrichedMsg.content)) {
+        embeds = await generic.generateAutoUUIDEmbeds(enrichedMsg);
+    }
+    if (embeds && embeds.length > 0) {
+        for (let embed of embeds) {
+            embed.description = await DnD5e_reformatMessage(await toHTML(embed.description, await DnD5e_getEnrichmentOptions(msg)));
+        }
+        if (!generic.willAutoUUIDEmbed(enrichedMsg.content)) {
+            constructedMessage = (/<[a-z][\s\S]*>/i.test(enrichedMsg.flavor) || enrichedMsg.flavor === embeds[0].title) ? "" : enrichedMsg.flavor;
+        }
         // use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         // we have to mimic this behavior here, since visibility is client-sided, and we are parsing raw message content.
         if (anonEnabled()) {
@@ -77,7 +84,7 @@ function DnD5e_createCardEmbed(message) {
     let title;
     const titleElement = div.querySelector("span.title");
     const h3Element = div.querySelector("h3");
-    if(titleElement?.textContent){
+    if (titleElement?.textContent) {
         title = titleElement.textContent.trim();
     }
     else if (h3Element?.textContent) {
@@ -194,7 +201,7 @@ async function midiqol_createMergeCard(message) {
                         rollValue += "**";
                     }
                 }
-                else if(['d20Only', 'd20AttackOnly'].includes(game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails)){
+                else if (['d20Only', 'd20AttackOnly'].includes(game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails)) {
                     if (message.flags['midi-qol'].isCritical) {
                         rollValue += " (Critical!)**";
                     }

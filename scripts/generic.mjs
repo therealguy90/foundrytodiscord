@@ -2,7 +2,7 @@ import { htmlTo2DTable, parse2DTable } from './helpers/tables.mjs';
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
 import { splitEmbed, hexToColor, removeEmptyEmbeds, splitText, splitFirstEmbed } from './helpers/messages.mjs';
 import { generateimglink } from './helpers/images.mjs';
-import { newEnrichedMessage } from './helpers/enrich.mjs';
+import { newEnrichedMessage, toHTML } from './helpers/enrich.mjs';
 import { getDieEmoji, getDocumentEmoji, swapOrNot, dieIcon } from './helpers/emojis/global.mjs';
 
 export async function messageParserGeneric(msg) {
@@ -55,11 +55,17 @@ export async function messageParserGeneric(msg) {
         console.log(`foundrytodiscord | System "${game.system.id}" is not supported for special roll embeds.`)
         embeds = createGenericRollEmbed(enrichedMsg);
     }
-
+    if (embeds.length === 0 && willAutoUUIDEmbed(enrichedMsg.content)) {
+        embeds = await generateAutoUUIDEmbeds(enrichedMsg);
+    }
     //Fix formatting before sending
-    if (embeds != [] && embeds.length > 0) {
-        embeds[0].description = await reformatMessage(embeds[0].description);
-        constructedMessage = (/<[a-z][\s\S]*>/i.test(enrichedMsg.flavor) || enrichedMsg.flavor === embeds[0].title) ? "" : enrichedMsg.flavor;
+    if (embeds && embeds.length > 0) {
+        for (let embed of embeds) {
+            embed.description = await reformatMessage(await toHTML(embed.description, await getEnrichmentOptions(msg)));
+        }
+        if (!willAutoUUIDEmbed(enrichedMsg.content)) {
+            constructedMessage = (/<[a-z][\s\S]*>/i.test(enrichedMsg.flavor) || enrichedMsg.flavor === embeds[0].title) ? "" : enrichedMsg.flavor;
+        }
         // use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
         // we have to mimic this behavior here, since visibility is client-sided, and we are parsing raw message content.
         if (anonEnabled()) {
@@ -404,6 +410,51 @@ export function getCardFooter(card) {
     }
 }
 
+export async function generateAutoUUIDEmbeds(message) {
+    let embeds = [];
+    const div = document.createElement('div');
+    div.innerHTML = message.content;
+    const links = div.querySelectorAll("a[data-uuid]");
+    for (const link of links) {
+        if (link) {
+            const uuid = link.getAttribute('data-uuid');
+            const originDoc = await fromUuid(uuid);
+            if (originDoc) {
+                if (originDoc instanceof Item) {
+                    let title = "";
+                    let desc = "";
+                    title += `${originDoc.name} `;
+                    desc += `\n<hr>\n`;
+                    desc += await toHTML(originDoc.system.description.value, await getEnrichmentOptions(message));
+                    embeds.push({ title: title, description: desc });
+                }
+                else if (originDoc instanceof JournalEntry || originDoc instanceof JournalEntryPage) {
+                    let pages;
+                    if (originDoc instanceof JournalEntry) {
+                        pages = originDoc.pages;
+                    }
+                    else if (originDoc instanceof JournalEntryPage) {
+                        pages = [originDoc];
+                    }
+                    let journalEmbeds = await embedsFromJournalPages(pages, reformatMessage);
+                    if (journalEmbeds.length > 0) {
+                        journalEmbeds[0].author = { name: "From Journal " + originDoc.name }
+                    }
+                    embeds.push(...journalEmbeds);
+                }
+            }
+        }
+        else{
+            console.warn("foundrytodiscord | Could not generate Auto UUID Embed due to reason: Item does not exist.");
+        }
+        if (embeds.length > 9) {
+            break;
+        }
+    }
+    return embeds;
+}
+
+
 /* All text being parsed eventually goes through reformatMessage. This is the backbone of the module, and is what allows
 *  HTML to be parsed into readable text. The structure of the module is a little weird, I must admit, but this is
 *  the best solution I can think of.  
@@ -628,6 +679,44 @@ export function anonymizeText(text, message) {
         anonymizedText = anonymizedText.replace(new RegExp(`\\b${speakerActor.name}\\b`, 'gi'), anon.getName(speakerActor));
     }
     return anonymizedText;
+}
+
+export async function embedsFromJournalPages(pages) {
+    let embeds = []
+    let oneOrMoreUnsupported = false;
+    for (const pageData of pages) {
+        switch (pageData.type) {
+            case "text":
+                const textEmbed = {
+                    title: pageData.name,
+                    description: pageData.text.content
+                };
+                embeds.push(textEmbed)
+                break;
+            case "image":
+                embeds.push({
+                    title: pageData.name,
+                    image: {
+                        url: generateimglink(pageData.src)
+                    },
+                    footer: {
+                        text: pageData.image.caption
+                    }
+                });
+                break;
+            default:
+                oneOrMoreUnsupported = true;
+                break;
+        }
+        if(embeds.length > 9){
+            console.warn("foundrytodiscord: Limiting to 10 pages...");
+            break;
+        }
+    }
+    if (oneOrMoreUnsupported) {
+        ui.notifications.warn("foundrytodiscord: One or more journal pages are not supported to send to Discord automatically. Only text and images are supported.");
+    }
+    return embeds;
 }
 
 export function tokenBar_createTokenBarCard(message) {
@@ -883,6 +972,24 @@ export function hasDiceRolls(htmlString) {
     else {
         return false;
     }
+}
+
+export function willAutoUUIDEmbed(htmlString) {
+    if (!getThisModuleSetting("autoUuidEmbed")) {
+        return false;
+    }
+    const div = document.createElement('div');
+    div.innerHTML = htmlString;
+    const links = div.querySelectorAll("a[data-uuid]");
+    if (links.length > 0) {
+        links.forEach(link => link.remove());
+        if (div.textContent.trim() === "") {
+            div.innerHTML = htmlString;
+            return true;
+        }
+    }
+    div.innerHTML = htmlString;
+    return false;
 }
 
 export function tokenBar_isTokenBarCard(htmlString) {

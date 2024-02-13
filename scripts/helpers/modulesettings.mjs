@@ -191,6 +191,14 @@ export function initModuleSettings() {
             type: Boolean
         });
     }*/
+    game.settings.register('foundrytodiscord', 'autoUuidEmbed', {
+        name: "Auto-embed UUID Link Messages",
+        hint: "Turn this on to automatically append an embed for an item description if a message only contains UUID links, up to 10.",
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean
+    })
     game.settings.register('foundrytodiscord', 'showAuthor', {
         name: "Show username on embeds",
         hint: "Include the Foundry username and avatar(if any) of the message sender in embeds.",
