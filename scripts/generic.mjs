@@ -79,12 +79,7 @@ export async function messageParserGeneric(msg) {
         constructedMessage = anonymizeText(constructedMessage, enrichedMsg)
     }
     constructedMessage = await reformatMessage(constructedMessage);
-    if (constructedMessage !== "" || embeds.length > 0) { //avoid sending empty messages
-        return getRequestParams(enrichedMsg, constructedMessage, embeds);
-    }
-    else {
-        return false;
-    }
+    return getRequestParams(enrichedMsg, constructedMessage, embeds);
 }
 
 // Used for enrichHTML. Using actor as default in the generic parser.
@@ -980,7 +975,7 @@ export function generateRollBreakdown(roll, nextTerm = false) {
             case term instanceof PoolTerm || term.hasOwnProperty("rolls"):
                 let poolRollCnt = 1;
                 term.rolls.forEach(poolRoll => {
-                    currentTermString += ` ${PF2e_generateRollBreakdown(poolRoll, true)}`;
+                    currentTermString += ` ${generateRollBreakdown(poolRoll, true)}`;
                     if (poolRollCnt <= term.rolls.length) {
                         currentTermString += " +";
                     }
