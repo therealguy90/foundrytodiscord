@@ -131,82 +131,83 @@ export function getRequestParams(message, msgText, embeds) {
             }
         });
     }
-
-    let embedSizeCharCount = 0;
-    let discordSizeLimitedEmbeds = [];
-    for (const embed of embeds) {
-        let descriptionLength = 0;
-        if (embed.description) {
-            descriptionLength = embed.description.length;
+    if (embeds && embeds.length > 0) {
+        let embedSizeCharCount = 0;
+        let discordSizeLimitedEmbeds = [];
+        for (const embed of embeds) {
+            let descriptionLength = 0;
+            if (embed.description) {
+                descriptionLength = embed.description.length;
+            }
+            if (embed.title) {
+                embedSizeCharCount += embed.title.length;
+            }
+            embedSizeCharCount += descriptionLength;
+            if (descriptionLength > 3500) {
+                discordSizeLimitedEmbeds.push(...splitEmbed(embed, 3500));
+            } else {
+                discordSizeLimitedEmbeds.push(embed);
+            }
         }
-        if (embed.title) {
-            embedSizeCharCount += embed.title.length;
-        }
-        embedSizeCharCount += descriptionLength;
-        if (descriptionLength > 3500) {
-            discordSizeLimitedEmbeds.push(...splitEmbed(embed, 3500));
-        } else {
-            discordSizeLimitedEmbeds.push(embed);
-        }
-    }
-    let embedGroups = [];
-    if (embedSizeCharCount > 4000) {
-        let tempCharCount = 0;
-        let j = 0;
-        for (let i = 0; i < discordSizeLimitedEmbeds.length; i++) {
-            tempCharCount += discordSizeLimitedEmbeds[i].description.length;
-            if (tempCharCount < 4000) {
-                if (!embedGroups[j]) {
-                    embedGroups[j] = [];
+        let embedGroups = [];
+        if (embedSizeCharCount > 4000) {
+            let tempCharCount = 0;
+            let j = 0;
+            for (let i = 0; i < discordSizeLimitedEmbeds.length; i++) {
+                tempCharCount += discordSizeLimitedEmbeds[i].description.length;
+                if (tempCharCount < 4000) {
+                    if (!embedGroups[j]) {
+                        embedGroups[j] = [];
+                    }
+                    embedGroups[j].push(discordSizeLimitedEmbeds[i]);
                 }
-                embedGroups[j].push(discordSizeLimitedEmbeds[i]);
-            }
-            else {
-                const splitEmbeds = splitFirstEmbed(discordSizeLimitedEmbeds[i], tempCharCount - 4000);
-                embedGroups[j].push(splitEmbeds[0]);
-                discordSizeLimitedEmbeds[i] = splitEmbeds[1];
-                i--;
-                j++;
-                tempCharCount = 0;
-            }
-        }
-    }
-    else {
-        embedGroups.push(...[embeds]);
-    }
-    let firstEmbedGroup = true;
-    let firstEmbedMessageIndex = undefined;
-    let embedMessagesNum = 0;
-    for (const embedGroup of embedGroups) {
-        embedGroup.forEach((embed) => {
-            // Add color to all embeds
-            if (message.user?.color) {
-                embed.color = hexToColor(message.user.color);
-            }
-        });
-        if (firstEmbedGroup) {
-            if (!embedGroup[0]?.author && getThisModuleSetting('showAuthor') && message.user && message.alias !== message.user.name) {
-                embedGroup[0].author = {
-                    name: message.user.name,
-                    icon_url: generateimglink(message.user.avatar)
+                else {
+                    const splitEmbeds = splitFirstEmbed(discordSizeLimitedEmbeds[i], tempCharCount - 4000);
+                    embedGroups[j].push(splitEmbeds[0]);
+                    discordSizeLimitedEmbeds[i] = splitEmbeds[1];
+                    i--;
+                    j++;
+                    tempCharCount = 0;
                 }
             }
-            allRequests[allRequests.length - 1].params.embeds = embedGroup;
-            firstEmbedGroup = false;
-            firstEmbedMessageIndex = allRequests.length - 1;
-            embedMessagesNum++;
         }
         else {
-            allRequests.push({
-                hook: hook,
-                params: {
-                    username: username,
-                    avatar_url: imgurl,
-                    content: "",
-                    embeds: embedGroup
+            embedGroups.push(...[embeds]);
+        }
+        let firstEmbedGroup = true;
+        let firstEmbedMessageIndex = undefined;
+        let embedMessagesNum = 0;
+        for (const embedGroup of embedGroups) {
+            embedGroup.forEach((embed) => {
+                // Add color to all embeds
+                if (message.user?.color) {
+                    embed.color = hexToColor(message.user.color);
                 }
             });
-            embedMessagesNum++;
+            if (firstEmbedGroup) {
+                if (!embedGroup[0]?.author && getThisModuleSetting('showAuthor') && message.user && message.alias !== message.user.name) {
+                    embedGroup[0]["author"] = {
+                        name: message.user.name,
+                        icon_url: generateimglink(message.user.avatar)
+                    }
+                }
+                allRequests[allRequests.length - 1].params.embeds = embedGroup;
+                firstEmbedGroup = false;
+                firstEmbedMessageIndex = allRequests.length - 1;
+                embedMessagesNum++;
+            }
+            else {
+                allRequests.push({
+                    hook: hook,
+                    params: {
+                        username: username,
+                        avatar_url: imgurl,
+                        content: "",
+                        embeds: embedGroup
+                    }
+                });
+                embedMessagesNum++;
+            }
         }
     }
     // For edit requests, we will trim the amount of requests if and only if there are more requests than
@@ -510,7 +511,7 @@ export async function generateAutoUUIDEmbeds(message) {
                 }
             }
         }
-        else{
+        else {
             console.warn("foundrytodiscord | Could not generate Auto UUID Embed due to reason: Item does not exist.");
         }
         if (embeds.length > 9) {
@@ -774,7 +775,7 @@ export async function embedsFromJournalPages(pages) {
                 oneOrMoreUnsupported = true;
                 break;
         }
-        if(embeds.length > 9){
+        if (embeds.length > 9) {
             console.warn("foundrytodiscord: Limiting to 10 pages...");
             break;
         }
