@@ -85,7 +85,7 @@ async function PF2e_parseHTMLText(htmlString) {
     // Format various elements
     generic.removeElementsBySelector('[data-visibility="gm"], [data-visibility="owner"],[data-visibility="none"]', htmldoc);
     generic.formatTextBySelector('.inline-check, span[data-pf2-check]', text => `${dieIcon(20)}\`${text}\``, htmldoc);
-    generic.formatTextBySelector('.action-glyph', text => `${actionGlyphEmojis[text.toLowerCase().trim()] ? actionGlyphEmojis[text.toLowerCase().trim()] : ""}`, htmldoc);
+    generic.formatTextBySelector('.action-glyph', text => `${text.replace(/1|2|3|f|r/g, match => actionGlyphEmojis[match])}`, htmldoc);
     generic.formatTextBySelector('.statements.reverted', text => `~~${text}~~`, htmldoc);
     reformattedText = htmldoc.innerHTML;
     htmldoc.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(header => {
@@ -140,9 +140,8 @@ function PF2e_createCardEmbed(message) {
     const h3Element = div.querySelector("h3");
     const actionGlyphElement = h3Element.querySelector(".action-glyph");
     if (actionGlyphElement) {
-        const glyphCharacter = actionGlyphElement.textContent.toLowerCase().trim();
-        if (getThisModuleSetting('prettierEmojis') && actionGlyphEmojis[glyphCharacter]) {
-            actionGlyphElement.innerHTML = actionGlyphEmojis[glyphCharacter];
+        if (getThisModuleSetting('prettierEmojis')) {
+            actionGlyphElement.innerHTML = actionGlyphElement.textContent.toLowerCase().replace(/1|2|3|f|r/g, match => actionGlyphEmojis[match]);
         }
         else {
             actionGlyphElement.remove();
