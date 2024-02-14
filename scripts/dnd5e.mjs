@@ -51,7 +51,7 @@ export async function messageParserDnD5e(msg) {
         embeds = generic.createGenericRollEmbed(enrichedMsg);
     }
     if (embeds.length === 0 && generic.willAutoUUIDEmbed(enrichedMsg.content)) {
-        embeds = await generic.generateAutoUUIDEmbeds(enrichedMsg);
+        embeds = await generic.generateAutoUUIDEmbeds(enrichedMsg, await DnD5e_getEnrichmentOptions(msg));
     }
     if (embeds && embeds.length > 0) {
         for (let embed of embeds) {

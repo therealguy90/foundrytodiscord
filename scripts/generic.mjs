@@ -477,7 +477,7 @@ export function getCardFooter(card) {
     }
 }
 
-export async function generateAutoUUIDEmbeds(message) {
+export async function generateAutoUUIDEmbeds(message, enrichmentOptions = {}) {
     let embeds = [];
     const div = document.createElement('div');
     div.innerHTML = message.content;
@@ -492,7 +492,7 @@ export async function generateAutoUUIDEmbeds(message) {
                     let desc = "";
                     title += `${originDoc.name} `;
                     desc += `\n<hr>\n`;
-                    desc += await toHTML(originDoc.system.description.value, await getEnrichmentOptions(message));
+                    desc += await toHTML(originDoc.system.description.value, enrichmentOptions);
                     embeds.push({ title: title, description: desc });
                 }
                 else if (originDoc instanceof JournalEntry || originDoc instanceof JournalEntryPage) {
