@@ -25,15 +25,40 @@ Hooks.on('deleteScene', async scene => {
 // For the "Send to Discord" context menu on chat messages.
 // Seldom needed, but if chat mirroring is disabled, this is one way to circumvent it.
 Hooks.on('getChatLogEntryContext', async (html, options) => {
-    options.unshift({
-        name: "Send to Discord",
-        icon: '<i class="fa-brands fa-discord"></i>',
-        condition: game.user.isGM,
-        callback: async li => {
-            let message = game.messages.get(li.attr("data-message-id"));
-            await tryPOST(message);
-        }
-    })
+    options.unshift(
+        {
+            name: "Send to Discord",
+            icon: '<i class="fa-brands fa-discord"></i>',
+            condition: game.user.isGM,
+            callback: async li => {
+                let message = game.messages.get(li.attr("data-message-id"));
+                await tryPOST(message);
+            }
+        },
+        {
+            name: "Delete (Foundry Chat Only)",
+            icon: '<i class="fa-brands fa-discord"></i>',
+            condition: game.user.isGM,
+            callback: async li => {
+                let message = game.messages.get(li.attr("data-message-id"));
+                let msgObjects;
+                if (getThisModuleSetting('messageList').hasOwnProperty(message.id) || getThisModuleSetting('clientMessageList').hasOwnProperty(message.id)) {
+                    if (game.user.isGM) {
+                        msgObjects = getThisModuleSetting('messageList')[message.id];
+                    } else {
+                        msgObjects = getThisModuleSetting('clientMessageList')[message.id];
+                    }
+                    delete msgObjects[message.id];
+                    if (game.user.isGM) {
+                        game.settings.set('foundrytodiscord', 'messageList', msgObjects);
+                    }
+                    else {
+                        game.settings.set('foundrytodiscord', 'clientMessageList', msgObjects);
+                    }
+                }
+                message.delete();
+            }
+        })
 });
 
 let requestQueue = [];
