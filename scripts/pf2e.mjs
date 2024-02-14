@@ -12,7 +12,7 @@ export async function messageParserPF2e(msg) {
     let embeds = [];
     if (PF2e_isActionCard(enrichedMsg) && enrichedMsg.rolls?.length < 1) {
         if (getThisModuleSetting('sendEmbeds')) {
-            embeds = PF2e_createActionCardEmbed(enrichedMsg);
+            embeds = await PF2e_createActionCardEmbed(enrichedMsg);
         }
     }
     else if (PF2e_isConditionCard(enrichedMsg)) {
@@ -371,7 +371,7 @@ function PF2e_createRollEmbed(message) {
 
 }
 
-function PF2e_createActionCardEmbed(message) {
+async function PF2e_createActionCardEmbed(message) {
     const div = document.createElement('div');
     div.innerHTML = message.content;
     let desc = "";
@@ -383,7 +383,7 @@ function PF2e_createActionCardEmbed(message) {
     const actionGlyph = actionDiv.querySelector(".action-glyph");
     title = `${h4Element ? h4Element.querySelector("strong") ? h4Element.querySelector("strong").textContent : h4Element.textContent : ""} ${subtitle ? subtitle.textContent : ""}`;
     if (getThisModuleSetting("prettierEmojis") && title && actionGlyph && actionGlyphEmojis.hasOwnProperty(actionGlyph.textContent.trim().toLowerCase())) {
-        title += actionGlyphEmojis[actionGlyph.textContent.trim().toLowerCase()];
+        title += actionGlyph.textContent.toLowerCase().replace(/1|2|3|f|r/g, match => actionGlyphEmojis[match])
     }
     desc = `${PF2e_parseTraits(message.flavor)}\n`;
     let speakerActor;
@@ -398,10 +398,11 @@ function PF2e_createActionCardEmbed(message) {
     }
     if (descVisible) {
         if (message.flags?.pf2e?.context?.item) {
-            const itemDesc = game.actors.get(message.speaker.actor).items.get(message.flags.pf2e.context.item).system.description.value;
+            const item = game.actors.get(message.speaker.actor).items.get(message.flags.pf2e.context.item);
+            const itemDesc = item.description;
             const actionCardDesc = div.querySelector(".description, .action-content");
             actionCardDesc.outerHTML = itemDesc;
-            desc += div.innerHTML;
+            desc += await toHTML(div.innerHTML, PF2e_generateEnrichmentOptionsUsingOrigin(item));
         }
         else {
             const actionDesc = div.querySelector(".description, .action-content");
