@@ -588,37 +588,21 @@ async function PF2e_generateAutoUUIDEmbeds(message) {
                 }
                 let glyph = undefined;
                 if (itemType === "spell") {
-                    if (getThisModuleSetting('prettierEmojis')) {
-                        switch (originDoc.system.time.value) {
-                            case 1:
-                                glyph = 1;
-                                break;
-                            case 2:
-                                glyph = 2;
-                                break;
-                            case 3:
-                                glyph = 3;
-                                break;
-                            case "free":
-                                glyph = "f";
-                                break;
-                            case "reaction":
-                                glyph = "r";
-                                break;
-                            default:
-                                glyph = undefined;
-                                break;
-                        }
-                    }
                     if (itemTraits.traditions.length > 0) {
                         desc += "**Traditions** ";
                         for (const [i, tradition] of itemTraits.traditions.entries()) {
-                            desc += game.i18n.localize(CONFIG.PF2E.magicTraditions[tradition]);
+                            desc += game.i18n.localize(CONFIG.PF2E.magicTraditions[tradition]).toLowerCase();
                             if (i < itemTraits.traditions.length - 1) {
                                 desc += ", ";
                             }
                         }
-                        desc += "\n";
+                        desc += "\n\n";
+                    }
+                    if (getThisModuleSetting('prettierEmojis') && originDoc.actionGlyph) {
+                        glyph = originDoc.actionGlyph.toLowerCase();
+                    }
+                    if (!originDoc.actionGlyph && originDoc.system.time?.value) {
+                        desc += `**Cast** ${originDoc.system.time.value}\n\n`;
                     }
                     if (originDoc.system.range?.value) {
                         desc += `**Range** ${originDoc.system.range.value}`;
@@ -632,16 +616,17 @@ async function PF2e_generateAutoUUIDEmbeds(message) {
                     if (originDoc.system.target?.value) {
                         desc += `**Targets** ${originDoc.system.target.value} `;
                     }
-                    desc += "\n";
+                    desc += "\n\n";
                     if (originDoc.defense) {
                         desc += `**Defense** ${originDoc.defense.label} `;
                     }
+                    desc += "\n<hr/>\n"
                 }
                 else {
                     if (getThisModuleSetting('prettierEmojis') && originDoc.system.actionType) {
-                        switch (originDoc.system.actionType) {
+                        switch (originDoc.actionCost.type) {
                             case "action":
-                                glyph = originDoc.system.actions;
+                                glyph = originDoc.actionCost.value;
                                 break;
                             case "reaction":
                                 glyph = "r";
@@ -656,9 +641,10 @@ async function PF2e_generateAutoUUIDEmbeds(message) {
                     }
                 }
                 if (glyph) {
-                    title += actionGlyphEmojis[glyph];
+                    let newGlyph = glyph.replace(/1|2|3|f|r/g, match => actionGlyphEmojis[match]);
+                    title += newGlyph;
                 }
-                desc += `\n<hr>\n`;
+                desc += `\n\n`;
                 desc += await toHTML(originDoc.description, PF2e_generateEnrichmentOptionsUsingOrigin(originDoc));
                 embeds.push({ title: title, description: desc });
             }
