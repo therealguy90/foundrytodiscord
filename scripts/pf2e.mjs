@@ -51,7 +51,7 @@ export async function messageParserPF2e(msg) {
 
     if (embeds && embeds.length > 0) {
         for (let embed of embeds) {
-            embed.description = await PF2e_reformatMessage(await toHTML(embed.description, await PF2e_getEnrichmentOptions(msg)));
+            embed.description = await PF2e_reformatMessage(embed.description);
         }
         if (!generic.willAutoUUIDEmbed(enrichedMsg.content)) {
             constructedMessage = (/<[a-z][\s\S]*>/i.test(enrichedMsg.flavor) || enrichedMsg.flavor === embeds[0].title) ? "" : enrichedMsg.flavor;
@@ -570,9 +570,7 @@ async function PF2e_generateAutoUUIDEmbeds(message) {
     for (const link of links) {
         if (link) {
             const uuid = link.getAttribute('data-uuid');
-            console.log(link);
             const originDoc = await fromUuid(uuid);
-            console.log(originDoc);
             if (originDoc instanceof Item && originDoc.isIdentified !== false) {
                 const itemTraits = originDoc.system.traits;
                 const itemType = originDoc.type;
@@ -612,7 +610,7 @@ async function PF2e_generateAutoUUIDEmbeds(message) {
                                 break;
                         }
                     }
-                    if (itemTraits.traditions) {
+                    if (itemTraits.traditions.length > 0) {
                         desc += "**Traditions** ";
                         for (const [i, tradition] of itemTraits.traditions.entries()) {
                             desc += game.i18n.localize(CONFIG.PF2E.magicTraditions[tradition]);

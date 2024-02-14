@@ -61,7 +61,7 @@ export async function messageParserGeneric(msg) {
     //Fix formatting before sending
     if (embeds && embeds.length > 0) {
         for (let embed of embeds) {
-            embed.description = await reformatMessage(await toHTML(embed.description, await getEnrichmentOptions(msg)));
+            embed.description = await reformatMessage(embed.description);
         }
         if (!willAutoUUIDEmbed(enrichedMsg.content)) {
             constructedMessage = (/<[a-z][\s\S]*>/i.test(enrichedMsg.flavor) || enrichedMsg.flavor === embeds[0].title) ? "" : enrichedMsg.flavor;

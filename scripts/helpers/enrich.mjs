@@ -5,5 +5,5 @@ export async function newEnrichedMessage(message, options = {}) {
 }
 
 export async function toHTML(content, options = {}) {
-    return await TextEditor.enrichHTML(content, options);
+    return (await TextEditor.enrichHTML(content, options)).replaceAll("\n", "");
 }

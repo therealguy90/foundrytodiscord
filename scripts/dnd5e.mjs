@@ -1,7 +1,7 @@
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
 import { parse2DTable } from './helpers/tables.mjs';
 import * as generic from './generic.mjs';
-import { newEnrichedMessage, toHTML } from './helpers/enrich.mjs';
+import { newEnrichedMessage } from './helpers/enrich.mjs';
 import { swapOrNot, getDieEmoji, dieIcon } from './helpers/emojis/global.mjs';
 
 export async function messageParserDnD5e(msg) {
@@ -55,7 +55,7 @@ export async function messageParserDnD5e(msg) {
     }
     if (embeds && embeds.length > 0) {
         for (let embed of embeds) {
-            embed.description = await DnD5e_reformatMessage(await toHTML(embed.description, await DnD5e_getEnrichmentOptions(msg)));
+            embed.description = await DnD5e_reformatMessage(embed.description);
         }
         if (!generic.willAutoUUIDEmbed(enrichedMsg.content)) {
             constructedMessage = (/<[a-z][\s\S]*>/i.test(enrichedMsg.flavor) || enrichedMsg.flavor === embeds[0].title) ? "" : enrichedMsg.flavor;
