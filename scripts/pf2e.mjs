@@ -138,16 +138,18 @@ function PF2e_createCardEmbed(message) {
     //generic card
 
     const h3Element = div.querySelector("h3");
-    const actionGlyphElement = h3Element.querySelector(".action-glyph");
-    if (actionGlyphElement) {
-        if (getThisModuleSetting('prettierEmojis')) {
-            actionGlyphElement.innerHTML = actionGlyphElement.textContent.toLowerCase().replace(/1|2|3|f|r/g, match => actionGlyphEmojis[match]);
+    if (h3Element) {
+        const actionGlyphElement = h3Element.querySelector(".action-glyph");
+        if (actionGlyphElement) {
+            if (getThisModuleSetting('prettierEmojis')) {
+                actionGlyphElement.innerHTML = actionGlyphElement.textContent.toLowerCase().replace(/1|2|3|f|r/g, match => actionGlyphEmojis[match]);
+            }
+            else {
+                actionGlyphElement.remove();
+            }
         }
-        else {
-            actionGlyphElement.remove();
-        }
+        title = h3Element.textContent.trim();
     }
-    title = h3Element.textContent.trim();
     desc = PF2e_parseTraits(message.content);
     let speakerActor;
     if (message.speaker?.actor) {
