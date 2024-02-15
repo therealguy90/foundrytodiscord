@@ -22,9 +22,11 @@ export function generateSendFormData(content, embeds = [], username = game.user.
     return formData;
 }
 
-export async function sendMessage(formData, isRoll = false, sceneID = game.user.viewedScene) {
+export async function sendMessage(formData, isRoll = false, sceneID = game.user.viewedScene, hookOverride = undefined) {
     let hook = "";
-    if (isRoll) {
+    if (hookOverride) {
+        hook = hookOverride;
+    } else if (isRoll) {
         if (sceneID !== "" && getThisModuleSetting("threadedChatMap").hasOwnProperty(sceneID)) {
             hook = getThisModuleSetting("rollWebHookURL").split('?')[0] + "?thread_id=" + getThisModuleSetting('threadedChatMap')[sceneID].rollThreadId;
         }
