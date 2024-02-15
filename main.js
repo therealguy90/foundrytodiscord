@@ -29,7 +29,7 @@ Hooks.on('getChatLogEntryContext', async (html, options) => {
         {
             name: "Send (Main Webhook)",
             icon: '<i class="fa-brands fa-discord"></i>',
-            condition: game.user.isGM,
+            condition: game.user.isGM || getThisModuleSetting('allowPlayerSend') ,
             callback: async li => {
                 let message = game.messages.get(li.attr("data-message-id"));
                 await tryPOST(message);

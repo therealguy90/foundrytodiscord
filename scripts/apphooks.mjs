@@ -12,25 +12,24 @@ import { postParse } from "../main.js";
 // Application header buttons
 export async function initMenuHooks() {
     Hooks.on('getJournalSheetHeaderButtons', async (sheet, buttons) => {
-        buttons.unshift(
-            {
-                label: "Send Page (Main Channel)",
-                class: 'send-page-to-discord',
-                icon: 'fa-brands fa-discord',
-                onclick: () => {
-                    sendJournal(sheet);
-                }
-            },
-            {
+        buttons.unshift({
+            label: "Send Page (Main Channel)",
+            class: 'send-page-to-discord',
+            icon: 'fa-brands fa-discord',
+            onclick: () => {
+                sendJournal(sheet);
+            }
+        });
+        if (getThisModuleSetting('notesWebHookURL') !== "" && (getThisModuleSetting('allowPlayerSend') || game.user.isGM)) {
+            buttons.unshift({
                 label: "Send Page (Notes)",
                 class: 'send-page-to-discord-notes',
                 icon: 'fa-brands fa-discord',
-                condition: getThisModuleSetting('notesWebHookURL') !== "" && (getThisModuleSetting('allowPlayerSend') || game.user.isGM),
                 onclick: () => {
                     sendJournal(sheet, getThisModuleSetting('notesWebHookURL'));
                 }
-            },
-        )
+            });
+        }
     });
 
     Hooks.on('getImagePopoutHeaderButtons', (sheet, buttons) => {
@@ -42,17 +41,18 @@ export async function initMenuHooks() {
                 onclick: async () => {
                     sendImage(sheet);
                 }
-            },
-            {
+            }
+        );
+        if (getThisModuleSetting('notesWebHookURL') !== "" && (getThisModuleSetting('allowPlayerSend') || game.user.isGM)) {
+            buttons.unshift({
                 label: "Send Image (Notes)",
                 class: 'send-image-to-discord-notes',
                 icon: 'fa-brands fa-discord',
-                condition: getThisModuleSetting('notesWebHookURL') !== "" && (getThisModuleSetting('allowPlayerSend') || game.user.isGM),
                 onclick: async () => {
                     sendImage(sheet, getThisModuleSetting('notesWebHookURL'));
                 }
-            }
-        )
+            });
+        }
     });
 
 
