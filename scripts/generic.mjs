@@ -1,11 +1,11 @@
 import { htmlTo2DTable, parse2DTable } from './helpers/tables.mjs';
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
-import { splitEmbed, hexToColor, removeEmptyEmbeds, splitText, splitFirstEmbed } from './helpers/messages.mjs';
+import { removeEmptyEmbeds, splitText, addEmbedsToRequests } from './helpers/messages.mjs';
 import { generateimglink } from './helpers/images.mjs';
 import { newEnrichedMessage, toHTML } from './helpers/enrich.mjs';
 import { getDieEmoji, getDocumentEmoji, swapOrNot, dieIcon } from './helpers/emojis/global.mjs';
 
-export async function messageParserGeneric(msg) {
+export async function messageParserGeneric(msg, edit = false) {
     // Make a new ChatMessage object with the content enriched using the TextEditor.
     // This makes it so that parsing is consistently using HTML instead of using regex for enrichers.
     // Most messages do not need EnrichmentOptions, but pass it anyways for parity. Spare the effort.
@@ -79,7 +79,7 @@ export async function messageParserGeneric(msg) {
         constructedMessage = anonymizeText(constructedMessage, enrichedMsg)
     }
     constructedMessage = await reformatMessage(constructedMessage);
-    return getRequestParams(enrichedMsg, constructedMessage, embeds);
+    return getRequestParams(enrichedMsg, constructedMessage, embeds, edit);
 }
 
 // Used for enrichHTML. Using actor as default in the generic parser.
@@ -98,7 +98,7 @@ export async function getEnrichmentOptions(message) {
     };
 }
 
-export function getRequestParams(message, msgText, embeds) {
+export function getRequestParams(message, msgText, embeds, editMode = false) {
     const imgurl = generateDiscordAvatar(message);
     let hook = "";
     if (message.isRoll && (!isCard(message.content) && message.rolls.length > 0)) {
@@ -132,83 +132,7 @@ export function getRequestParams(message, msgText, embeds) {
         });
     }
     if (embeds && embeds.length > 0) {
-        let embedSizeCharCount = 0;
-        let discordSizeLimitedEmbeds = [];
-        for (const embed of embeds) {
-            let descriptionLength = 0;
-            if (embed.description) {
-                descriptionLength = embed.description.length;
-            }
-            if (embed.title) {
-                embedSizeCharCount += embed.title.length;
-            }
-            embedSizeCharCount += descriptionLength;
-            if (descriptionLength > 3500) {
-                discordSizeLimitedEmbeds.push(...splitEmbed(embed, 3500));
-            } else {
-                discordSizeLimitedEmbeds.push(embed);
-            }
-        }
-        let embedGroups = [];
-        if (embedSizeCharCount > 4000) {
-            let tempCharCount = 0;
-            let j = 0;
-            for (let i = 0; i < discordSizeLimitedEmbeds.length; i++) {
-                tempCharCount += discordSizeLimitedEmbeds[i].description.length;
-                if (tempCharCount < 4000) {
-                    if (!embedGroups[j]) {
-                        embedGroups[j] = [];
-                    }
-                    embedGroups[j].push(discordSizeLimitedEmbeds[i]);
-                }
-                else {
-                    const splitEmbeds = splitFirstEmbed(discordSizeLimitedEmbeds[i], tempCharCount - 4000);
-                    embedGroups[j].push(splitEmbeds[0]);
-                    discordSizeLimitedEmbeds[i] = splitEmbeds[1];
-                    i--;
-                    j++;
-                    tempCharCount = 0;
-                }
-            }
-        }
-        else {
-            embedGroups.push(...[embeds]);
-        }
-        let firstEmbedGroup = true;
-        let firstEmbedMessageIndex = undefined;
-        let embedMessagesNum = 0;
-        for (const embedGroup of embedGroups) {
-            embedGroup.forEach((embed) => {
-                // Add color to all embeds
-                if (message.user?.color) {
-                    embed.color = hexToColor(message.user.color);
-                }
-            });
-            if (firstEmbedGroup) {
-                if (!embedGroup[0]?.author && getThisModuleSetting('showAuthor') && message.user && message.alias !== message.user.name) {
-                    embedGroup[0]["author"] = {
-                        name: message.user.name,
-                        icon_url: generateimglink(message.user.avatar)
-                    }
-                }
-                allRequests[allRequests.length - 1].params.embeds = embedGroup;
-                firstEmbedGroup = false;
-                firstEmbedMessageIndex = allRequests.length - 1;
-                embedMessagesNum++;
-            }
-            else {
-                allRequests.push({
-                    hook: hook,
-                    params: {
-                        username: username,
-                        avatar_url: imgurl,
-                        content: "",
-                        embeds: embedGroup
-                    }
-                });
-                embedMessagesNum++;
-            }
-        }
+        allRequests = addEmbedsToRequests(allRequests, hook, username, imgurl, embeds, message.user);
     }
     // For edit requests, we will trim the amount of requests if and only if there are more requests than
     // linked messages for the edit. This makes it so that we don't need to make new messages to accommodate
@@ -224,11 +148,11 @@ export function getRequestParams(message, msgText, embeds) {
     else {
         messageList = getThisModuleSetting('clientMessageList');
     }
-    if (messageList.hasOwnProperty(message.id) && messageList[message.id][0]) {
+    if (editMode && messageList.hasOwnProperty(message.id) && messageList[message.id][0]) {
         let shortestLinkedLength = Infinity;
-        for (const linkedMessageIndex in messageList) {
-            if (shortestLinkedLength > Object.keys(messageList[linkedMessageIndex]).length) {
-                shortestLinkedLength = Object.keys(messageList[linkedMessageIndex]).length;
+        for (const linkedMessageIndex in messageList[message.id]) {
+            if (shortestLinkedLength > (Object.keys(messageList[message.id][linkedMessageIndex])).length) {
+                shortestLinkedLength = (Object.keys(messageList[message.id][linkedMessageIndex])).length;
             }
         }
         if (allRequests.length > shortestLinkedLength) {

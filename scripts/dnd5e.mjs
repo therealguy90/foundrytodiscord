@@ -4,7 +4,7 @@ import * as generic from './generic.mjs';
 import { newEnrichedMessage } from './helpers/enrich.mjs';
 import { swapOrNot, getDieEmoji, dieIcon } from './helpers/emojis/global.mjs';
 
-export async function messageParserDnD5e(msg) {
+export async function messageParserDnD5e(msg, edit = false) {
     const enrichedMsg = await newEnrichedMessage(msg, await DnD5e_getEnrichmentOptions(msg));
     let constructedMessage = '';
     let embeds = [];
@@ -73,7 +73,7 @@ export async function messageParserDnD5e(msg) {
         constructedMessage = generic.anonymizeText(constructedMessage, enrichedMsg);
     }
     constructedMessage = await DnD5e_reformatMessage(constructedMessage);
-    return generic.getRequestParams(enrichedMsg, constructedMessage, embeds);
+    return generic.getRequestParams(enrichedMsg, constructedMessage, embeds, edit);
 }
 
 function DnD5e_createCardEmbed(message) {

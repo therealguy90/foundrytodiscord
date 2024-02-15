@@ -6,7 +6,7 @@ import { actionGlyphEmojis, damageEmojis, templateEmojis, targetEmoji } from './
 
 const DamageRoll = CONFIG.Dice.rolls.find(r => r.name === "DamageRoll");
 
-export async function messageParserPF2e(msg) {
+export async function messageParserPF2e(msg, edit = false) {
     const enrichedMsg = await newEnrichedMessage(msg, await PF2e_getEnrichmentOptions(msg));
     let constructedMessage = '';
     let embeds = [];
@@ -70,7 +70,7 @@ export async function messageParserPF2e(msg) {
         constructedMessage = generic.anonymizeText(constructedMessage, enrichedMsg);
     }
     constructedMessage = await PF2e_reformatMessage(constructedMessage);
-    return generic.getRequestParams(enrichedMsg, constructedMessage, embeds);
+    return generic.getRequestParams(enrichedMsg, constructedMessage, embeds, edit);
 }
 
 export async function PF2e_reformatMessage(text) {

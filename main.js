@@ -212,7 +212,7 @@ Hooks.on('updateChatMessage', async (msg, change, options) => {
                         msgObjects = getThisModuleSetting('clientMessageList')[msg.id];
                     }
                     let editHook;
-                    const requestParams = await messageParse(msg);
+                    const requestParams = await messageParse(msg, true);
                     if (requestParams) {
                         for (const request of requestParams) {
                             for (const linkedIndex in msgObjects) {
@@ -227,7 +227,7 @@ Hooks.on('updateChatMessage', async (msg, change, options) => {
                                     } else {
                                         editHook = url + '/messages/' + message.id;
                                     }
-                                    const { waitHook, formData } = await postParse(request);
+                                    const { waitHook, formData } = await postParse(msg, request);
                                     requestQueue.push(
                                         {
                                             hook: editHook,
@@ -341,7 +341,7 @@ function deleteAll(msg) {
 * A successfully sent message is added to the object stored in a hidden module setting (max 100). This allows all clients to access
 * previously-sent messages, and for the messages to not be erased after the client reloads their browser.
 */
-async function tryPOST(msg) {
+async function tryPOST(msg, hookOverride = undefined) {
     let requestParams = await messageParse(msg);
     // do post-parse checks, such as adding images to upload and editing webhook links
     if (requestParams && requestParams.length > 0) {
@@ -360,7 +360,7 @@ async function tryPOST(msg) {
             linkedMsgNum = Object.keys(messageList[msg.id]).length;
         }
         for (const request of requestParams) {
-            const { waitHook, formData } = await postParse(request);
+            const { waitHook, formData } = await postParse(msg, request, hookOverride);
             requestQueue.push(
                 {
                     hook: waitHook,
@@ -380,35 +380,49 @@ async function tryPOST(msg) {
     }
 }
 
-async function postParse(request) {
+export async function postParse(message, request, hookOverride = undefined) {
     if (request.params.avatar_url === "") {
         console.warn("foundrytodiscord | Your Invite URL is not set! Avatar images cannot be displayed on Discord.")
     }
     let formData = new FormData()
     if (game.modules.get("chat-media")?.active || game.modules.get("chatgifs")?.active) {
-        const { formDataTemp, contentTemp } = getChatMediaAttachments(formData, request.params.content, msg.content);
+        const { formDataTemp, contentTemp } = getChatMediaAttachments(formData, request.params.content, message.content);
         if (formDataTemp !== formData) {
             formData = formDataTemp;
         }
         request.params.content = contentTemp;
     }
-    if (request.params.content === "" && request.params.embeds.length === 0 && !formData.get('files[0]')) {
-        if (!msg.content.includes('<img') && !msg.content.includes('<video')) {
-            return;
-        }
-        else {
-            request.params.content += addMediaLinks(msg);
-        }
-        if (request.params.content === "") {
-            return;
+    if (message) {
+        if (request.params.content === "" && request.params.embeds.length === 0 && !formData.get('files[0]')) {
+            if (!message.content.includes('<img') && !message.content.includes('<video')) {
+                return;
+            }
+            else {
+                request.params.content += addMediaLinks(message);
+            }
+            if (request.params.content === "") {
+                return;
+            }
         }
     }
     let waitHook;
-    if (request.hook.includes("?")) {
-        waitHook = request.hook + "&wait=true";
+    let hook;
+    if (hookOverride) {
+        hook = hookOverride;
     }
     else {
-        waitHook = request.hook + "?wait=true";
+        hook = request.hook;
+    }
+    if (hook) {
+        if (hook.includes("?")) {
+            waitHook = hook + "&wait=true";
+        }
+        else {
+            waitHook = hook + "?wait=true";
+        }
+    }
+    else {
+        waitHook = undefined;
     }
     formData.append('payload_json', JSON.stringify(request.params));
     return { waitHook: waitHook, formData: formData };

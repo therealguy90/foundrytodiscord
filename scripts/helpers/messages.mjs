@@ -1,3 +1,6 @@
+import { getThisModuleSetting } from "./modulesettings.mjs";
+import { generateimglink } from "./images.mjs";
+
 export function splitEmbed(embed, MAX_LENGTH = 4000) {
     let description = embed.description;
     const parts = [];
@@ -151,6 +154,82 @@ export function splitText(text, MAX_LENGTH) {
         textArray.push(curText);
     }
     return textArray;
+}
+
+export function addEmbedsToRequests(allRequests, hook, username, imgurl, embeds, user) {
+    let embedSizeCharCount = 0;
+    let discordSizeLimitedEmbeds = [];
+    for (const embed of embeds) {
+        let descriptionLength = 0;
+        if (embed.description) {
+            descriptionLength = embed.description.length;
+        }
+        if (embed.title) {
+            embedSizeCharCount += embed.title.length;
+        }
+        embedSizeCharCount += descriptionLength;
+        if (descriptionLength > 3500) {
+            discordSizeLimitedEmbeds.push(...splitEmbed(embed, 3500));
+        } else {
+            discordSizeLimitedEmbeds.push(embed);
+        }
+    }
+    let embedGroups = [];
+    if (embedSizeCharCount > 4000) {
+        let tempCharCount = 0;
+        let j = 0;
+        for (let i = 0; i < discordSizeLimitedEmbeds.length; i++) {
+            tempCharCount += discordSizeLimitedEmbeds[i].description.length;
+            if (tempCharCount < 4000) {
+                if (!embedGroups[j]) {
+                    embedGroups[j] = [];
+                }
+                embedGroups[j].push(discordSizeLimitedEmbeds[i]);
+            }
+            else {
+                const splitEmbeds = splitFirstEmbed(discordSizeLimitedEmbeds[i], tempCharCount - 4000);
+                embedGroups[j].push(splitEmbeds[0]);
+                discordSizeLimitedEmbeds[i] = splitEmbeds[1];
+                i--;
+                j++;
+                tempCharCount = 0;
+            }
+        }
+    }
+    else {
+        embedGroups.push(...[embeds]);
+    }
+    let firstEmbedGroup = true;
+    for (const embedGroup of embedGroups) {
+        embedGroup.forEach((embed) => {
+            // Add color to all embeds
+            if (user?.color) {
+                embed.color = hexToColor(user.color);
+            }
+        });
+        if (firstEmbedGroup) {
+            if (!embedGroup[0]?.author && getThisModuleSetting('showAuthor') && user && username !== user.name) {
+                embedGroup[0]["author"] = {
+                    name: user.name,
+                    icon_url: generateimglink(user.avatar)
+                }
+            }
+            allRequests[allRequests.length - 1].params.embeds = embedGroup;
+            firstEmbedGroup = false;
+        }
+        else {
+            allRequests.push({
+                hook: hook,
+                params: {
+                    username: username,
+                    avatar_url: imgurl,
+                    content: "",
+                    embeds: embedGroup
+                }
+            });
+        }
+    }
+    return allRequests;
 }
 
 export function hexToColor(hex) {
