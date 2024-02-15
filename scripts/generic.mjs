@@ -680,7 +680,7 @@ export async function embedsFromJournalPages(pages) {
             case "text":
                 const textEmbed = {
                     title: pageData.name,
-                    description: pageData.text.content
+                    description: await toHTML(pageData.text.content)
                 };
                 embeds.push(textEmbed)
                 break;
