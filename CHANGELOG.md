@@ -1,4 +1,18 @@
-# 1.8.5
+# 1.9.0
+
+- No more limits! Messages of 2000 characters or longer will be split up into multiple messages. Long embeds can now also be split up into 2 or more messages in Discord. Note that this does not affect the API, but does affect everything else. ~~This means Foundry to Discord now fully supports unnecessarily long item descriptions!~~
+- Note that because of the major changes in the chat mirroring system, I may have missed some bugs. For now, though, foundry messages sent prior to 1.9.0 can't be edited nor can they be deleted, but that's not much of an issue. I recommend clearing your chat log before installing this update, but it's not really necessary, since the module can't touch any of the messages sent before this version.
+
+- Added the UUID Auto Embed system, as requested in #23. By toggling "Auto-embed UUID Link Messages" on, all messages that contain a `@UUID` link to an item, journal, or journal page will be automatically appended with an embed of the title and description of the item/journal. Up to 10 `@UUID` links will be embedded onto the message. Be careful with journals, though, as they will spam your channel, but a hard 10-page limit is set on journals to prevent massive spam. Deleting the message with the UUID link will delete the embeds associated with them, so don't worry if you accidentally spammed your channel with long journal pages.
+- #24 Added a button to only delete a message on Foundry, but keep the sent message/s on Discord. This is available for GMs only. It will appear in the chat message context menu as "Delete (Foundry Chat Only)".
+- #25 Split "Send to Discord" buttons into two: a "Send (Main Channel)" button and a "Send (Player Notes)" button. To enable sending to player notes, a Player Notes Webhook must be added. Follow the steps as usual for making webhooks, and add `?thread_id=xxx` to the end of the webhook if you want to send to a thread instead. Toggling 'Enable "Send to Discord" for everyone' will enable the "Send (Player Notes)" button for players.
+
+- Fixes:
+- (pf2e) Fixed rerolls not sending on Discord.
+- (pf2e) Fixed some action glyph emojis not appearing.
+- (dnd5e) Improved compatibility with the 3.0.0+ chat card format slightly.
+
+## 1.8.5
 
 - Use enrichers on journal pages before sending.
 - Remove polyglot common override in favor of using polyglot's omniglot function. The chosen default language(common for dnd5e, taldane for post-5.12 pf2e) is always included.
