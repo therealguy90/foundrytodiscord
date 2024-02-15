@@ -120,7 +120,7 @@ export function initModuleSettings() {
     });
     game.settings.register('foundrytodiscord', 'showDescription', {
         name: "Show chat card descriptions",
-        hint: "Disabling this means chat cards descriptions are no longer sent to discord. This can be useful if you don't want to log long spell descriptions.",
+        hint: "Disabling this means chat cards descriptions are no longer sent to discord, which could be useful if you don't want to log long spell descriptions, for example.",
         scope: "world",
         config: true,
         default: true,
@@ -128,7 +128,7 @@ export function initModuleSettings() {
     });
     game.settings.register('foundrytodiscord', 'sendEmbeds', {
         name: "Show chat card embeds",
-        hint: "Disabling this means chat cards are no longer sent to discord.",
+        hint: "Disabling this means chat cards are no longer sent to discord. (Does not affect chat cards with rolls attached to them, such as with midi-qol)",
         scope: "world",
         config: true,
         default: true,
