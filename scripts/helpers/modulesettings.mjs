@@ -118,6 +118,23 @@ export function initModuleSettings() {
         default: true,
         type: Boolean
     });
+    game.settings.register('foundrytodiscord', 'allowPlayerSend', {
+        name: "Enable \"Send to Discord\" for everyone",
+        hint: "This will allow players to use the \"Send to Discord\" context menu option on chat messages, as well as the \"Send to Player Notes\" context menu option, if you have the \"Player Notes Webhook URL\" filled in.",
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean
+    });
+    game.settings.register('foundrytodiscord', 'notesWebHookURL', {
+        name: "Player Notes Webhook URL",
+        hint: "This is the webhook for player notes, which is used when \"Send _ to Player Notes\" is clicked. (option does not appear in windows or context menus if this is not filled in)",
+        scope: "world",
+        config: true,
+        default: "",
+        requiresReload: true,
+        type: String
+    })
     game.settings.register('foundrytodiscord', 'showDescription', {
         name: "Show chat card descriptions",
         hint: "Disabling this means chat cards descriptions are no longer sent to discord, which could be useful if you don't want to log long spell descriptions, for example.",

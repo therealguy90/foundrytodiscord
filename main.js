@@ -27,12 +27,36 @@ Hooks.on('deleteScene', async scene => {
 Hooks.on('getChatLogEntryContext', async (html, options) => {
     options.unshift(
         {
-            name: "Send to Discord",
+            name: "Send (Main Webhook)",
             icon: '<i class="fa-brands fa-discord"></i>',
             condition: game.user.isGM,
             callback: async li => {
                 let message = game.messages.get(li.attr("data-message-id"));
                 await tryPOST(message);
+            }
+        },
+        {
+            name: "Send (Player Notes)",
+            icon: '<i class="fa-brands fa-discord"></i>',
+            condition: getThisModuleSetting('notesWebHookURL') !== "" && (getThisModuleSetting('allowPlayerSend') || game.user.isGM),
+            callback: async li => {
+                const message = game.messages.get(li.attr("data-message-id"));
+                const requestParams = await messageParse(message);
+                if (requestParams && requestParams.length > 0) {
+                    for (const request of requestParams) {
+                        const { hook, formData } = await postParse(message, request);
+                        const { response, dmessage } = await api.sendMessage(formData, false, undefined, getThisModuleSetting('notesWebHookURL'))
+                            .catch(error => {
+                                ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
+                            });
+                        if (response.ok) {
+                            ui.notifications.info("Successfully sent to Discord Player Notes.");
+                        }
+                        else {
+                            ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
+                        }
+                    }
+                }
             }
         },
         {
