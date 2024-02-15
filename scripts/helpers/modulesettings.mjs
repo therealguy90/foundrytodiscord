@@ -210,7 +210,7 @@ export function initModuleSettings() {
     }*/
     game.settings.register('foundrytodiscord', 'autoUuidEmbed', {
         name: "Auto-embed UUID Link Messages",
-        hint: "Turn this on to automatically append an embed for an item description if a message only contains UUID links, up to 10.",
+        hint: "Turn this on to automatically append an embed for an item description or journal if a message only contains UUID links, up to 10 item links and/or journal pages. If you send a ridiculously long journal, deleting the message containing the UUID link on Foundry will also remove the long embeds on Discord.",
         scope: "world",
         config: true,
         default: false,
