@@ -322,19 +322,10 @@ export function createCardEmbed(message) {
     const div = document.createElement("div");
     div.innerHTML = message.content;
     // Find the <h3> element and extract its text content, since h3 works for most systems
-    // if not, use the first line it finds
     const h3Element = div.querySelector("h3");
     let title;
     if (h3Element?.textContent) {
         title = h3Element.textContent.trim();
-    }
-    else {
-        //Use first line of plaintext to title the embed instead
-        const lines = div.textContent.split('\n'); // Split by newline characters
-        title = lines[0].trim(); // Get the first line of plain text
-        const regex = new RegExp('\\b' + title + '\\b', 'i');
-        div.innerHTML = div.innerHTML.replace(regex, "");
-
     }
     let desc = "";
     let speakerActor = undefined;
