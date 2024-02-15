@@ -44,16 +44,18 @@ Hooks.on('getChatLogEntryContext', async (html, options) => {
                 const requestParams = await messageParse(message);
                 if (requestParams && requestParams.length > 0) {
                     for (const request of requestParams) {
-                        const { hook, formData } = await postParse(message, request);
-                        const { response, dmessage } = await api.sendMessage(formData, false, undefined, getThisModuleSetting('notesWebHookURL'))
-                            .catch(error => {
+                        const { waitHook, formData } = await postParse(message, request, getThisModuleSetting('notesWebHookURL'));
+                        if (waitHook) {
+                            const { response, dmessage } = await api.sendMessage(formData, false, undefined, waitHook)
+                                .catch(error => {
+                                    ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
+                                });
+                            if (response.ok) {
+                                ui.notifications.info("Successfully sent to Discord Player Notes.");
+                            }
+                            else {
                                 ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
-                            });
-                        if (response.ok) {
-                            ui.notifications.info("Successfully sent to Discord Player Notes.");
-                        }
-                        else {
-                            ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
+                            }
                         }
                     }
                 }
@@ -385,19 +387,21 @@ async function tryPOST(msg, hookOverride = undefined) {
         }
         for (const request of requestParams) {
             const { waitHook, formData } = await postParse(msg, request, hookOverride);
-            requestQueue.push(
-                {
-                    hook: waitHook,
-                    formData: formData,
-                    msgID: msg.id,
-                    method: "POST",
-                    dmsgID: null,
-                    linkedMsgNum: linkedMsgNum
+            if (waitHook) {
+                requestQueue.push(
+                    {
+                        hook: waitHook,
+                        formData: formData,
+                        msgID: msg.id,
+                        method: "POST",
+                        dmsgID: null,
+                        linkedMsgNum: linkedMsgNum
+                    }
+                );
+                if (!isProcessing) {
+                    isProcessing = true;
+                    requestOnce();
                 }
-            );
-            if (!isProcessing) {
-                isProcessing = true;
-                requestOnce();
             }
         }
 
@@ -419,13 +423,15 @@ export async function postParse(message, request, hookOverride = undefined) {
     if (message) {
         if (request.params.content === "" && request.params.embeds.length === 0 && !formData.get('files[0]')) {
             if (!message.content.includes('<img') && !message.content.includes('<video')) {
-                return;
+                console.error('foundrytodiscord | Failed to send message after parsing: parser returned empty result');
+                return { waitHook: undefined, formData: {} };
             }
             else {
                 request.params.content += addMediaLinks(message);
             }
             if (request.params.content === "") {
-                return;
+                console.error('foundrytodiscord | Failed to send message after parsing: parser returned empty result');
+                return { waitHook: undefined, formData: {} };
             }
         }
     }
