@@ -1,7 +1,7 @@
 import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
 import { parse2DTable } from './helpers/tables.mjs';
 import * as generic from './generic.mjs';
-import { newEnrichedMessage } from './helpers/enrich.mjs';
+import { newEnrichedMessage, toHTML } from './helpers/enrich.mjs';
 import { swapOrNot, getDieEmoji, dieIcon } from './helpers/emojis/global.mjs';
 
 export async function messageParserDnD5e(msg, edit = false) {
@@ -51,7 +51,7 @@ export async function messageParserDnD5e(msg, edit = false) {
         embeds = generic.createGenericRollEmbed(enrichedMsg);
     }
     if (embeds.length === 0 && generic.willAutoUUIDEmbed(enrichedMsg.content)) {
-        embeds = await generic.generateAutoUUIDEmbeds(enrichedMsg, await DnD5e_getEnrichmentOptions(msg));
+        embeds = await DnD5e_generateAutoUUIDEmbeds(enrichedMsg);
     }
     if (embeds && embeds.length > 0) {
         for (let embed of embeds) {
@@ -74,6 +74,22 @@ export async function messageParserDnD5e(msg, edit = false) {
     }
     constructedMessage = await DnD5e_reformatMessage(constructedMessage);
     return generic.getRequestParams(enrichedMsg, constructedMessage, embeds, edit);
+}
+
+export async function DnD5e_reformatMessage(text) {
+    let reformattedText = await generic.reformatMessage(text, DnD5e_parseHTMLText);
+    return reformattedText;
+}
+
+async function DnD5e_parseHTMLText(htmlString) {
+    let reformattedText = htmlString;
+    const htmldoc = document.createElement('div');
+    htmldoc.innerHTML = reformattedText;
+    // Format various elements
+    generic.formatTextBySelector('a.roll-link', text => `${dieIcon()}\`${text}\``, htmldoc);
+    reformattedText = htmldoc.innerHTML;
+
+    return reformattedText;
 }
 
 function DnD5e_createCardEmbed(message) {
@@ -125,20 +141,52 @@ function DnD5e_createCardEmbed(message) {
     return [{ title: title, description: desc, footer: { text: generic.getCardFooter(message.content) } }];
 }
 
-export async function DnD5e_reformatMessage(text) {
-    let reformattedText = await generic.reformatMessage(text, DnD5e_parseHTMLText);
-    return reformattedText;
-}
-
-async function DnD5e_parseHTMLText(htmlString) {
-    let reformattedText = htmlString;
-    const htmldoc = document.createElement('div');
-    htmldoc.innerHTML = reformattedText;
-    // Format various elements
-    generic.formatTextBySelector('a.roll-link', text => `${dieIcon()}\`${text}\``, htmldoc);
-    reformattedText = htmldoc.innerHTML;
-
-    return reformattedText;
+async function DnD5e_generateAutoUUIDEmbeds(message) {
+    let embeds = [];
+    const div = document.createElement('div');
+    div.innerHTML = message.content;
+    const links = div.querySelectorAll("a[data-uuid]");
+    for (const link of links) {
+        if (link) {
+            const uuid = link.getAttribute('data-uuid');
+            const originDoc = await fromUuid(uuid);
+            if (originDoc) {
+                if (originDoc instanceof Item) {
+                    let title = "";
+                    let desc = "";
+                    title += `${originDoc.name} `;
+                    if (!originDoc.system.identified) {
+                        desc += await toHTML(originDoc.system.description.value);
+                    }
+                    else {
+                        desc += await toHTML(originDoc.system.description.unidentified);
+                    }
+                    embeds.push({ title: title, description: desc });
+                }
+                else if (originDoc instanceof JournalEntry || originDoc instanceof JournalEntryPage) {
+                    let pages;
+                    if (originDoc instanceof JournalEntry) {
+                        pages = originDoc.pages;
+                    }
+                    else if (originDoc instanceof JournalEntryPage) {
+                        pages = [originDoc];
+                    }
+                    let journalEmbeds = await embedsFromJournalPages(pages, reformatMessage);
+                    if (journalEmbeds.length > 0) {
+                        journalEmbeds[0].author = { name: "From Journal " + originDoc.name }
+                    }
+                    embeds.push(...journalEmbeds);
+                }
+            }
+        }
+        else {
+            console.warn("foundrytodiscord | Could not generate Auto UUID Embed due to reason: Item does not exist.");
+        }
+        if (embeds.length > 9) {
+            break;
+        }
+    }
+    return embeds;
 }
 
 // midi might as well be part of the system at this point.
