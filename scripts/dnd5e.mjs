@@ -414,13 +414,19 @@ async function midiqol_createSavesDisplayCard(message) {
     let element = divs.querySelector('.midi-qol-saves-display');
     let title = "";
     let desc = "";
-    if (element.textContent !== "" && game.settings.get('midi-qol', 'ConfigSettings').displaySaveDC) {
-        title = element.querySelector(".midi-qol-nobox.midi-qol-bigger-text");
-        if ((!title || title === "" || !title.innerHTML) && message.flavor !== "") {
+    if (element.textContent !== "") {
+        const strongTitle = element.querySelector("strong");
+        if ((!strongTitle || !strongTitle.textContent) && message.flavor !== "") {
             title = message.flavor;
         }
         else {
-            title = title.innerHTML;
+            if (!game.settings.get('midi-qol', 'ConfigSettings').displaySaveDC) {
+                const saveDC = strongTitle.querySelector(".midi-qol-saveDC");
+                if(saveDC){
+                    saveDC.remove();
+                }
+            }
+            title = strongTitle.innerHTML;
         }
     }
     if (game.settings.get('midi-qol', 'ConfigSettings').autoCheckSaves !== 'whisper') {
@@ -456,7 +462,7 @@ async function midiqol_createSavesDisplayCard(message) {
 function midiqol_isMergeCard(htmlString) {
     const tempElement = document.createElement('div');
     tempElement.innerHTML = htmlString;
-    const midiQOLItemCard = tempElement.querySelector('.midi-qol-item-card');
+    const midiQOLItemCard = tempElement.querySelector('.midi-qol-item-card, .midi-chat-card.item-card');
     if (midiQOLItemCard) {
         return true;
     } else {
