@@ -362,7 +362,7 @@ function deleteAll(msg) {
 * All requests are put into a queue such that everything executes in the order the hooks are detected in-game.
 * This also allows any and all requests to stop if a rate limit is reached.
 * A single object inqueue consists of a hook string, a FormData object, the message id, the request method, 
-* and (for deletions) the discord message ID.
+* (for deletions) the discord message ID, and the linked message ID number, for messages that get mapped to multiple discord messages.
 * The client will attempt to send/edit/delete a message thrice, and if it fails every time, the request gets discarded from the queue.
 * A successfully sent message is added to the object stored in a hidden module setting (max 100). This allows all clients to access
 * previously-sent messages, and for the messages to not be erased after the client reloads their browser.
