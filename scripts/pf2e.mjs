@@ -87,48 +87,50 @@ async function PF2e_parseHTMLText(htmlString) {
     let reformattedText = htmlString;
     const htmldoc = document.createElement('div');
     htmldoc.innerHTML = reformattedText;
-    // Format various elements
-    generic.removeElementsBySelector('[data-visibility="gm"], [data-visibility="owner"],[data-visibility="none"]', htmldoc);
-    generic.formatTextBySelector('.inline-check, span[data-pf2-check]', text => `${dieIcon(20)}\`${text}\``, htmldoc);
-    generic.formatTextBySelector('.action-glyph', text => `${text.replace(/1|2|3|4|5|a|d|t|f|r/g, match => swapOrNot(match.toLowerCase(), actionGlyphEmojis[match.toLowerCase()]))}`, htmldoc);
-    generic.formatTextBySelector('.statements.reverted', text => `~~${text}~~`, htmldoc);
-    reformattedText = htmldoc.innerHTML;
-    htmldoc.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(header => {
-        header.querySelectorAll('span[style="float:right"]').forEach(floatright => {
-            if (header.textContent.trim() !== floatright.textContent.trim()) {
-                floatright.textContent = ` - ${floatright.textContent}`;
-            }
+    if (htmldoc.hasChildNodes()) {
+        // Format various elements
+        generic.removeElementsBySelector('[data-visibility="gm"], [data-visibility="owner"],[data-visibility="none"]', htmldoc);
+        generic.formatTextBySelector('.inline-check, span[data-pf2-check]', text => `${dieIcon(20)}\`${text}\``, htmldoc);
+        generic.formatTextBySelector('.action-glyph', text => `${text.replace(/1|2|3|4|5|a|d|t|f|r/g, match => swapOrNot(match.toLowerCase(), actionGlyphEmojis[match.toLowerCase()]))}`, htmldoc);
+        generic.formatTextBySelector('.statements.reverted', text => `~~${text}~~`, htmldoc);
+        reformattedText = htmldoc.innerHTML;
+        htmldoc.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(header => {
+            header.querySelectorAll('span[style="float:right"]').forEach(floatright => {
+                if (header.textContent.trim() !== floatright.textContent.trim()) {
+                    floatright.textContent = ` - ${floatright.textContent}`;
+                }
+            });
         });
-    });
-    const templateButtons = htmldoc.querySelectorAll('span[data-pf2-effect-area]');
-    if (templateButtons.length > 0) {
-        templateButtons.forEach(template => {
-            const type = template.getAttribute('data-pf2-effect-area');
-            let tempTemplate = ""
-            if (templateEmojis.hasOwnProperty(type)) {
-                tempTemplate += templateEmojis[type];
-            }
-            tempTemplate += "`" + template.textContent + "`";
-            template.outerHTML = tempTemplate;
-        })
-    }
-    reformattedText = htmldoc.innerHTML;
-
-    //Old format for status effects. Kept this in for now, but will be removed later on.
-    const statuseffectlist = htmldoc.querySelectorAll('.statuseffect-rules');
-    if (statuseffectlist.length !== 0) {
-        let statfx = '';
-        statuseffectlist.forEach(effect => {
-            statfx += effect.innerHTML.replace(/<p>.*?<\/p>/g, '') + '\n';
-        });
-        const tempdivs = document.createElement('div');
-        tempdivs.innerHTML = reformattedText;
-        const targetdiv = tempdivs.querySelector('.dice-total.statuseffect-message');
-        if (targetdiv) {
-            targetdiv.innerHTML = statfx;
+        const templateButtons = htmldoc.querySelectorAll('span[data-pf2-effect-area]');
+        if (templateButtons.length > 0) {
+            templateButtons.forEach(template => {
+                const type = template.getAttribute('data-pf2-effect-area');
+                let tempTemplate = ""
+                if (templateEmojis.hasOwnProperty(type)) {
+                    tempTemplate += templateEmojis[type];
+                }
+                tempTemplate += "`" + template.textContent + "`";
+                template.outerHTML = tempTemplate;
+            })
         }
-        generic.removeElementsBySelector('.dice-total.statuseffect-message ul', tempdivs);
-        reformattedText = tempdivs.innerHTML;
+        reformattedText = htmldoc.innerHTML;
+
+        //Old format for status effects. Kept this in for now, but will be removed later on.
+        const statuseffectlist = htmldoc.querySelectorAll('.statuseffect-rules');
+        if (statuseffectlist.length !== 0) {
+            let statfx = '';
+            statuseffectlist.forEach(effect => {
+                statfx += effect.innerHTML.replace(/<p>.*?<\/p>/g, '') + '\n';
+            });
+            const tempdivs = document.createElement('div');
+            tempdivs.innerHTML = reformattedText;
+            const targetdiv = tempdivs.querySelector('.dice-total.statuseffect-message');
+            if (targetdiv) {
+                targetdiv.innerHTML = statfx;
+            }
+            generic.removeElementsBySelector('.dice-total.statuseffect-message ul', tempdivs);
+            reformattedText = tempdivs.innerHTML;
+        }
     }
 
     return reformattedText;

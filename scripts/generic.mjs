@@ -456,71 +456,72 @@ export async function parseHTMLText(htmlString, customHTMLParser = undefined) {
     let reformattedText = htmlString;
     const htmldoc = document.createElement('div');
     htmldoc.innerHTML = reformattedText;
-    removeElementsBySelector('[style*="display:none"]', htmldoc); //remove all display:none
-    // Format tables using the table parser first
-    const tables = htmldoc.querySelectorAll('table');
-    tables.forEach((table) => {
-        const newTable2D = htmlTo2DTable(table);
-        table.outerHTML = `\n${parse2DTable(newTable2D)}`;
-    });
+    if (htmldoc.hasChildNodes()) {
+        removeElementsBySelector('[style*="display:none"]', htmldoc); //remove all display:none
+        // Format tables using the table parser first
+        const tables = htmldoc.querySelectorAll('table');
+        tables.forEach((table) => {
+            const newTable2D = htmlTo2DTable(table);
+            table.outerHTML = `\n${parse2DTable(newTable2D)}`;
+        });
 
 
-    // Remove <img> tags
-    removeElementsBySelector('img', htmldoc);
-    // Format inline-request-roll for Monk's TokenBar
-    formatTextBySelector('.inline-roll, .inline-request-roll', text => `${dieIcon()}\`${text}\``, htmldoc);
+        // Remove <img> tags
+        removeElementsBySelector('img', htmldoc);
+        // Format inline-request-roll for Monk's TokenBar
+        formatTextBySelector('.inline-roll, .inline-request-roll', text => `${dieIcon()}\`${text}\``, htmldoc);
 
 
-    reformattedText = htmldoc.innerHTML;
-    if (customHTMLParser) {
-        reformattedText = await customHTMLParser(reformattedText);
-    }
-    htmldoc.innerHTML = reformattedText;
-
-    const dataLinks = htmldoc.querySelectorAll('a[data-uuid]');
-    if (dataLinks.length > 0) {
-        for (const link of dataLinks) {
-            const newLink = link.cloneNode(true);
-            const uuid = newLink.getAttribute('data-uuid');
-            const document = await fromUuid(uuid);
-            let emoji = "";
-            if (document) {
-                switch (true) {
-                    case document instanceof Actor:
-                        emoji = swapOrNot(":bust_in_silhouette:", getDocumentEmoji("actor"));
-                        break;
-                    case document instanceof Scene:
-                        emoji = swapOrNot(":map:", getDocumentEmoji("scene"));
-                        break;
-                    case document instanceof Macro:
-                        emoji = swapOrNot(":link:", getDocumentEmoji("macro"));
-                        break;
-                    case document instanceof JournalEntry:
-                        emoji = swapOrNot(":book:", getDocumentEmoji("journal"));
-                        break;
-                    case document instanceof RollTable:
-                        emoji = swapOrNot(":page_facing_up:", getDocumentEmoji("rolltable"));
-                        break;
-                    case document instanceof Folder:
-                        emoji = swapOrNot(":file_folder:", getDocumentEmoji("folder"));
-                        break;
-                    default:
-                        emoji = swapOrNot(":baggage_claim:", getDocumentEmoji("item"));
-                        break;
-                }
-            }
-            else {
-                emoji = swapOrNot(":x:", getDocumentEmoji("broken"));
-            }
-            newLink.innerHTML = `${emoji}\`${newLink.textContent}\``;
-            link.parentNode.replaceChild(newLink, link);
+        reformattedText = htmldoc.innerHTML;
+        if (customHTMLParser) {
+            reformattedText = await customHTMLParser(reformattedText);
         }
+        htmldoc.innerHTML = reformattedText;
+
+        const dataLinks = htmldoc.querySelectorAll('a[data-uuid]');
+        if (dataLinks.length > 0) {
+            for (const link of dataLinks) {
+                const newLink = link.cloneNode(true);
+                const uuid = newLink.getAttribute('data-uuid');
+                const document = await fromUuid(uuid);
+                let emoji = "";
+                if (document) {
+                    switch (true) {
+                        case document instanceof Actor:
+                            emoji = swapOrNot(":bust_in_silhouette:", getDocumentEmoji("actor"));
+                            break;
+                        case document instanceof Scene:
+                            emoji = swapOrNot(":map:", getDocumentEmoji("scene"));
+                            break;
+                        case document instanceof Macro:
+                            emoji = swapOrNot(":link:", getDocumentEmoji("macro"));
+                            break;
+                        case document instanceof JournalEntry:
+                            emoji = swapOrNot(":book:", getDocumentEmoji("journal"));
+                            break;
+                        case document instanceof RollTable:
+                            emoji = swapOrNot(":page_facing_up:", getDocumentEmoji("rolltable"));
+                            break;
+                        case document instanceof Folder:
+                            emoji = swapOrNot(":file_folder:", getDocumentEmoji("folder"));
+                            break;
+                        default:
+                            emoji = swapOrNot(":baggage_claim:", getDocumentEmoji("item"));
+                            break;
+                    }
+                }
+                else {
+                    emoji = swapOrNot(":x:", getDocumentEmoji("broken"));
+                }
+                newLink.innerHTML = `${emoji}\`${newLink.textContent}\``;
+                link.parentNode.replaceChild(newLink, link);
+            }
+        }
+        reformattedText = htmldoc.innerHTML;
+
+        // Format everything else
+        reformattedText = htmlCodeCleanup(reformattedText);
     }
-    reformattedText = htmldoc.innerHTML;
-
-    // Format everything else
-    reformattedText = htmlCodeCleanup(reformattedText);
-
     return reformattedText;
 }
 

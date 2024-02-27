@@ -92,10 +92,11 @@ async function DnD5e_parseHTMLText(htmlString) {
     let reformattedText = htmlString;
     const htmldoc = document.createElement('div');
     htmldoc.innerHTML = reformattedText;
-    // Format various elements
-    generic.formatTextBySelector('a.roll-link', text => `${dieIcon()}\`${text}\``, htmldoc);
-    reformattedText = htmldoc.innerHTML;
-
+    if (htmldoc.hasChildNodes()) {
+        // Format various elements
+        generic.formatTextBySelector('a.roll-link', text => `${dieIcon()}\`${text}\``, htmldoc);
+        reformattedText = htmldoc.innerHTML;
+    }
     return reformattedText;
 }
 
