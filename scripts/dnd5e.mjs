@@ -2,10 +2,12 @@ import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs'
 import { parse2DTable } from './helpers/tables.mjs';
 import * as generic from './generic.mjs';
 import { newEnrichedMessage, toHTML } from './helpers/enrich.mjs';
-import { swapOrNot, getDieEmoji, dieIcon } from './helpers/emojis/global.mjs';
+import { swapOrNot, getDieEmoji, dieIcon, checkFails } from './helpers/emojis/global.mjs';
+import { shieldEmoji } from './helpers/emojis/dnd5e.mjs';
 
 export async function messageParserDnD5e(msg, edit = false) {
     const enrichedMsg = await newEnrichedMessage(msg, await DnD5e_getEnrichmentOptions(msg));
+    console.log(enrichedMsg);
     let constructedMessage = '';
     let embeds = [];
     if (game.modules.get('midi-qol')?.active && midiqol_isMergeCard(enrichedMsg.content)) {
@@ -285,43 +287,30 @@ async function midiqol_createMergeCard(message) {
             fields.push({ name: damageTitle, value: rollValue, inline: true })
         }
     }
+    divs.innerHTML = message.content.replace(/>\s+</g, '><');
+    let title = "";
+    let desc = "";
+    element = divs.querySelector('.midi-qol-hits-display');
+    if (element && game.settings.get('midi-qol', 'ConfigSettings').autoCheckHit === 'all') {
+        desc = midiqol_parseTargetsFromDisplay(element);
+        if (desc && desc !== "") {
+            fields.push({ name: "Results", value: desc });
+        }
+    }
+    title = "";
+    desc = "";
+    element = divs.querySelector('.midi-qol-saves-display');
+    if (element && element.textContent) {
+        title = await midiqol_getSaveDisplayTitle(message, element);
+        desc = midiqol_parseTargetsFromDisplay(element);
+        fields.push({ name: title, value: desc });
+    }
     embeds = [{
         title: embeds[0].title,
         description: embeds[0].description,
         fields: fields,
         footer: embeds[0].footer
     }];
-    divs.innerHTML = message.content.replace(/>\s+</g, '><');
-    element = divs.querySelector('.midi-qol-saves-display');
-    let title = "";
-    let desc = "";
-    if (element && element.textContent) {
-        embeds = embeds.concat(await midiqol_createSavesDisplayCard(message));
-        return embeds;
-    }
-    element = divs.querySelector('.midi-qol-hits-display');
-    if (element && game.settings.get('midi-qol', 'ConfigSettings').autoCheckHit === 'all') {
-        element.querySelectorAll('.midi-qol-flex-container').forEach(container => {
-            let parsedTarget = "";
-            const result = container.querySelector('strong');
-            if (result) {
-                parsedTarget += `**${result.textContent}** `;
-            }
-            const target = container.querySelector('.midi-qol-target-npc-Player.midi-qol-target-name');
-            if (target) {
-                parsedTarget += `${target.textContent} `;
-            }
-            parsedTarget = parsedTarget.replace(/\s+/g, ' ').trim();
-            desc += parsedTarget + "\n";
-        });
-        if (title) {
-            embeds.push({ title: title ? generic.parseHTMLText(title.innerHTML) : "", description: desc });
-        }
-        else if (desc !== "") {
-            embeds.push({ description: desc })
-        }
-        return embeds;
-    }
     return embeds;
 }
 
@@ -392,71 +381,93 @@ async function midiqol_createSingleHitCard(message) {
     let element = divs.querySelector('.midi-qol-single-hit-card');
     let desc = "";
     const title = element.querySelector('div').textContent;
-    element.querySelectorAll('.midi-qol-flex-container').forEach(container => {
-        let parsedTarget = "";
-        const result = container.querySelector('strong');
-        if (result) {
-            parsedTarget += `**${result.textContent}** `;
-        }
-        const target = container.querySelector('.midi-qol-target-npc-Player.midi-qol-target-name');
-        if (target) {
-            parsedTarget += `${target.textContent} `;
-        }
-        parsedTarget = parsedTarget.replace(/\s+/g, ' ').trim();
-        desc += parsedTarget + "\n";
-    });
+    desc = midiqol_parseTargetsFromDisplay(element);
     return [{ title: title, description: desc }];
 }
 
+
+function midiqol_parseTargetsFromDisplay(element) {
+    let parsedText = ""
+    element.querySelectorAll('.midi-qol-flex-container, .target').forEach(targetContainer => {
+        let parsedTarget = "";
+        const result = targetContainer.querySelector('strong');
+        if (result) {
+            parsedTarget += `**${result.textContent}** `;
+        }
+        const target = targetContainer.querySelector('.midi-qol-target-npc-Player.midi-qol-target-name, .midi-qol-playerTokenName');
+        if (target) {
+            const icon = targetContainer.querySelector(".midi-qol-target-name").querySelector("i");
+            if (icon) {
+                switch (icon.className) {
+                    case "fas fa-times":
+                        parsedTarget += swapOrNot(":negative_squared_cross_mark:", checkFails["xmark"]);
+                        break;
+                    case "fas fa-check":
+                        parsedTarget += swapOrNot(":white_check_mark:", checkFails["check"]);
+                        break;
+                    case "fas fa-check-double":
+                        parsedTarget += swapOrNot(":white_check_mark::white_check_mark:", checkFails["doublecheck"]);
+                        break;
+                }
+            }
+            parsedTarget += `**${target.textContent.trim()}**`;
+            // For attack hits:
+            let ac = targetContainer.querySelector("i.fas.fa-shield-halved");
+            if (game.settings.get('midi-qol', 'ConfigSettings').displayHitResultNumeric && ac) {
+                ac = ac.parentNode;
+                parsedTarget += ` (${swapOrNot(":shield:", shieldEmoji)}**__${ac.textContent}__**)`;
+            }
+            // For spell saves:
+            const save = targetContainer.querySelector(".midi-qol-save-total");
+            if (save) {
+                parsedTarget += `: ${dieIcon(20)}**__${save.textContent}__**`;
+            }
+        }
+        parsedTarget = parsedTarget.replace(/\s+/g, ' ').trim();
+        parsedText += `${parsedTarget}\n`;
+    });
+    return parsedText;
+}
+
 async function midiqol_createSavesDisplayCard(message) {
-    const divs = document.createElement('div');
-    divs.innerHTML = message.content;
-    let element = divs.querySelector('.midi-qol-saves-display');
+    const element = document.createElement('div');
+    element.innerHTML = message.content;
     let title = "";
     let desc = "";
-    if (element.textContent !== "") {
-        const strongTitle = element.querySelector("strong");
-        if ((!strongTitle || !strongTitle.textContent) && message.flavor !== "") {
-            title = message.flavor;
-        }
-        else {
-            if (!game.settings.get('midi-qol', 'ConfigSettings').displaySaveDC) {
-                const saveDC = strongTitle.querySelector(".midi-qol-saveDC");
-                if(saveDC){
-                    saveDC.remove();
-                }
-            }
-            title = strongTitle.innerHTML;
-        }
+    if (element && element.textContent !== "") {
+        title = await midiqol_getSaveDisplayTitle(message, element);
     }
     if (game.settings.get('midi-qol', 'ConfigSettings').autoCheckSaves !== 'whisper') {
-        element.querySelectorAll('.midi-qol-flex-container').forEach(container => {
-            let parsedTarget = "";
-            const target = container.querySelector('.midi-qol-target-npc-Player.midi-qol-target-name');
-            if (target) {
-                parsedTarget += `${target.textContent} `;
-            }
-            const label = container.querySelector('label')?.textContent;
-            if (label) {
-                parsedTarget += `${label} `;
-            }
-            if (game.settings.get('midi-qol', 'ConfigSettings').autoCheckSaves !== 'allNoRoll') {
-                const savetotal = container.querySelector('.midi-qol-tooltip.midi-qol-save-total')
-                if (savetotal) {
-                    parsedTarget += `: ${dieIcon()} **__${savetotal.firstChild.textContent.split(" ")[1]}__**`;
-                }
-            }
-            parsedTarget = parsedTarget.replace(/\s+/g, ' ').trim();
-            desc += parsedTarget + "\n";
-        });
+        desc = midiqol_parseTargetsFromDisplay(element);
         if (title) {
-            return [{ title: title ? await generic.parseHTMLText(title) : "", description: desc }];
+            return [{ title: title ? title : "", description: desc }];
         }
         else if (desc !== "") {
             return [{ description: desc }];
         }
     }
     return [];
+}
+
+async function midiqol_getSaveDisplayTitle(message, element) {
+    let title = "";
+    const strongTitle = element.querySelector("strong");
+    if ((!strongTitle || !strongTitle.textContent) && message.flavor !== "") {
+        title = await DnD5e_reformatMessage(message.flavor);
+    }
+    else {
+        if (!game.settings.get('midi-qol', 'ConfigSettings').displaySaveDC) {
+            const saveDC = strongTitle.querySelector(".midi-qol-saveDC");
+            if (saveDC) {
+                saveDC.remove();
+            }
+        }
+        title = await DnD5e_reformatMessage(strongTitle.innerHTML);
+        if (element.textContent.includes("Base ½")) {
+            title += " (Base ½)";
+        }
+    }
+    return title;
 }
 
 function midiqol_isMergeCard(htmlString) {
@@ -496,7 +507,7 @@ function midiqol_isSingleHitCard(htmlString) {
 function midiqol_isSavesDisplayCard(htmlString) {
     const tempElement = document.createElement('div');
     tempElement.innerHTML = htmlString;
-    const midiQOLSavesCard = tempElement.querySelector('.midi-qol-saves-display');
+    const midiQOLSavesCard = tempElement.querySelector('div label.midi-qol-saveDC, div .midi-qol-save-tooltip');
     if (midiQOLSavesCard) {
         return true;
     } else {

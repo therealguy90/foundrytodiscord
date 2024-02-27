@@ -1,0 +1,1 @@
+export const shieldEmoji  = "<:acshield:1211860048423297075>";

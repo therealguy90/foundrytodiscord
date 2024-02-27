@@ -88,6 +88,12 @@ export const documents = {
     "scene": "<:scene:1178861007687389235>"
 }
 
+export const checkFails = {
+    "xmark": "<:xmark:1211844737401888829>",
+    "doublecheck": "<:doublecheck:1211844735510249522>",
+    "check": "<:check:1211844740329246730>"
+}
+
 export function swapOrNot(text, emoji){
     if(!getThisModuleSetting('prettierEmojis') || !emoji){
         return text;
