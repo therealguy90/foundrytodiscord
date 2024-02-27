@@ -216,7 +216,7 @@ function generateDiscordAvatar(message) {
 
     if (message.speaker?.scene && message.speaker.token) {
         const speakerToken = game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token);
-        if (speakerToken.texture?.src && speakerToken.texture.src !== "") {
+        if (speakerToken?.texture?.src && speakerToken?.texture.src !== "") {
             return generateimglink(speakerToken.texture.src);
         }
     }
