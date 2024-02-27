@@ -57,7 +57,12 @@ export async function messageParserDnD5e(msg, edit = false) {
     }
     if (embeds && embeds.length > 0) {
         for (let embed of embeds) {
-            embed.description = await DnD5e_reformatMessage(embed.description);
+            if (embed.title) {
+                embed.title = await DnD5e_reformatMessage(embed.title);
+            }
+            if (embed.description) {
+                embed.description = await DnD5e_reformatMessage(embed.description);
+            }
         }
         if (!generic.willAutoUUIDEmbed(enrichedMsg.content)) {
             constructedMessage = (/<[a-z][\s\S]*>/i.test(enrichedMsg.flavor) || enrichedMsg.flavor === embeds[0].title) ? "" : enrichedMsg.flavor;
