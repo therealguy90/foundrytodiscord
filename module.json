@@ -20,57 +20,5 @@
   "compatibility": {
     "minimum": "11",
     "verified": "11"
-  },
-  "relationships": {
-    "optional": [
-      {
-        "id": "polyglot",
-        "type": "module",
-        "manifest": "https://github.com/mclemente/fvtt-module-polyglot/releases/download/2.1.6/module.json",
-        "compatibility": {
-          "verified": "2.1.6"
-        }
-      },
-      {
-        "id": "pf2e-target-damage",
-        "type": "module",
-        "manifest": "https://github.com/MrVauxs/PF2e-Target-Damage/releases/download/2.4.15/module.json",
-        "compatibility": {
-          "verified": "2.4.15"
-        }
-      },
-      {
-        "id": "anonymous",
-        "type": "module",
-        "manifest": "https://github.com/reonZ/anonymous/releases/download/1.4.4/module.json",
-        "compatibility": {
-          "verified": "1.4.4"
-        }
-      },
-      {
-        "id": "chat-media",
-        "type": "module",
-        "manifest": "https://github.com/p4535992/foundryvtt-chat-media/releases/download/3.3.5/module.json",
-        "compatibility": {
-          "verified": "3.3.5"
-        }
-      },
-      {
-        "id": "midi-qol",
-        "type": "module",
-        "manifest": "https://gitlab.com/tposney/midi-qol/raw/v11/package/module.json",
-        "compatibility": {
-          "verified": "11.0.16"
-        }
-      },
-      {
-        "id": "monks-tokenbar",
-        "type": "module",
-        "manifest": "https://github.com/ironmonk88/monks-tokenbar/releases/latest/download/module.json",
-        "compatibility": {
-          "verified": "11.02"
-        }
-      }
-    ]
   }
 }
