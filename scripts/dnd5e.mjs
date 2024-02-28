@@ -7,7 +7,6 @@ import { shieldEmoji } from './helpers/emojis/dnd5e.mjs';
 
 export async function messageParserDnD5e(msg, edit = false) {
     const enrichedMsg = await newEnrichedMessage(msg, await DnD5e_getEnrichmentOptions(msg));
-    console.log(enrichedMsg);
     let constructedMessage = '';
     let embeds = [];
     if (game.modules.get('midi-qol')?.active && midiqol_isMergeCard(enrichedMsg.content)) {
@@ -144,6 +143,11 @@ function DnD5e_createCardEmbed(message) {
             let text = paragraph.innerHTML;
             desc += text + "\n\n";
         });
+        let supplement = div.querySelector('p.supplement');
+        if(supplement && supplement.textContent){
+            supplement.querySelector('strong').textContent += " ";
+            desc += supplement.innerHTML;
+        }
     }
 
     return [{ title: title, description: desc, footer: { text: generic.getCardFooter(message.content) } }];
