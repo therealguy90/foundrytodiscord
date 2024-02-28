@@ -202,12 +202,10 @@ async function midiqol_createMergeCard(message) {
     let embeds = DnD5e_createCardEmbed(message);
     const divs = document.createElement('div');
     divs.innerHTML = message.content;
-    let attackTitle = "";
-    let damageTitle = "";
     let element = divs.querySelector('.midi-qol-attack-roll');
     let fields = [];
     if (element) {
-        attackTitle = element.querySelector('div').textContent;
+        const attackTitle = element.querySelector('div').textContent;
         if (attackTitle && attackTitle !== "") {
             const total = element.querySelector('h4.dice-total');
             let result = total.textContent;
@@ -273,43 +271,42 @@ async function midiqol_createMergeCard(message) {
         }
     }
     element = divs.querySelector('.midi-qol-damage-roll');
-    if (element) {
-        damageTitle = element.querySelector('div').textContent;
+    if (element && element.textContent) {
+        const damageTitle = element.querySelector('div').textContent;
         if (damageTitle && damageTitle !== "") {
-            let rollValue = "";
-            rollValue = element.querySelector('h4.dice-total').textContent;
-            if (rollValue !== "" && ['all', 'd20AttackOnly'].includes(game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails)) {
-                rollValue = `${dieIcon()}**Rolled**`;
-            }
-            else {
-                if (getThisModuleSetting('showFormula') && game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails === 'none') {
-                    const rollFormula = element.querySelector(".dice-formula");
-                    rollValue = `${dieIcon()}**\`${rollFormula.textContent}\`**\n${dieIcon()}**Result: __${rollValue}__**`;
-                }
-                else {
-                    rollValue = `${dieIcon()}**Result: __${rollValue}__**`;
-                }
-            }
+            const rollValue = midiqol_parseDamageRollFromDisplay(element);
             fields.push({ name: damageTitle, value: rollValue, inline: true })
         }
     }
     divs.innerHTML = message.content.replace(/>\s+</g, '><');
-    let title = "";
-    let desc = "";
     element = divs.querySelector('.midi-qol-hits-display');
     if (element && game.settings.get('midi-qol', 'ConfigSettings').autoCheckHit === 'all') {
-        desc = midiqol_parseTargetsFromDisplay(element);
-        if (desc && desc !== "") {
-            fields.push({ name: "Results", value: desc });
+        const hitValues = midiqol_parseTargetsFromDisplay(element);
+        if (hitValues && hitValues !== "") {
+            fields.push({ name: "Results", value: hitValues });
         }
     }
-    title = "";
-    desc = "";
+    element = divs.querySelector('.midi-qol-other-damage-roll');
+    if (element && element.textContent) {
+        const damageTitle = element.querySelector('div').cloneNode(true).firstChild.textContent;
+        if (damageTitle && damageTitle !== "") {
+            const rollValue = midiqol_parseDamageRollFromDisplay(element);
+            fields.push({ name: damageTitle, value: rollValue})
+        }
+    }
+    element = divs.querySelector('.midi-qol-bonus-damage-roll');
+    if (element && element.textContent) {
+        const damageTitle = element.querySelector('div').cloneNode(true).firstChild.textContent;
+        if (damageTitle && damageTitle !== "") {
+            const rollValue = midiqol_parseDamageRollFromDisplay(element);
+            fields.push({ name: damageTitle, value: rollValue})
+        }
+    }
     element = divs.querySelector('.midi-qol-saves-display');
     if (element && element.textContent) {
-        title = await midiqol_getSaveDisplayTitle(message, element);
-        desc = midiqol_parseTargetsFromDisplay(element);
-        fields.push({ name: title, value: desc });
+        const saveTitle = await midiqol_getSaveDisplayTitle(message, element);
+        const saveValues = midiqol_parseTargetsFromDisplay(element);
+        fields.push({ name: saveTitle, value: saveValues });
     }
     embeds = [{
         title: embeds[0].title,
@@ -433,6 +430,22 @@ function midiqol_parseTargetsFromDisplay(element) {
         parsedText += `${parsedTarget}\n`;
     });
     return parsedText;
+}
+
+function midiqol_parseDamageRollFromDisplay(element) {
+    let rollValue = element.querySelector('h4.dice-total').textContent;
+    if (rollValue !== "" && ['all', 'd20AttackOnly'].includes(game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails)) {
+        return `${dieIcon()}**Rolled**`;
+    }
+    else {
+        if (getThisModuleSetting('showFormula') && game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails === 'none') {
+            const rollFormula = element.querySelector(".dice-formula");
+            return `${dieIcon()}**\`${rollFormula.textContent}\`**\n${dieIcon()}**Result: __${rollValue}__**`;
+        }
+        else {
+            return `${dieIcon()}**Result: __${rollValue}__**`;
+        }
+    }
 }
 
 async function midiqol_createSavesDisplayCard(message) {
