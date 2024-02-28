@@ -3,7 +3,7 @@ import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs'
 import { removeEmptyEmbeds, splitText, addEmbedsToRequests } from './helpers/messages.mjs';
 import { generateimglink } from './helpers/images.mjs';
 import { newEnrichedMessage, toHTML } from './helpers/enrich.mjs';
-import { getDieEmoji, getDocumentEmoji, swapOrNot, dieIcon } from './helpers/emojis/global.mjs';
+import { getDieEmoji, getDocumentEmoji, swapOrNot, dieIcon, checkFails } from './helpers/emojis/global.mjs';
 
 export async function messageParserGeneric(msg, edit = false) {
     // Make a new ChatMessage object with the content enriched using the TextEditor.
@@ -744,10 +744,10 @@ export function tokenBar_createTokenBarCard(message) {
                             desc += `${dieIcon()} `;
                             break;
                         case 'won':
-                            desc += ":white_check_mark: ";
+                            desc += `${swapOrNot(":white_check_mark:", checkFails["check"])} `;
                             break;
                         case 'failed':
-                            desc += ":negative_squared_cross_mark: ";
+                            desc += `${swapOrNot(":negative_squared_cross_mark:", checkFails["xmark"])} `;
                             break;
                         default:
                             desc += `${dieIcon()} `;
@@ -789,16 +789,16 @@ export function tokenBar_createTokenBarCard(message) {
                                 desc += `${dieIcon()} `;
                                 break;
                             case true:
-                                desc += ":white_check_mark: ";
+                                desc += `${swapOrNot(":white_check_mark:", checkFails["check"])} `;
                                 break;
                             case false:
-                                desc += ":negative_squared_cross_mark: ";
+                                desc += `${swapOrNot(":negative_squared_cross_mark:", checkFails["xmark"])} `;
                                 break;
                             case 'success':
-                                desc += ":white_check_mark::white_check_mark: ";
+                                desc += `${swapOrNot(":white_check_mark::white_check_mark:", checkFails["doublecheck"])} `;
                                 break;
                             case 'failed':
-                                desc += ":no_entry_sign: ";
+                                desc += `${swapOrNot(":no_entry_sign:", checkFails["wrong"])} `;
                                 break;
                             default:
                                 desc += `${dieIcon()} `;
@@ -836,7 +836,7 @@ export function tokenBar_createTokenBarCard(message) {
                 message.flags["monks-tokenbar"].actors.forEach(actor => {
                     desc += "**" + actor.name + " (" + actor.xp + ")**";
                     if (actor.assigned) {
-                        desc += ":white_check_mark:";
+                        desc += `${swapOrNot(":white_check_mark:", checkFails["check"])} `;
                     }
                     desc += "\n\n";
                 });

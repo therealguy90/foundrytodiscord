@@ -89,6 +89,7 @@ export const documents = {
 }
 
 export const checkFails = {
+    "wrong": "<:wrong:1212256124607143967>",
     "xmark": "<:xmark:1211844737401888829>",
     "doublecheck": "<:doublecheck:1211844735510249522>",
     "check": "<:check:1211844740329246730>"
