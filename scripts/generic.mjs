@@ -741,7 +741,7 @@ export function tokenBar_createTokenBarCard(message) {
                     const tokenData = message.flags["monks-tokenbar"]["token" + tokenID]
                     switch (tokenData.passed) {
                         case 'waiting':
-                            desc += `${dieIcon()} `;
+                            desc += `${dieIcon(20)} `;
                             break;
                         case 'won':
                             desc += `${swapOrNot(":white_check_mark:", checkFails["check"])} `;
@@ -750,7 +750,7 @@ export function tokenBar_createTokenBarCard(message) {
                             desc += `${swapOrNot(":negative_squared_cross_mark:", checkFails["xmark"])} `;
                             break;
                         default:
-                            desc += `${dieIcon()} `;
+                            desc += `${dieIcon(20)} `;
                             break;
                     }
                     desc += "**" + (tokenData.passed === 'won' ? "__" : "") + tokenData.name;
@@ -786,7 +786,7 @@ export function tokenBar_createTokenBarCard(message) {
                     if (message.flags["monks-tokenbar"].rollmode !== "gmroll") {
                         switch (tokenData.passed) {
                             case 'waiting':
-                                desc += `${dieIcon()} `;
+                                desc += `${dieIcon(20)} `;
                                 break;
                             case true:
                                 desc += `${swapOrNot(":white_check_mark:", checkFails["check"])} `;
@@ -801,12 +801,12 @@ export function tokenBar_createTokenBarCard(message) {
                                 desc += `${swapOrNot(":no_entry_sign:", checkFails["wrong"])} `;
                                 break;
                             default:
-                                desc += `${dieIcon()} `;
+                                desc += `${dieIcon(20)} `;
                                 break;
                         }
                     }
                     else {
-                        desc += `${dieIcon()} `;
+                        desc += `${dieIcon(20)} `;
                     }
                     desc += "**" + tokenData.name;
                     if (tokenData.total || tokenData.total === 0) {
