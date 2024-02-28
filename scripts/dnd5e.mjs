@@ -144,8 +144,11 @@ function DnD5e_createCardEmbed(message) {
             desc += text + "\n\n";
         });
         let supplement = div.querySelector('p.supplement');
-        if(supplement && supplement.textContent){
-            supplement.querySelector('strong').textContent += " ";
+        if (supplement && supplement.textContent) {
+            const supplementTitle = supplement.querySelector('strong');
+            if (supplementTitle) {
+                supplement.querySelector('strong').textContent += " ";
+            }
             desc += supplement.innerHTML;
         }
     }
@@ -295,7 +298,7 @@ async function midiqol_createMergeCard(message) {
         const damageTitle = element.querySelector('div').cloneNode(true).firstChild.textContent;
         if (damageTitle && damageTitle !== "") {
             const rollValue = midiqol_parseDamageRollFromDisplay(element);
-            fields.push({ name: damageTitle, value: rollValue})
+            fields.push({ name: damageTitle, value: rollValue })
         }
     }
     element = divs.querySelector('.midi-qol-bonus-damage-roll');
@@ -303,7 +306,7 @@ async function midiqol_createMergeCard(message) {
         const damageTitle = element.querySelector('div').cloneNode(true).firstChild.textContent;
         if (damageTitle && damageTitle !== "") {
             const rollValue = midiqol_parseDamageRollFromDisplay(element);
-            fields.push({ name: damageTitle, value: rollValue})
+            fields.push({ name: damageTitle, value: rollValue })
         }
     }
     element = divs.querySelector('.midi-qol-saves-display');
