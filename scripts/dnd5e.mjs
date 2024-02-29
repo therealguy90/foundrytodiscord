@@ -310,7 +310,7 @@ async function midiqol_createMergeCard(message) {
         }
     }
     element = divs.querySelector('.midi-qol-saves-display');
-    if (element && element.textContent) {
+    if (element && element.textContent && game.settings.get("midi-qol", "ConfigSettings").autoCheckSaves !== "whisper") {
         const saveTitle = await midiqol_getSaveDisplayTitle(message, element);
         const saveValues = midiqol_parseTargetsFromDisplay(element);
         fields.push({ name: saveTitle, value: saveValues });
@@ -423,13 +423,13 @@ function midiqol_parseTargetsFromDisplay(element) {
             parsedTarget += `**${target.textContent.trim()}**`;
             // For attack hits:
             let ac = targetContainer.querySelector("i.fas.fa-shield-halved");
-            if (game.settings.get('midi-qol', 'ConfigSettings').displayHitResultNumeric && ac) {
+            if (ac && game.settings.get('midi-qol', 'ConfigSettings').displayHitResultNumeric) {
                 ac = ac.parentNode;
                 parsedTarget += ` (${swapOrNot(":shield:", shieldEmoji)}**__${ac.textContent}__**)`;
             }
             // For spell saves:
             const save = targetContainer.querySelector(".midi-qol-save-total");
-            if (save) {
+            if (save && game.settings.get("midi-qol", "ConfigSettings").autoCheckSaves !== "allNoRoll") {
                 parsedTarget += `: ${dieIcon(20)}**__${save.textContent}__**`;
             }
         }
