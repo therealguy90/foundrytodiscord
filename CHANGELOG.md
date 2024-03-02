@@ -1,4 +1,17 @@
-# 1.9.0
+# 1.10.0
+
+- In light of the upcoming changes to midi-qol and dnd5e, this module now supports the new chat cards for dnd5e 3.x. This version is only compatible with the upcoming 11.4.x version of midi-qol.
+- (midi-qol) #26 Attack and spell mergecards have been updated to fit the new format. Mergecards are now all merged into one embed on Discord, instead of multiple embeds.
+- (midi-qol) #22 Roll breakdowns (in spoiler tags) are now added to all mergecards if visible.
+- (midi-qol) other-damage and bonus-damage rolls are now included on the embed.
+- (midi-qol) Saves are now better hidden according to your midi settings.
+- (dnd5e) Auto UUID embeds use their own parser for the system.
+- Rolls with modifiers (i.e. 2d20kh, 1d10r1) now display the discarded rolls with a `ˣ` symbol to indicate that the die result does not count towards the total. For 2d20kh, for example, the roll breakdown would show the lower result with an `ˣ` symbol. This still only applies to rolls which include the formulas.
+- Added a new toggle to force show GM roll details on embeds.
+- Fix for embed titles including HTML sometimes.
+
+
+## 1.9.0
 
 - No more limits! Messages of 2000 characters or longer will be split up into multiple messages. Long embeds can now also be split up into 2 or more messages in Discord. Note that this does not affect the API, but does affect everything else. ~~This means Foundry to Discord now fully supports unnecessarily long item descriptions!~~
 - Note that because of the major changes in the chat mirroring system, I may have missed some bugs. For now, though, foundry messages sent prior to 1.9.0 can't be edited nor can they be deleted, but that's not much of an issue. I recommend clearing your chat log before installing this update, but it's not really necessary, since the module can't touch any of the messages sent before this version.
