@@ -882,12 +882,16 @@ export function generateRollBreakdown(roll, nextTerm = false) {
                 }();
                 currentTermString += " ";
                 term.results.forEach(dieResult => {
+                    let tempTermString = "";
                     if (dieResult.active) {
-                        currentTermString += `${swapOrNot(` ${dieResult.result}`, getDieEmoji(term.faces, dieResult.result))}`;
-                        if ((notDieEmoji && i < term.results.length) || (nextTerm && (roll.terms[termcount] && (!roll.terms[termcount] instanceof OperatorTerm)))) {
-                            currentTermString += " +";
-                        }
+                        tempTermString += `${swapOrNot(` ${dieResult.result}`, getDieEmoji(term.faces, dieResult.result))}`;
+                    } else if (dieResult.discarded || dieResult.rerolled) {
+                        tempTermString += `${swapOrNot(` ${dieResult.result}ˣ`, `[${getDieEmoji(term.faces, dieResult.result)}ˣ]`)}`;
                     }
+                    if (tempTermString !== "" && ((notDieEmoji && i < term.results.length) || (nextTerm && (roll.terms[termcount] && (!roll.terms[termcount] instanceof OperatorTerm))))) {
+                        tempTermString += " +";
+                    }
+                    currentTermString += tempTermString;
                     i++;
                 });
                 if (notDieEmoji) {
