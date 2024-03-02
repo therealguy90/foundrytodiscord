@@ -7,7 +7,6 @@ import { shieldEmoji } from './helpers/emojis/dnd5e.mjs';
 
 export async function messageParserDnD5e(msg, edit = false) {
     const enrichedMsg = await newEnrichedMessage(msg, await DnD5e_getEnrichmentOptions(msg));
-    console.log(enrichedMsg);
     let constructedMessage = '';
     let embeds = [];
     if (game.modules.get('midi-qol')?.active && midiqol_isMergeCard(enrichedMsg.content)) {
