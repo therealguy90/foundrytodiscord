@@ -309,18 +309,18 @@ function PF2e_createRollEmbed(message) {
         }
     }
     desc += "\n";
-
+    const speakerActor = game.actors.get(message.speaker.actor);
+    const showDetails = getThisModuleSetting('forceShowRolls') || speakerActor?.hasPlayerOwner || (!speakerActor && !message?.user?.isGM);
     if (!message.isReroll) {
         //Add roll information to embed:
-        const speakerActor = game.actors.get(message.speaker.actor);
         message.rolls.forEach(roll => {
-            let rollBreakdown = ""
-            if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))) {
-                desc += `${dieIcon()}**\`${roll.formula}\`**\n`
+            let rollBreakdown = "";
+            if (getThisModuleSetting('showFormula') && showDetails) {
+                desc += `${dieIcon()}**\`${roll.formula}\`**\n`;
                 rollBreakdown = PF2e_generateRollBreakdown(roll);
             }
             desc += `${dieIcon()}**Result: __${roll.total}__**`;
-            if (speakerActor?.hasPlayerOwner && roll.dice[0]?.faces === 20) {
+            if (showDetails && roll.dice[0]?.faces === 20) {
                 if (roll.result.startsWith('20 ')) {
                     desc += ` (${swapOrNot("Nat 20", getDieEmoji(20, 20))}!)`;
                 }
@@ -330,7 +330,7 @@ function PF2e_createRollEmbed(message) {
             }
             if (roll instanceof DamageRoll) {
                 desc += PF2e_parseDamageTypes(roll);
-                if (rollBreakdown && speakerActor?.hasPlayerOwner) {
+                if (rollBreakdown && showDetails) {
                     desc += `\n||(${rollBreakdown})||`;
                 }
             }
@@ -341,7 +341,7 @@ function PF2e_createRollEmbed(message) {
                 else if (PF2e_parseDegree(message.flags.pf2e?.context?.outcome)) {
                     desc += `\`(${PF2e_parseDegree(message.flags.pf2e.context.outcome)})\``;
                 }
-                if (rollBreakdown && speakerActor?.hasPlayerOwner) {
+                if (rollBreakdown && showDetails) {
                     desc += `||(${rollBreakdown})||`;
                 }
             }
@@ -349,13 +349,12 @@ function PF2e_createRollEmbed(message) {
         });
     }
     else { // isReroll typically only consists of one Roll object.
-        const speakerActor = game.actors.get(message.speaker.actor);
-        if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))) {
+        if (getThisModuleSetting('showFormula') && showDetails) {
             desc += `${dieIcon()}**\`${message.rolls[0].formula}\`**\n`
         }
         desc += `~~${dieIcon()}Result: __${PF2e_getDiscardedRoll(message)}__~~\n`;
         desc += `${dieIcon()}**Result: __${message.rolls[0].total}__**`;
-        if (speakerActor?.hasPlayerOwner && message.rolls[0].dice[0].faces === 20) {
+        if (showDetails && message.rolls[0].dice[0].faces === 20) {
             if (message.rolls[0].result.startsWith('20 ')) {
                 desc += ` (${swapOrNot("Nat 20", getDieEmoji(20, 20))}!)`;
             }
@@ -366,7 +365,7 @@ function PF2e_createRollEmbed(message) {
         if (PF2e_parseDegree(message.flags.pf2e.context.outcome)) {
             desc += `\`(${PF2e_parseDegree(message.flags.pf2e.context.outcome)})\``;
         }
-        if (speakerActor?.hasPlayerOwner) {
+        if (showDetails) {
             desc += `||(${PF2e_generateRollBreakdown(message.rolls[0])})||`;
         }
         desc += "\n";

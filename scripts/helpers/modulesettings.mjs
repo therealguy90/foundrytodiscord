@@ -197,6 +197,14 @@ export function initModuleSettings() {
         default: false,
         type: Boolean
     });
+    game.settings.register('foundrytodiscord', 'forceShowRolls', {
+        name: "Force show GM roll results, formulas, and breakdowns",
+        hint: "The module will no longer attempt to hide all GM roll details. \"Show roll formulas where applicable\" still needs to be on to show formulas and roll breakdowns. This only affects public rolls, and no other metagame info.",
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean
+    });
     /*if (SYSTEM_ID === 'PLACEHOLDER') {
         game.settings.register('foundrytodiscord', 'experimentalFeatures', {
             name: "(PLACEHOLDER) Experimental Parser",

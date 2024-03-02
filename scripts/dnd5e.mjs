@@ -221,7 +221,7 @@ async function midiqol_createMergeCard(message) {
             if (result) {
                 const hide = game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails;
                 switch (true) {
-                    case midiqol_messageHasPlayerOwner(message) || hide === 'none':
+                    case getThisModuleSetting('forceShowRolls') || midiqol_messageHasPlayerOwner(message) || hide === 'none':
                         rollFormula = element.querySelector(".dice-formula");
                         if (getThisModuleSetting('showFormula')) {
                             rollValue = `${dieIcon()}**\`${rollFormula.textContent}\`**\n${dieIcon()}**Result: __${result}__`;
@@ -448,7 +448,7 @@ function midiqol_parseTargetsFromDisplay(element) {
 function midiqol_parseDamageRollFromDisplay(element, message) {
     let hide = game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails;
     switch (true) {
-        case !midiqol_messageHasPlayerOwner(message) && hide === "all" || hide === "d20AttackOnly":
+        case !midiqol_messageHasPlayerOwner(message) && !getThisModuleSetting('forceShowRolls') && hide === "all" || hide === "d20AttackOnly":
             return `${dieIcon()}**Rolled**`;
             break;
         default:
