@@ -10,7 +10,6 @@ Hooks.once("init", function () {
     messageParse = getSystemParser();
 });
 
-
 Hooks.on('deleteScene', async scene => {
     if (isUserMainGM()) {
         // Used for Threaded Scenes to delete a thread map if a scene is deleted.
@@ -29,7 +28,7 @@ Hooks.on('getChatLogEntryContext', async (html, options) => {
         {
             name: "Send (Main Webhook)",
             icon: '<i class="fa-brands fa-discord"></i>',
-            condition: game.user.isGM || getThisModuleSetting('allowPlayerSend') ,
+            condition: game.user.isGM || getThisModuleSetting('allowPlayerSend'),
             callback: async li => {
                 let message = game.messages.get(li.attr("data-message-id"));
                 await tryPOST(message);
@@ -90,7 +89,57 @@ Hooks.on('getChatLogEntryContext', async (html, options) => {
 let requestQueue = [];
 let isProcessing = false;
 
-Hooks.once("ready", function () {
+Hooks.on('userConnected', async (user, connected) => {
+    if (isUserMainGM() || (!game.users.activeGM && isUserMainNonGM())) {
+        await sendUserMonitorMessage(user, connected);
+        await updateServerStatus(true);
+    }
+});
+
+window.addEventListener("beforeunload", beforeUnloadUserUpdate);
+
+async function beforeUnloadUserUpdate() {
+    if (game.users.filter(user => user.active).length === 1) {
+        updateServerStatus(true, true).then(() => { });
+        sendUserMonitorMessage(game.user, false).then(() => { });
+    }
+}
+
+let logoutListenersAdded = false;
+
+Hooks.on('changeSidebarTab', async (app) => {
+    if (!logoutListenersAdded && app.tabName === "settings") {
+        const element = app.element[0];
+        const logout = element.querySelector('button[data-action="logout"]');
+        const setup = element.querySelector('button[data-action="setup"]');
+        if (logout) {
+            logout.addEventListener('click', async () => {
+                window.removeEventListener('beforeunload', beforeUnloadUserUpdate);
+                await beforeUnloadUserUpdate();
+            });
+        }
+        if (setup) {
+            setup.addEventListener('click', async () => {
+                const hook = getThisModuleSetting('webHookURL');
+                let serverCloseMsg = undefined;
+                if (hook && hook !== '') {
+                    const formData = api.generateSendFormData("Admin has closed the server.");
+                    serverCloseMsg = await api.sendMessage(formData, false, "");
+                }
+                await updateServerStatus(false);
+                await wait(30000);
+                if (serverCloseMsg) {
+                    console.log('foundrytodiscord | False alarm... resetting server status.');
+                    await api.deleteMessage(serverCloseMsg.response.url, serverCloseMsg.message.id);
+                    await updateServerStatus(true);
+                }
+            });
+        }
+        logoutListenersAdded = true;
+    }
+})
+
+Hooks.once("ready", async () => {
     // Application and context menu buttons for all users
     initMenuHooks();
     if (isUserMainGM()) {
@@ -101,9 +150,13 @@ Hooks.once("ready", function () {
         else if (curInviteURL === "") {
             game.settings.set('foundrytodiscord', 'inviteURL', "http://");
         }
-        initSystemStatus();
+        await initSystemStatus();
     }
     console.log("foundrytodiscord | Ready");
+    //PLACEHOLDER
+    if ((isUserMainGM() || (!game.users.activeGM && isUserMainNonGM())) || game.users.filter(user => user.active).length === 1) {
+        await sendUserMonitorMessage(game.user, true);
+    }
 });
 
 
@@ -111,32 +164,13 @@ Hooks.once("ready", function () {
 async function initSystemStatus() {
     if (getThisModuleSetting('serverStatusMessage')) {
         if (getThisModuleSetting('messageID') && getThisModuleSetting('messageID') !== "") {
-            const editedMessage = new FormData()
-            const body = JSON.stringify({
-                embeds: [{
-                    title: 'Server Status: ' + game.world.id,
-                    description: '**ONLINE**\n' + (getThisModuleSetting('showInvite') ? '**Invite Link: **' + getThisModuleSetting('inviteURL') : ''),
-                    footer: {
-                        text: 'Have a GM type "ftd serveroff" in Foundry to set your server status to OFFLINE. This will persist until the next time a GM logs in.\n\n' + (game.modules.get('foundrytodiscord').id + ' v' + game.modules.get('foundrytodiscord').version)
-                    },
-                    color: 65280
-                }]
-            });
-            editedMessage.append('payload_json', body)
-
-            const response = await api.editMessage(editedMessage, getThisModuleSetting('webHookURL'), getThisModuleSetting('messageID'));
-            if (response.ok) {
-                console.log('foundrytodiscord | Server state set to ONLINE');
-            }
-            else {
-                console.error('foundrytodiscord | Error editing embed:', response.status, response.statusText);
-            }
+            await updateServerStatus(true);
         } else {
             const hook = getThisModuleSetting('webHookURL');
             if (hook && hook !== '') {
                 const formData = new FormData();
                 formData.append("payload_json", JSON.stringify({
-                    username: game.world.id,
+                    username: game.world.title,
                     avatar_url: getDefaultAvatarLink(),
                     content: '',
                     embeds: [{
@@ -151,32 +185,86 @@ async function initSystemStatus() {
                         }
                     }]
                 }));
-                await api.sendMessage(formData);
+                await api.sendMessage(formData, false, undefined);
             }
         }
     }
+}
+
+async function updateServerStatus(online, noneActive = false) {
+    if (online) {
+        let numActive;
+        if (noneActive) {
+            numActive = 0;
+        }
+        else {
+            numActive = game.users.filter(user => user.active).length;
+        }
+        console.log(numActive);
+        const editedMessage = new FormData()
+        const body = JSON.stringify({
+            embeds: [{
+                title: 'Server Status: ' + game.world.id,
+                description: `## ONLINE\n${getThisModuleSetting('showInvite') ? `**Invite Link: **${getThisModuleSetting('inviteURL')}\n` : ''}\n__**${numActive}/${Array.from(game.users).length} Active Users**__`,
+                footer: {
+                    text: 'Have a GM type "ftd serveroff" in Foundry to set your server status to OFFLINE. This will persist until the next time a GM logs in.\n\n' + (game.modules.get('foundrytodiscord').id + ' v' + game.modules.get('foundrytodiscord').version)
+                },
+                color: 65280
+            }]
+        });
+        editedMessage.append('payload_json', body)
+        return await api.editMessage(editedMessage, getThisModuleSetting('webHookURL'), getThisModuleSetting('messageID'));
+    }
+    else {
+        const editedMessage = new FormData()
+        const body = JSON.stringify({
+            embeds: [{
+                title: 'Server Status: ' + game.world.id,
+                description: '## OFFLINE',
+                footer: {
+                    text: game.modules.get('foundrytodiscord').id + ' v' + game.modules.get('foundrytodiscord').version
+                },
+                color: 16711680
+            }]
+        });
+
+        editedMessage.append('payload_json', body);
+
+        console.log('foundrytodiscord | Attempting to edit server status...');
+        return await api.editMessage(editedMessage, getThisModuleSetting('webHookURL'), getThisModuleSetting('messageID'));
+    }
+}
+
+async function sendUserMonitorMessage(user, userConnected) {
+    if (!getThisModuleSetting("userMonitor")) {
+        return;
+    }
+    let numActive;
+    const noUsers = game.users.filter(user => user.active).length === 1 && user === game.user && !userConnected;
+    if (noUsers) {
+        numActive = 0;
+    }
+    else {
+        numActive = game.users.filter(user => user.active).length;
+    }
+    const hook = getThisModuleSetting('webHookURL');
+    if (hook && hook !== '') {
+        const formData = new FormData();
+        formData.append("payload_json", JSON.stringify({
+            username: game.world.title,
+            avatar_url: getDefaultAvatarLink(),
+            content: `User ${user.name} ${userConnected ? "connected" : "disconnected"} ${userConnected ? "to" : "from"} ${game.world.title}. __**(${numActive}/${Array.from(game.users).length})**__`,
+        }));
+        return await api.sendMessage(formData, false, "");
+    }
+    return undefined;
 }
 
 Hooks.on('createChatMessage', async (msg) => {
     if (msg.content === "ftd serveroff" && msg.user.isGM) {
         if (getThisModuleSetting('serverStatusMessage')) {
             if (getThisModuleSetting('messageID') && getThisModuleSetting('messageID') !== "") {
-                const editedMessage = new FormData()
-                const body = JSON.stringify({
-                    embeds: [{
-                        title: 'Server Status: ' + game.world.id,
-                        description: '**OFFLINE**',
-                        footer: {
-                            text: game.modules.get('foundrytodiscord').id + ' v' + game.modules.get('foundrytodiscord').version
-                        },
-                        color: 16711680
-                    }]
-                });
-
-                editedMessage.append('payload_json', body);
-
-                console.log('foundrytodiscord | Attempting to edit server status...');
-                const response = await api.editMessage(editedMessage, getThisModuleSetting('webHookURL'), getThisModuleSetting('messageID'));
+                const response = await updateServerStatus(false);
                 if (response.ok) {
                     console.log('foundrytodiscord | Server state set to OFFLINE');
                     ChatMessage.create({ content: 'Server state set to OFFLINE.', speaker: { alias: "Foundry to Discord" }, whisper: [game.user.id] });

@@ -94,6 +94,15 @@ export function initModuleSettings() {
             default: true
         });
     }
+    game.settings.register('foundrytodiscord', 'userMonitor', {
+        name: "Monitor user login/logout",
+        hint: "Foundry to Discord will send a message to your webhook if a user connects or disconnects.",
+        scope: "world",
+        config: true,
+        requiresReload: true,
+        type: Boolean,
+        default: false
+    });
     game.settings.register('foundrytodiscord', 'prettierEmojis', {
         name: "Use External Emojis",
         hint: "Enhance your experience by allowing the module to use external emojis from other discord servers! Make sure that @everyone permissions in your channel/server are set to enable external emojis.",
