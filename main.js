@@ -106,6 +106,7 @@ async function beforeUnloadUserUpdate() {
 }
 
 let logoutListenersAdded = false;
+let adminDisconnect = false;
 
 Hooks.on('changeSidebarTab', async (app) => {
     if (!logoutListenersAdded && app.tabName === "settings") {
@@ -122,14 +123,18 @@ Hooks.on('changeSidebarTab', async (app) => {
             setup.addEventListener('click', async () => {
                 const hook = getThisModuleSetting('webHookURL');
                 let serverCloseMsg = undefined;
+                window.removeEventListener('beforeunload', beforeUnloadUserUpdate);
+                adminDisconnect = true;
                 if (hook && hook !== '') {
                     const formData = api.generateSendFormData("Admin has closed the server.");
                     serverCloseMsg = await api.sendMessage(formData, false, "");
                 }
                 await updateServerStatus(false);
                 await wait(30000);
+                console.log('foundrytodiscord | False alarm... resetting server status.');
+                adminDisconnect = false;
+                window.addEventListener("beforeunload", beforeUnloadUserUpdate);
                 if (serverCloseMsg) {
-                    console.log('foundrytodiscord | False alarm... resetting server status.');
                     await api.deleteMessage(serverCloseMsg.response.url, serverCloseMsg.message.id);
                     await updateServerStatus(true);
                 }
@@ -200,7 +205,6 @@ async function updateServerStatus(online, noneActive = false) {
         else {
             numActive = game.users.filter(user => user.active).length;
         }
-        console.log(numActive);
         const editedMessage = new FormData()
         const body = JSON.stringify({
             embeds: [{
@@ -236,7 +240,7 @@ async function updateServerStatus(online, noneActive = false) {
 }
 
 async function sendUserMonitorMessage(user, userConnected) {
-    if (!getThisModuleSetting("userMonitor")) {
+    if (!getThisModuleSetting("userMonitor") || adminDisconnect) {
         return;
     }
     let numActive;
