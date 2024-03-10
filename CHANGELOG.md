@@ -1,4 +1,10 @@
-# 1.10.0
+# 1.11.0
+
+- #27 Added Login/Logout monitoring. Enable `Monitor User Login/Logout` for this to function.
+- "Return to Setup" button on the sidebar now sets the server status message to offline automatically (Hopefully!). The command `ftd serveroff` hasn't been removed.
+- #28 Added the Auto Ping feature, where an `@mention` on Foundry will reflect on Discord as a User/Role ping. The mentions have to be manually mapped to a keyword.
+
+## 1.10.0
 
 - In light of the upcoming changes to midi-qol and dnd5e, this module now supports the new chat cards for dnd5e 3.x. This version is only compatible with the upcoming 11.4.x version of midi-qol.
 - (midi-qol) #26 Attack and spell mergecards have been updated to fit the new format. Mergecards are now all merged into one embed on Discord, instead of multiple embeds.
@@ -9,7 +15,6 @@
 - Rolls with modifiers (i.e. 2d20kh, 1d10r1) now display the discarded rolls with a `ˣ` symbol to indicate that the die result does not count towards the total. For 2d20kh, for example, the roll breakdown would show the lower result with an `ˣ` symbol. This still only applies to rolls which include the formulas.
 - Added a new toggle to force show GM roll details on embeds.
 - Fix for embed titles including HTML sometimes.
-
 
 ## 1.9.0
 
