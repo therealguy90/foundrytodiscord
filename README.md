@@ -96,7 +96,7 @@ Do note that this follows message deletions as well. If a message is deleted in 
 
 ![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/78bd2264-1d7d-497a-acce-031b4ea468c8)
 ![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/9f228ea5-3849-41cf-91c6-4063505129aa)
-![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/fe7953d7-c880-406b-9cc2-c16f341a62ff)
+![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/4e981c36-80e5-4981-a50c-3d882e652428)
 
 
 #### Send to Discord
@@ -130,7 +130,13 @@ Map a keyword to ping a user from Foundry without having to tab out to Discord!
 
 Allow your players to check if your world is online by setting your server status as ONLINE in your Server Status Message when a GM logs in. To indicate it's offline, have a GM type "ftd serveroff" in your world chat. Enable this feature in the config with a step-by-step tutorial. Note that this feature is only available for your main Webhook URL. Modules work client-side, so there's not much other better solutions to the problem other than the GM manually using the command to set it offline.
 
-![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/2043b300-7ee6-4b93-98b2-34edd26061d0)
+![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/02d34b9f-ead9-477e-aac4-5ffc44758821)
+
+#### User Login Alerts
+
+Toggle the module setting on to send an alert to your Discord channel whenever someone logs in to the server. The Server Status Message already indicates how many players are in the server, but this will alert you to when a certain user logs in to the server through your Discord channel.
+
+![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/57f8f9c6-c3b2-4cce-bc6a-563146fca1f7)
 
 
 #### The Foundry to Discord API
