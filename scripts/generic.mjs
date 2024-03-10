@@ -449,6 +449,21 @@ export async function generateAutoUUIDEmbeds(message, enrichmentOptions = {}) {
 export async function reformatMessage(text, customHTMLParser = undefined) {
     let reformattedText = text;
     reformattedText = await parseHTMLText(reformattedText, customHTMLParser);
+    // Add Auto Pings
+    const autoPingMap = getThisModuleSetting("autoPingMap");
+    const pattern = new RegExp(`(?:^|\\W)@(${Object.keys(autoPingMap).join('|')})(?=\\W|$)`, 'gi');
+
+    reformattedText = reformattedText.replace(pattern, (match, keyword) => {
+        if(autoPingMap[keyword]){
+            if(autoPingMap[keyword].type === "User"){
+                return `<@${autoPingMap[keyword].ID}>`;
+            }
+            else if(autoPingMap[keyword].type === "Role"){
+                return `<@&${autoPingMap[keyword].ID}>`
+            }
+            else return match;
+        }
+    });
     return reformattedText;
 }
 

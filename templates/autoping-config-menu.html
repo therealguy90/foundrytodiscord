@@ -1,0 +1,77 @@
+<style>
+    /* Style for the tabs and content container */
+    .foundrytodiscord .tabs-container {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    /* Style for the tabs */
+    .foundrytodiscord .tabs {
+        height: 50px; /* Change this value to your desired height */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Style for the content area */
+    .foundrytodiscord .tabs-content {
+        flex-grow: 1;
+        overflow: auto;
+        box-sizing: border-box;
+        padding: 10px;
+    }
+</style>
+
+<div class="foundrytodiscord tabs-container">
+    <div class="foundrytodiscord tabs">
+        <nav class="foundrytodiscord tabs">
+            <h2 class="item" data-tab="autoPingTab">Foundry to Discord: Auto-Ping Mapper Tool</h2>
+        </nav>
+    </div>
+    <div style="display: flex; flex: unset;">
+        <span>
+            <p>This is a tool for pinging a Discord user whenever their @username is mentioned in chat. 
+                Enter a keyword (case-sensitive) and assign a Discord user ID or Role ID to it. Whenever that keyword is mentioned in
+                Foundry Chat, for example, the keyword <code>foo</code>, when mentioned in chat as <strong>@foo</strong>, the ping
+                that corresponds to it will replace the keyword. To get the ID, simply <strong>Right-Click on the user or role, and Copy ID.</strong>
+                Enable Developer Mode for this to work.
+            </p>
+        </span>
+    </div>
+    <div class="foundrytodiscord tabs-content">
+        <div class="tab" data-tab="autoPingTab">
+            <form>
+                <div class="form-group">
+                    <label style="text-align: center;" for="type">Type:</label>
+                    <select name="type" id="type">
+                        <option value="" disabled selected>Select type</option>
+                        <option value="User">User</option>
+                        <option value="Role">Role</option>
+                    </select>
+                    <label style="text-align: center;" for="keyword">Keyword:</label>
+                    <input type="text" name="keyword" id="keyword">
+                    <label style="text-align: center;" for="ID">ID:</label>
+                    <input type="text" name="ID" id="ID">
+                </div>
+                <button type="submit" class="btn btn-primary">Add Mapping</button>
+            </form>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Keyword</th>
+                            <th>Type</th>
+                            <th>ID</th>
+                            <th> </th>
+                        </tr>
+                    </thead>
+                    <tbody id="config-rows">
+                        <!-- Config rows will be added here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -2,6 +2,7 @@ import { messageParserGeneric } from '../generic.mjs';
 import { messageParserPF2e } from '../pf2e.mjs';
 import { messageParserDnD5e } from '../dnd5e.mjs';
 import { ThreadedChatConfig } from '../../src/forms/threadedchatconfig.mjs'
+import { AutoPingConfig } from '../../src/forms/autopingconfig.mjs';
 let SYSTEM_ID;
 
 export function initModuleSettings() {
@@ -39,6 +40,12 @@ export function initModuleSettings() {
         default: {},
         type: Object
     });
+    game.settings.register('foundrytodiscord', 'autoPingMap', {
+        scope: "world",
+        config: false,
+        default: {},
+        type: Object
+    });
     game.settings.register('foundrytodiscord', 'messageList', {
         // messageList is a list of the past 100 messages that have been sent to discord through Chat Mirroring.
         // It has a URL and a discord Message object for each entry with a key of the FoundryVTT message ID.
@@ -63,6 +70,15 @@ export function initModuleSettings() {
         scope: "world",
         icon: 'fas fa-cogs',
         type: ThreadedChatConfig,
+        restricted: true
+    });
+    game.settings.registerMenu('foundrytodiscord', 'autoPingConfig', {
+        name: 'Auto Ping User/Role',
+        label: 'Edit Auto Ping Mapping',
+        hint: 'Ping users when a keyword is mentioned in chat!',
+        scope: "world",
+        icon: 'fas fa-cogs',
+        type: AutoPingConfig,
         restricted: true
     });
     game.settings.register('foundrytodiscord', 'serverStatusMessage', {
