@@ -96,7 +96,7 @@ Do note that this follows message deletions as well. If a message is deleted in 
 
 ![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/78bd2264-1d7d-497a-acce-031b4ea468c8)
 ![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/9f228ea5-3849-41cf-91c6-4063505129aa)
-![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/fe7953d7-c880-406b-9cc2-c16f341a62ff)
+![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/4e981c36-80e5-4981-a50c-3d882e652428)
 
 
 #### Send to Discord
