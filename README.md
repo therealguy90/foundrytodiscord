@@ -132,6 +132,12 @@ Allow your players to check if your world is online by setting your server statu
 
 ![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/02d34b9f-ead9-477e-aac4-5ffc44758821)
 
+#### User Login Alerts
+
+Toggle the module setting on to send an alert to your Discord channel whenever someone logs in to the server. The Server Status Message already indicates how many players are in the server, but this will alert you to when a certain user logs in to the server through your Discord channel.
+
+![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/57f8f9c6-c3b2-4cce-bc6a-563146fca1f7)
+
 
 #### The Foundry to Discord API
 
