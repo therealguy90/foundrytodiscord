@@ -43,7 +43,6 @@ While it will work with other systems, the extent of compatibility may vary. Reg
 - If any of your modules automatically deletes the chat archive other than you clicking on the flush chat log button (i.e. DF Chat Enhancements Archive function), **DISABLE** Message Deletions via config first! Otherwise, your discord messages will be deleted!
 
 ## Known Issues:
-- The new 3.x version of DnD5e has new formatting, which might not sit well with Foundry to Discord. I will roll out an update as soon as midi-qol decides to update to 3.x, as they might need to cope with the new changes as well, changing formatting around for me to grab.
 - Foundry to Discord uses the same enrichers that a system uses for ease of parsing custom inline rolls and the like. This means that notification warnings or console errors may be doubled if the enricher throws them at you. Not a huge issue, but it's something.
 - There's a very low chance that a midi-qol mergecard might not be parsed properly. I do not know the cause of this, and it is *almost* always the first mergecard the module encounters. Subsequent ones are fine... for some reason. If this ever happens to you, you can try resending the message by right-clicking on the message in Foundry and clicking "Send to Discord".
 
@@ -92,16 +91,25 @@ On DnD5e, roll cards from midi-qol are also supported.
 
 Do note that this follows message deletions as well. If a message is deleted in Foundry, it will also be deleted in the channel. Although this can be disabled in the config, it is recommended to keep it on for any "oopsie" moments. When clicking on Reveal Message or Hide Message, it will also mirror it onto Discord, unless you have Ignore Whispers turned off, in which case whispers will always be displayed.
 
-There is currently no config to disable the hiding of metagame information (except for Anonymous), and it is currently not in consideration. 
 
 **Enhance your chat mirroring experience by enabling custom emojis! Go to the config and turn on "Use External Emojis". Webhooks use `@everyone` permissions, so make sure to enable `@everyone` to use external emojis on your server.**
 
-![Chat Mirroring Example](https://github.com/therealguy90/foundrytodiscord/assets/100253440/b7eb9ebd-e64d-4f1e-9ffc-5fd85f025a99)
-![Chat Mirroring Example](https://github.com/therealguy90/foundrytodiscord/assets/100253440/caaa5350-fdf2-4aeb-a697-41f59551b506)
+![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/78bd2264-1d7d-497a-acce-031b4ea468c8)
+![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/9f228ea5-3849-41cf-91c6-4063505129aa)
+![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/fe7953d7-c880-406b-9cc2-c16f341a62ff)
+
 
 #### Send to Discord
 
-Journal Entries, Image Popouts, and even individual chat messages have a "Send _ to Discord" button on the window header, or on the chat message context menu. Journal Entries will send the current page you're looking at!
+Journal Entries, Image Popouts, and even individual chat messages have a "Send" button on the window header or on the chat message context menu, either to the Main Channel webhook, or a separate Player Notes webhook. Journal Entries will send the current page you're looking at. 
+
+#### UUID Tag Auto-Embeds
+
+Messages containing UUID tags of items or journal entriess will automatically show the description of the item or the contents of the journal entry.
+
+![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/e61d0fe9-3ef4-4c0b-b90f-dcec164815d2)
+![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/2f9fa584-5e40-4da0-8898-40227f4f8164)
+
 
 #### Threaded Scenes
 
@@ -109,11 +117,21 @@ Discord threads are supported by Foundry to Discord by adding a `?thread_id` que
 
 ![Threaded Scenes Example](https://github.com/therealguy90/foundrytodiscord/assets/100253440/c11578ba-5e52-4baf-b4ce-e6476cebcc20)
 
+#### Auto-Ping
+
+Map a keyword to ping a user from Foundry without having to tab out to Discord!
+
+![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/36529bf7-9c1e-4855-9e01-19ec7c4138d2)
+![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/e881517a-d1da-4108-a401-ff72a9c8a2c8)
+![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/e0686c9a-d4c7-46eb-8038-093e6b09b1a5)
+
+
 #### Server Status Message
 
 Allow your players to check if your world is online by setting your server status as ONLINE in your Server Status Message when a GM logs in. To indicate it's offline, have a GM type "ftd serveroff" in your world chat. Enable this feature in the config with a step-by-step tutorial. Note that this feature is only available for your main Webhook URL. Modules work client-side, so there's not much other better solutions to the problem other than the GM manually using the command to set it offline.
 
-![Server Status Message Example](https://github.com/therealguy90/foundrytodiscord/assets/100253440/8a7c5d08-870f-4155-9153-a822f82d0d6c)
+![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/2043b300-7ee6-4b93-98b2-34edd26061d0)
+
 
 #### The Foundry to Discord API
 
