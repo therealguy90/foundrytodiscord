@@ -1,4 +1,9 @@
-# 1.11.0
+# 1.11.1
+
+- Fix for "Admin has closed the server" appearing whether or not `Monitor User Login/Logout` is enabled
+- Fixes for Server Status Message going back up online when it's not supposed to.
+
+## 1.11.0
 
 - #27 Added Login/Logout monitoring. Enable `Monitor User Login/Logout` for this to function.
 - "Return to Setup" button on the sidebar now sets the server status message to offline automatically (Hopefully!). The command `ftd serveroff` hasn't been removed.
