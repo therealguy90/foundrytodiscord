@@ -3,6 +3,7 @@ import { dataToBlob, generateimglink, getDefaultAvatarLink } from './scripts/hel
 import { initModuleSettings, getThisModuleSetting, getSystemParser } from './scripts/helpers/modulesettings.mjs';
 import { initMenuHooks } from './scripts/apphooks.mjs';
 import * as api from './api.js';
+import { getMessageInfo } from './scripts/helpers/messages.mjs';
 
 let messageParse;
 Hooks.once("init", function () {
@@ -90,9 +91,17 @@ let requestQueue = [];
 let isProcessing = false;
 
 Hooks.on('userConnected', async (user, connected) => {
-    if (isUserMainGM() || (!game.users.activeGM && isUserMainNonGM())) {
+    if (!user.isSelf || isUserMainGM() || (!game.users.activeGM && isUserMainNonGM())) {
+        const webhook = getThisModuleSetting('webHookURL');
+        const messageID = getThisModuleSetting('messageID');
         await sendUserMonitorMessage(user, connected);
-        await updateServerStatus(true);
+        if (webhook !== "" && messageID !== "") {
+            const response = await getMessageInfo(webhook, messageID);
+            const serverStatusMsg = await response.json();
+            if (serverStatusMsg?.embeds[0]?.description !== '## OFFLINE') {
+                await updateServerStatus(true);
+            }
+        }
     }
 });
 
@@ -105,6 +114,26 @@ async function beforeUnloadUserUpdate() {
     }
 }
 
+async function backToSetupUpdate() {
+    const hook = getThisModuleSetting('webHookURL');
+    let serverCloseMsg = undefined;
+    window.removeEventListener('beforeunload', beforeUnloadUserUpdate);
+    adminDisconnect = true;
+    if (hook && hook !== '' && getThisModuleSetting("userMonitor")) {
+        const formData = api.generateSendFormData("Admin has closed the server.");
+        serverCloseMsg = await api.sendMessage(formData, false, "");
+    }
+    await updateServerStatus(false);
+    /*await wait(30000);
+    console.log('foundrytodiscord | False alarm... resetting server status.');
+    adminDisconnect = false;
+    window.addEventListener("beforeunload", beforeUnloadUserUpdate);
+    if (serverCloseMsg) {
+        await api.deleteMessage(serverCloseMsg.response.url, serverCloseMsg.message.id);
+        await updateServerStatus(true);
+    }*/
+}
+
 let logoutListenersAdded = false;
 let adminDisconnect = false;
 
@@ -113,6 +142,7 @@ Hooks.on('changeSidebarTab', async (app) => {
         const element = app.element[0];
         const logout = element.querySelector('button[data-action="logout"]');
         const setup = element.querySelector('button[data-action="setup"]');
+        const forgevtt = element.querySelector('button[data-action="forgevtt"]');
         if (logout) {
             logout.addEventListener('click', async () => {
                 window.removeEventListener('beforeunload', beforeUnloadUserUpdate);
@@ -120,25 +150,10 @@ Hooks.on('changeSidebarTab', async (app) => {
             });
         }
         if (setup) {
-            setup.addEventListener('click', async () => {
-                const hook = getThisModuleSetting('webHookURL');
-                let serverCloseMsg = undefined;
-                window.removeEventListener('beforeunload', beforeUnloadUserUpdate);
-                adminDisconnect = true;
-                if (hook && hook !== '') {
-                    const formData = api.generateSendFormData("Admin has closed the server.");
-                    serverCloseMsg = await api.sendMessage(formData, false, "");
-                }
-                await updateServerStatus(false);
-                await wait(30000);
-                console.log('foundrytodiscord | False alarm... resetting server status.');
-                adminDisconnect = false;
-                window.addEventListener("beforeunload", beforeUnloadUserUpdate);
-                if (serverCloseMsg) {
-                    await api.deleteMessage(serverCloseMsg.response.url, serverCloseMsg.message.id);
-                    await updateServerStatus(true);
-                }
-            });
+            setup.addEventListener('click', backToSetupUpdate);
+        }
+        if (forgevtt) {
+            forgevtt.addEventListener('click', backToSetupUpdate);
         }
         logoutListenersAdded = true;
     }
@@ -244,7 +259,7 @@ async function sendUserMonitorMessage(user, userConnected) {
         return;
     }
     let numActive;
-    const noUsers = game.users.filter(user => user.active).length === 1 && user === game.user && !userConnected;
+    const noUsers = game.users.filter(user => user.active).length === 1 && user.isSelf && !userConnected;
     if (noUsers) {
         numActive = 0;
     }

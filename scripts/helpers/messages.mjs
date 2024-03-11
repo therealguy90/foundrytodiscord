@@ -245,3 +245,19 @@ export function hexToColor(hex) {
 export function removeEmptyEmbeds(embeds) {
     return embeds.filter(embed => embed.title || embed.description || !embed.footer);
 }
+
+export async function getMessageInfo(webhook, messageID) {
+    if (webhook.split('?').length > 1) {
+        const querysplit = webhook.split('?');
+        webhook = querysplit[0] + '/messages/' + messageID + '?' + querysplit[1];
+    } else {
+        webhook = webhook + '/messages/' + messageID;
+    }
+    const requestOptions = {
+        method: "GET"
+    };
+    return await fetch(webhook, requestOptions)
+        .catch(error => {
+            console.error('foundrytodiscord | Error getting message information:', error);
+        });
+}
