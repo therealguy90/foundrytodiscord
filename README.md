@@ -128,7 +128,7 @@ Map a keyword to ping a user from Foundry without having to tab out to Discord!
 
 #### Server Status Message
 
-Allow your players to check if your world is online by setting your server status as ONLINE in your Server Status Message when a GM logs in. To indicate it's offline, have a GM type "ftd serveroff" in your world chat. Enable this feature in the config with a step-by-step tutorial. Note that this feature is only available for your main Webhook URL. Modules work client-side, so there's not much other better solutions to the problem other than the GM manually using the command to set it offline.
+Allow your players to check if your world is online by setting your server status as ONLINE in your Server Status Message when a GM logs in. To indicate it's offline, have a GM type "ftd serveroff" in your world chat. Enable this feature in the config with a step-by-step tutorial. Note that this feature is only available for your main Webhook URL. Clicking on Return to Setup / Back to the Forge (for Forge users) also automatically sets the Server Status Message to Offline.
 
 ![image](https://github.com/therealguy90/foundrytodiscord/assets/100253440/02d34b9f-ead9-477e-aac4-5ffc44758821)
 
