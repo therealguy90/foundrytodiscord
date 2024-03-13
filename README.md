@@ -91,6 +91,8 @@ On DnD5e, roll cards from midi-qol are also supported.
 
 Do note that this follows message deletions as well. If a message is deleted in Foundry, it will also be deleted in the channel. Although this can be disabled in the config, it is recommended to keep it on for any "oopsie" moments. When clicking on Reveal Message or Hide Message, it will also mirror it onto Discord, unless you have Ignore Whispers turned off, in which case whispers will always be displayed.
 
+Clearing the chat log via the button **does not** delete any of your Discord messages, unless there are 10 or less messages in the chat log, as the module will automatically detect a deletion of more than 10 ChatMessages and cancel deleting the corresponding messages on Discord. Similarly, using ChatMessage.deleteDocuments on more than 10 ChatMessage objects will trigger the same detection system.
+
 
 **Enhance your chat mirroring experience by enabling custom emojis! Go to the config and turn on "Use External Emojis". Webhooks use `@everyone` permissions, so make sure to enable `@everyone` to use external emojis on your server.**
 
