@@ -164,6 +164,35 @@ Hooks.on('deleteChatMessage', async (msg) => {
     }
 });
 
+export async function tryPOST(msg, hookOverride = undefined) {
+    let requestParams = await messageParse(msg);
+    // do post-parse checks, such as adding images to upload and editing webhook links
+    if (requestParams && requestParams.length > 0) {
+        let messageList;
+        if (game.user.isGM) {
+            messageList = getThisModuleSetting('messageList');
+        }
+        else {
+            messageList = getThisModuleSetting('clientMessageList');
+        }
+        let linkedMsgNum;
+        if (!messageList[msg.id]) {
+            linkedMsgNum = 0;
+        }
+        else {
+            linkedMsgNum = Object.keys(messageList[msg.id]).length;
+        }
+        for (const request of requestParams) {
+            const { waitHook, formData } = await postParse(msg, request, hookOverride);
+            if (waitHook) {
+                requestQueue.sendMessage(waitHook, formData).then(({ response, message }) => {
+                    addSentMessage(msg.id, { url: response.url, message: message }, linkedMsgNum);
+                });
+            }
+        }
+    }
+}
+
 function deleteAll(msg) {
     let msgObjects;
     if (game.user.isGM) {
@@ -194,35 +223,6 @@ function deleteAll(msg) {
     }
     else {
         game.settings.set('foundrytodiscord', 'clientMessageList', msgObjects);
-    }
-}
-
-export async function tryPOST(msg, hookOverride = undefined) {
-    let requestParams = await messageParse(msg);
-    // do post-parse checks, such as adding images to upload and editing webhook links
-    if (requestParams && requestParams.length > 0) {
-        let messageList;
-        if (game.user.isGM) {
-            messageList = getThisModuleSetting('messageList');
-        }
-        else {
-            messageList = getThisModuleSetting('clientMessageList');
-        }
-        let linkedMsgNum;
-        if (!messageList[msg.id]) {
-            linkedMsgNum = 0;
-        }
-        else {
-            linkedMsgNum = Object.keys(messageList[msg.id]).length;
-        }
-        for (const request of requestParams) {
-            const { waitHook, formData } = await postParse(msg, request, hookOverride);
-            if (waitHook) {
-                requestQueue.sendMessage(waitHook, formData).then(({ response, message }) => {
-                    addSentMessage(msg.id, { url: response.url, message: message }, linkedMsgNum);
-                });
-            }
-        }
     }
 }
 
