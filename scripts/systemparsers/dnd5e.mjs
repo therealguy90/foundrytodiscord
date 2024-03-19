@@ -1,9 +1,9 @@
-import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
-import { parse2DTable } from './helpers/tables.mjs';
+import { anonEnabled, getThisModuleSetting } from '../helpers/modulesettings.mjs';
+import { parse2DTable } from '../helpers/parser/tables.mjs';
 import * as generic from './generic.mjs';
-import { newEnrichedMessage, toHTML } from './helpers/enrich.mjs';
-import { swapOrNot, getDieEmoji, dieIcon, checkFails } from './helpers/emojis/global.mjs';
-import { shieldEmoji } from './helpers/emojis/dnd5e.mjs';
+import { newEnrichedMessage, toHTML } from '../helpers/parser/enrich.mjs';
+import { swapOrNot, getDieEmoji, dieIcon, checkFails } from '../helpers/emojis/global.mjs';
+import { shieldEmoji } from '../helpers/emojis/dnd5e.mjs';
 
 export async function messageParserDnD5e(msg, edit = false) {
     const enrichedMsg = await newEnrichedMessage(msg, await DnD5e_getEnrichmentOptions(msg));

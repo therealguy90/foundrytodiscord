@@ -1,16 +1,16 @@
-import { reformatMessage } from "./generic.mjs";
-import { PF2e_reformatMessage } from "./pf2e.mjs";
-import { DnD5e_reformatMessage } from "./dnd5e.mjs";
-import { dataToBlob, generateimglink } from "./helpers/images.mjs";
-import { addEmbedsToRequests } from "./helpers/messages.mjs";
-import { toHTML } from "./helpers/enrich.mjs";
-import { getThisModuleSetting } from "./helpers/modulesettings.mjs";
+import { reformatMessage } from "./systemparsers/generic.mjs";
+import { PF2e_reformatMessage } from "./systemparsers/pf2e.mjs";
+import { DnD5e_reformatMessage } from "./systemparsers/dnd5e.mjs";
+import { dataToBlob, generateimglink } from "./helpers/parser/images.mjs";
+import { postParse, addEmbedsToRequests } from "./helpers/parser/messages.mjs";
+import { toHTML } from "./helpers/parser/enrich.mjs";
+import { getSystemParser, getThisModuleSetting } from "./helpers/modulesettings.mjs";
 import * as api from '../api.js';
-import { postParse } from "../main.js";
+import { tryPOST } from "../main.js";
 
 
 // Application header buttons
-export async function initMenuHooks() {
+export async function initButtonHooks() {
     Hooks.on('getJournalSheetHeaderButtons', async (sheet, buttons) => {
         buttons.unshift({
             label: "Send Page (Main Channel)",
@@ -55,6 +55,71 @@ export async function initMenuHooks() {
         }
     });
 
+    // For the "Send to Discord" context menu on chat messages.
+    // Seldom needed, but if chat mirroring is disabled, this is one way to circumvent it.
+    Hooks.on('getChatLogEntryContext', async (html, options) => {
+        options.unshift(
+            {
+                name: "Send (Main Webhook)",
+                icon: '<i class="fa-brands fa-discord"></i>',
+                condition: game.user.isGM || getThisModuleSetting('allowPlayerSend'),
+                callback: async li => {
+                    let message = game.messages.get(li.attr("data-message-id"));
+                    await tryPOST(message);
+                }
+            },
+            {
+                name: "Send (Player Notes)",
+                icon: '<i class="fa-brands fa-discord"></i>',
+                condition: getThisModuleSetting('notesWebHookURL') !== "" && (getThisModuleSetting('allowPlayerSend') || game.user.isGM),
+                callback: async li => {
+                    const messageParse = getSystemParser();
+                    const message = game.messages.get(li.attr("data-message-id"));
+                    const requestParams = await messageParse(message);
+                    if (requestParams && requestParams.length > 0) {
+                        for (const request of requestParams) {
+                            const { waitHook, formData } = await postParse(message, request, getThisModuleSetting('notesWebHookURL'));
+                            if (waitHook) {
+                                const { response, dmessage } = await api.sendMessage(formData, false, undefined, waitHook)
+                                    .catch(error => {
+                                        ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
+                                    });
+                                if (response.ok) {
+                                    ui.notifications.info("Successfully sent to Discord Player Notes.");
+                                }
+                                else {
+                                    ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                name: "Delete (Foundry Chat Only)",
+                icon: '<i class="fa-brands fa-discord"></i>',
+                condition: game.user.isGM,
+                callback: async li => {
+                    let message = game.messages.get(li.attr("data-message-id"));
+                    let msgObjects;
+                    if (getThisModuleSetting('messageList').hasOwnProperty(message.id) || getThisModuleSetting('clientMessageList').hasOwnProperty(message.id)) {
+                        if (game.user.isGM) {
+                            msgObjects = getThisModuleSetting('messageList')[message.id];
+                        } else {
+                            msgObjects = getThisModuleSetting('clientMessageList')[message.id];
+                        }
+                        delete msgObjects[message.id];
+                        if (game.user.isGM) {
+                            game.settings.set('foundrytodiscord', 'messageList', msgObjects);
+                        }
+                        else {
+                            game.settings.set('foundrytodiscord', 'clientMessageList', msgObjects);
+                        }
+                    }
+                    message.delete();
+                }
+            })
+    });
 
     //Forien's Quest Log
     if (game.modules.get("forien-quest-log")?.active) {

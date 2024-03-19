@@ -1,8 +1,8 @@
+import { dieIcon, getDieEmoji, swapOrNot } from '../helpers/emojis/global.mjs';
+import { actionGlyphEmojis, damageEmojis, targetEmoji, templateEmojis } from '../helpers/emojis/pf2e.mjs';
+import { newEnrichedMessage, toHTML } from '../helpers/parser/enrich.mjs';
+import { anonEnabled, getThisModuleSetting } from '../helpers/modulesettings.mjs';
 import * as generic from './generic.mjs';
-import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
-import { newEnrichedMessage, toHTML } from './helpers/enrich.mjs';
-import { swapOrNot, getDieEmoji, dieIcon } from './helpers/emojis/global.mjs';
-import { actionGlyphEmojis, damageEmojis, templateEmojis, targetEmoji } from './helpers/emojis/pf2e.mjs';
 
 const DamageRoll = CONFIG.Dice.rolls.find(r => r.name === "DamageRoll");
 

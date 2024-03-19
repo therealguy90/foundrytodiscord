@@ -1,6 +1,6 @@
-import { messageParserGeneric } from '../generic.mjs';
-import { messageParserPF2e } from '../pf2e.mjs';
-import { messageParserDnD5e } from '../dnd5e.mjs';
+import { messageParserGeneric } from '../systemparsers/generic.mjs';
+import { messageParserPF2e } from '../systemparsers/pf2e.mjs';
+import { messageParserDnD5e } from '../systemparsers/dnd5e.mjs';
 import { ThreadedChatConfig } from '../../src/forms/threadedchatconfig.mjs'
 import { AutoPingConfig } from '../../src/forms/autopingconfig.mjs';
 let SYSTEM_ID;

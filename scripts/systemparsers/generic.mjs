@@ -1,9 +1,9 @@
-import { htmlTo2DTable, parse2DTable } from './helpers/tables.mjs';
-import { anonEnabled, getThisModuleSetting } from './helpers/modulesettings.mjs';
-import { removeEmptyEmbeds, splitText, addEmbedsToRequests } from './helpers/messages.mjs';
-import { generateimglink } from './helpers/images.mjs';
-import { newEnrichedMessage, toHTML } from './helpers/enrich.mjs';
-import { getDieEmoji, getDocumentEmoji, swapOrNot, dieIcon, checkFails } from './helpers/emojis/global.mjs';
+import { htmlTo2DTable, parse2DTable } from '../helpers/parser/tables.mjs';
+import { anonEnabled, getThisModuleSetting } from '../helpers/modulesettings.mjs';
+import { removeEmptyEmbeds, splitText, addEmbedsToRequests } from '../helpers/parser/messages.mjs';
+import { generateimglink } from '../helpers/parser/images.mjs';
+import { newEnrichedMessage, toHTML } from '../helpers/parser/enrich.mjs';
+import { getDieEmoji, getDocumentEmoji, swapOrNot, dieIcon, checkFails } from '../helpers/emojis/global.mjs';
 
 export async function messageParserGeneric(msg, edit = false) {
     // Make a new ChatMessage object with the content enriched using the TextEditor.

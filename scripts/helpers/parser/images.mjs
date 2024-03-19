@@ -1,4 +1,4 @@
-import { getThisModuleSetting } from "./modulesettings.mjs";
+import { getThisModuleSetting } from "../modulesettings.mjs";
 
 //Convert base64 to a blob
 export function dataToBlob(base64String) {
