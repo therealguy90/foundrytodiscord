@@ -5,12 +5,25 @@ import { dataToBlob, generateimglink } from "./helpers/parser/images.mjs";
 import { postParse, addEmbedsToRequests } from "./helpers/parser/messages.mjs";
 import { toHTML } from "./helpers/parser/enrich.mjs";
 import { getSystemParser, getThisModuleSetting } from "./helpers/modulesettings.mjs";
+import { isUserMainGM } from "./helpers/userfilter.mjs";
 import * as api from '../api.js';
 import { tryPOST } from "../main.js";
 
 
 // Application header buttons
-export async function initButtonHooks() {
+export async function initOtherHooks() {
+
+    Hooks.on('deleteScene', async scene => {
+        if (isUserMainGM()) {
+            // Used for Threaded Scenes to delete a thread map if a scene is deleted.
+            const threadedChatMap = getThisModuleSetting('threadedChatMap');
+            if (threadedChatMap.hasOwnProperty(scene.id)) {
+                delete threadedChatMap[scene.id];
+                game.settings.set('foundrytodiscord', 'threadedChatMap', threadedChatMap);
+            }
+        }
+    });
+
     Hooks.on('getJournalSheetHeaderButtons', async (sheet, buttons) => {
         buttons.unshift({
             label: "Send Page (Main Channel)",

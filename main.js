@@ -1,6 +1,6 @@
 import { isCard } from './scripts/systemparsers/generic.mjs';
 import { initModuleSettings, getThisModuleSetting, getSystemParser } from './scripts/helpers/modulesettings.mjs';
-import { initButtonHooks } from './scripts/apphooks.mjs';
+import { initOtherHooks } from './scripts/hooks.mjs';
 import { postParse } from './scripts/helpers/parser/messages.mjs';
 import { updateServerStatus, initSystemStatus } from './scripts/helpers/monitor/serverStatus.mjs';
 import { sendUserMonitorMessage } from './scripts/helpers/monitor/loginmonitor.mjs';
@@ -16,20 +16,9 @@ Hooks.once("init", function () {
     messageParse = getSystemParser();
 });
 
-Hooks.on('deleteScene', async scene => {
-    if (isUserMainGM()) {
-        // Used for Threaded Scenes to delete a thread map if a scene is deleted.
-        const threadedChatMap = getThisModuleSetting('threadedChatMap');
-        if (threadedChatMap.hasOwnProperty(scene.id)) {
-            delete threadedChatMap[scene.id];
-            game.settings.set('foundrytodiscord', 'threadedChatMap', threadedChatMap);
-        }
-    }
-});
-
 Hooks.once("ready", async () => {
     // Application and context menu buttons for all users
-    initButtonHooks();
+    initOtherHooks();
     if (isUserMainGM()) {
         const curInviteURL = getThisModuleSetting('inviteURL');
         if (curInviteURL !== "" && !curInviteURL.endsWith("/")) {
