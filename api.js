@@ -1,5 +1,6 @@
 import { getThisModuleSetting } from "./scripts/helpers/modulesettings.mjs";
-import { getDefaultAvatarLink } from "./scripts/helpers/images.mjs";
+import { getDefaultAvatarLink } from "./scripts/helpers/parser/images.mjs";
+import { requestQueue } from "./main.js";
 
 Hooks.once("init", function () {
     game.modules.get('foundrytodiscord').api = {
@@ -19,6 +20,7 @@ export function generateSendFormData(content, embeds = [], username = game.user.
         content: content,
         embeds: embeds
     }));
+    
     return formData;
 }
 
@@ -42,48 +44,18 @@ export async function sendMessage(formData, isRoll = false, sceneID = game.user.
         }
     }
 
-    if (hook.includes("?")) {
-        hook += "&wait=true";
-    }
-    else if (hook !== "") {
-        hook += "?wait=true";
-    }
-
-    const requestOptions = {
-        method: 'POST',
-        body: formData
-    };
-
-    console.log("foundrytodiscord | Attempting to send message to webhook...");
-    try {
-        const response = await fetch(hook, requestOptions)
-        if (response.ok) {
-            const message = (await response.json());
-            return { response: response, message: message }
-        }
-    } catch (error) {
-        console.error("foundrytodiscord | Error sending message: ", error);
-    }
+    return await requestQueue.sendMessage(hook, formData);
 }
 
 export async function editMessage(formData, webhook, messageID) {
     if (!webhook.includes('/messages/')) {
-        if (webhook.split('?').length > 1) {
+        if (!webhook.includes('/messages/')) {
             const querysplit = webhook.split('?');
-            webhook = querysplit[0] + '/messages/' + messageID + '?' + querysplit[1];
-        } else {
-            webhook = webhook + '/messages/' + messageID;
+            webhook =  `${querysplit[0]}/messages/${messageID}${querysplit[1] ? `?${querysplit[1]}` : ""}`;
         }
     }
-    const requestOptions = {
-        method: 'PATCH',
-        body: formData
-    };
-    console.log("foundrytodiscord | Attempting to edit message...");
-    return await fetch(webhook, requestOptions)
-        .catch(error => {
-            console.error('foundrytodiscord | Error editing message:', error);
-        });
+
+    return await requestQueue.editMessage(webhook, formData);
 }
 
 export async function deleteMessage(webhook, messageID) {
@@ -95,9 +67,6 @@ export async function deleteMessage(webhook, messageID) {
             webhook = webhook + '/messages/' + messageID;
         }
     }
-    console.log("foundrytodiscord | Attempting to delete message...");
-    return await fetch(webhook, { method: 'DELETE' })
-        .catch(error => {
-            console.error("foundrytodiscord | Error deleting message:", error);
-        });
+
+    return await requestQueue.deleteMessage(webhook);
 }
