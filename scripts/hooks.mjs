@@ -148,12 +148,12 @@ export async function initOtherHooks() {
                     let author = { name: "", icon_url: "" };
                     if (questData.giverData) {
                         author.name = questData.giverData.name;
-                        author.icon_url = generateimglink(questData.giverData.img);
+                        author.icon_url = await generateimglink(questData.giverData.img);
                     }
                     //
                     let thumbnail = { url: "" };
                     if (questData.splash) {
-                        thumbnail.url = generateimglink(questData.splash);
+                        thumbnail.url = await generateimglink(questData.splash);
                     }
                     //Build embed title
                     let title = "QUEST: " + questData._name;
@@ -224,7 +224,7 @@ export async function initOtherHooks() {
                     }];
                     const params = {
                         username: game.user.name,
-                        avatar_url: generateimglink(game.user.avatar),
+                        avatar_url: await generateimglink(game.user.avatar),
                         content: "",
                         embeds: embeds
                     };
@@ -268,7 +268,7 @@ async function sendJournal(sheet, hookOverride = undefined) {
                 author: { name: "From Journal " + sheet.title },
                 title: pageData.name,
                 image: {
-                    url: generateimglink(pageData.src)
+                    url: await generateimglink(pageData.src)
                 },
                 footer: {
                     text: pageData.image.caption
@@ -294,8 +294,8 @@ async function sendJournal(sheet, hookOverride = undefined) {
     if (embeds.length > 0 || msgText !== "") {
         const user = game.user;
         const username = user.name;
-        const imgurl = generateimglink(game.user.avatar);
-        let allRequests = addEmbedsToRequests([{
+        const imgurl = await generateimglink(game.user.avatar);
+        let allRequests = await addEmbedsToRequests([{
             hook: undefined,
             params: {
                 username: username,
@@ -337,7 +337,7 @@ async function sendImage(sheet, hookOverride = undefined) {
         if (supportedFormats.includes(fileExt)) {
             const params = {
                 username: game.user.name,
-                avatar_url: generateimglink(game.user.avatar),
+                avatar_url: await generateimglink(game.user.avatar),
                 content: ""
             }
             formData.append('files[0]', imgblob, "foundrytodiscord_sharedimage." + fileExt);
@@ -358,7 +358,7 @@ async function sendImage(sheet, hookOverride = undefined) {
     }
     else {
         let link;
-        link = generateimglink(sheet.object);
+        link = await generateimglink(sheet.object);
         if (link === "") {
             console.error("foundrytodiscord | Your Invite URL isn't set! Image was not sent.");
             return;
@@ -366,7 +366,7 @@ async function sendImage(sheet, hookOverride = undefined) {
         msgText += link;
         const params = {
             username: game.user.name,
-            avatar_url: generateimglink(game.user.avatar),
+            avatar_url: await generateimglink(game.user.avatar),
             content: msgText
         }
         formData.append('payload_json', JSON.stringify(params));

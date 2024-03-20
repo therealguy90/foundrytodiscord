@@ -79,7 +79,7 @@ export async function messageParserDnD5e(msg, edit = false) {
         constructedMessage = generic.anonymizeText(constructedMessage, enrichedMsg);
     }
     constructedMessage = await DnD5e_reformatMessage(constructedMessage);
-    return generic.getRequestParams(enrichedMsg, constructedMessage, embeds, edit);
+    return await generic.getRequestParams(enrichedMsg, constructedMessage, embeds, edit);
 }
 
 export async function DnD5e_reformatMessage(text) {

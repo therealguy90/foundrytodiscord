@@ -156,7 +156,7 @@ export function splitText(text, MAX_LENGTH) {
     return textArray;
 }
 
-export function addEmbedsToRequests(allRequests, hook, username, imgurl, embeds, user) {
+export async function addEmbedsToRequests(allRequests, hook, username, imgurl, embeds, user) {
     let embedSizeCharCount = 0;
     let discordSizeLimitedEmbeds = [];
     for (const embed of embeds) {
@@ -211,7 +211,7 @@ export function addEmbedsToRequests(allRequests, hook, username, imgurl, embeds,
             if (!embedGroup[0]?.author && getThisModuleSetting('showAuthor') && user && username !== user.name) {
                 embedGroup[0]["author"] = {
                     name: user.name,
-                    icon_url: generateimglink(user.avatar)
+                    icon_url: await generateimglink(user.avatar)
                 }
             }
             allRequests[allRequests.length - 1].params.embeds = embedGroup;
@@ -265,7 +265,7 @@ export async function postParse(message, request, hookOverride = undefined) {
                 return { waitHook: undefined, formData: {} };
             }
             else {
-                request.params.content += addMediaLinks(message);
+                request.params.content += await addMediaLinks(message);
             }
             if (request.params.content === "") {
                 console.error('foundrytodiscord | Failed to send message after parsing: parser returned empty result');
@@ -348,12 +348,12 @@ function getChatMediaAttachments(formData, msgText, content) {
     return { formDataTemp: formData, contentTemp: msgText };
 }
 
-function addMediaLinks(message) {
+async function addMediaLinks(message) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(message.content, "text/html");
     const images = doc.querySelectorAll('img');
     let links = "";
-    images.forEach(imgElement => {
+    for (const imgElement of images) {
         const src = imgElement.getAttribute('src');
         if (src.includes('http')) {
             if (links !== "") {
@@ -362,11 +362,11 @@ function addMediaLinks(message) {
             links += src;
         }
         else if (src) {
-            links += generateimglink(src, false);
+            links += await generateimglink(src, false);
         }
-    });
+    }
     const videos = doc.querySelectorAll('video');
-    videos.forEach(videoElement => {
+    for(videoElement of videos){
         const src = videoElement.getAttribute('src');
         if (src.includes('http')) {
             if (links !== "") {
@@ -374,7 +374,7 @@ function addMediaLinks(message) {
             }
             links += src;
         }
-    });
+    }
     if (links) {
         console.log(`foundrytodiscord | Links found. Adding media from following sources: ${links}`);
     }

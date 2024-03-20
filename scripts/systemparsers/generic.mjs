@@ -84,7 +84,7 @@ export async function messageParserGeneric(msg, edit = false) {
         constructedMessage = anonymizeText(constructedMessage, enrichedMsg)
     }
     constructedMessage = await reformatMessage(constructedMessage);
-    return getRequestParams(enrichedMsg, constructedMessage, embeds, edit);
+    return await getRequestParams(enrichedMsg, constructedMessage, embeds, edit);
 }
 
 // Used for enrichHTML. Using actor as default in the generic parser.
@@ -103,8 +103,8 @@ export async function getEnrichmentOptions(message) {
     };
 }
 
-export function getRequestParams(message, msgText, embeds, editMode = false) {
-    const imgurl = generateDiscordAvatar(message);
+export async function getRequestParams(message, msgText, embeds, editMode = false) {
+    const imgurl = await generateDiscordAvatar(message);
     let hook = "";
     if (message.isRoll && (!isCard(message.content) && message.rolls.length > 0)) {
         if (getThisModuleSetting("threadedChatMap").hasOwnProperty(message.user.viewedScene)) {
@@ -137,7 +137,7 @@ export function getRequestParams(message, msgText, embeds, editMode = false) {
         });
     }
     if (embeds && embeds.length > 0) {
-        allRequests = addEmbedsToRequests(allRequests, hook, username, imgurl, embeds, message.user);
+        allRequests = await addEmbedsToRequests(allRequests, hook, username, imgurl, embeds, message.user);
     }
     // For edit requests, we will trim the amount of requests if and only if there are more requests than
     // linked messages for the edit. This makes it so that we don't need to make new messages to accommodate
@@ -208,33 +208,33 @@ export function getRequestParams(message, msgText, embeds, editMode = false) {
     return allRequests;
 }
 
-function generateDiscordAvatar(message) {
+async function generateDiscordAvatar(message) {
     // Prioritize chat-portrait for parity
     if (game.modules.get("chat-portrait")?.active && message.flags["chat-portrait"]?.src) {
-        return generateimglink(message.flags["chat-portrait"].src);
+        return await generateimglink(message.flags["chat-portrait"].src);
     }
 
     if (message.speaker?.scene && message.speaker.token) {
         const speakerToken = game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token);
         if (speakerToken?.texture?.src && speakerToken?.texture.src !== "") {
-            return generateimglink(speakerToken.texture.src);
+            return await generateimglink(speakerToken.texture.src);
         }
     }
 
     if (message.speaker?.actor) {
         const speakerActor = game.actors.get(message.speaker.actor);
         if (speakerActor?.prototypeToken?.texture?.src) {
-            return generateimglink(speakerActor.prototypeToken.texture.src);
+            return await generateimglink(speakerActor.prototypeToken.texture.src);
         }
     }
 
     // Probably need to remove this, honestly. Doesn't do anything in practice.
     const aliasMatchedActor = game.actors.find(actor => actor.name === message.alias);
     if (aliasMatchedActor?.prototypeToken?.texture?.src) {
-        return generateimglink(aliasMatchedActor.prototypeToken.texture.src);
+        return await generateimglink(aliasMatchedActor.prototypeToken.texture.src);
     }
 
-    return generateimglink(message.user.avatar);
+    return await generateimglink(message.user.avatar);
 }
 
 function generateDiscordUsername(message) {
@@ -700,7 +700,7 @@ export async function embedsFromJournalPages(pages) {
                 embeds.push({
                     title: pageData.name,
                     image: {
-                        url: generateimglink(pageData.src)
+                        url: await generateimglink(pageData.src)
                     },
                     footer: {
                         text: pageData.image.caption
