@@ -1,6 +1,6 @@
 import { htmlTo2DTable, parse2DTable } from '../helpers/parser/tables.mjs';
 import { anonEnabled, getThisModuleSetting } from '../helpers/modulesettings.mjs';
-import { removeEmptyEmbeds, splitText, addEmbedsToRequests } from '../helpers/parser/messages.mjs';
+import { getPropertyByString, censorId, removeEmptyEmbeds, splitText, addEmbedsToRequests } from '../helpers/parser/messages.mjs';
 import { generateimglink } from '../helpers/parser/images.mjs';
 import { newEnrichedMessage, toHTML } from '../helpers/parser/enrich.mjs';
 import { getDieEmoji, getDocumentEmoji, swapOrNot, dieIcon, checkFails } from '../helpers/emojis/global.mjs';
@@ -1009,27 +1009,4 @@ export function tokenBar_isTokenBarCard(htmlString) {
     } else {
         return false;
     }
-}
-
-function getPropertyByString(obj, propString) {
-    let props = propString.split('.');
-    let current = obj;
-
-    for (let i = 0; i < props.length; i++) {
-        if (current[props[i]] !== undefined) {
-            current = current[props[i]];
-        } else {
-            return undefined;
-        }
-    }
-    return current;
-}
-
-
-function censorId(docid) {
-    // Censors IDs for anonymized names
-    const firstPart = docid.substring(0, 4);
-    const censoredId = `${firstPart}****`;
-
-    return censoredId;
 }

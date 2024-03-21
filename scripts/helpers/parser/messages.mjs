@@ -246,6 +246,30 @@ export function removeEmptyEmbeds(embeds) {
     return embeds.filter(embed => embed.title || embed.description || !embed.footer);
 }
 
+export function getPropertyByString(obj, propString) {
+    let props = propString.split('.');
+    let current = obj;
+
+    for (let i = 0; i < props.length; i++) {
+        if (current[props[i]] !== undefined) {
+            current = current[props[i]];
+        } else {
+            return undefined;
+        }
+    }
+    return current;
+}
+
+
+export function censorId(docid) {
+    // Censors IDs for anonymized names
+    const firstPart = docid.substring(0, 4);
+    const censoredId = `${firstPart}****`;
+
+    return censoredId;
+}
+
+
 export async function postParse(message, request, hookOverride = undefined) {
     if (request.params.avatar_url === "") {
         console.warn("foundrytodiscord | Your Invite URL is not set! Avatar images cannot be displayed on Discord.");
