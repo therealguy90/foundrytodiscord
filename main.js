@@ -1,4 +1,3 @@
-import { isCard } from './scripts/systemparsers/generic.mjs';
 import { initModuleSettings, getThisModuleSetting, getSystemParser } from './scripts/helpers/modulesettings.mjs';
 import { initOtherHooks } from './scripts/hooks.mjs';
 import { postParse } from './scripts/helpers/parser/messages.mjs';
@@ -8,14 +7,14 @@ import { initLoginMonitor } from './scripts/helpers/monitor/loginmonitor.mjs';
 import { isUserMainGM, isUserMainNonGM } from './scripts/helpers/userfilter.mjs';
 import { DiscordRequestQueue, delay } from './src/objects/requestQueue.mjs';
 
-let messageParse;
+export let messageParser;
 export const requestQueue = new DiscordRequestQueue();
 
 Hooks.once("init", function () {
     initModuleSettings();
     initLoginMonitor();
     initOtherHooks();
-    messageParse = getSystemParser();
+    messageParser = getSystemParser();
 });
 
 Hooks.once("ready", async () => {
@@ -60,10 +59,10 @@ Hooks.on('createChatMessage', async (msg) => {
         if (!isUserMainGM() && (game.users.activeGM || !(getThisModuleSetting("allowNoGM") && isUserMainNonGM()))) {
             return;
         }
-        if (msg.isRoll && (!isCard(msg.content) && msg.rolls.length > 0) && getThisModuleSetting("rollWebHookURL") === "") {
+        if (msg.isRoll && (!messageParser.isCard(msg.content) && msg.rolls.length > 0) && getThisModuleSetting("rollWebHookURL") === "") {
             return;
         }
-        if (!msg.isRoll && (isCard(msg.content) && msg.rolls.length < 1) && getThisModuleSetting("webHookURL") === "") {
+        if (!msg.isRoll && (messageParser.isCard(msg.content) && msg.rolls.length < 1) && getThisModuleSetting("webHookURL") === "") {
             return;
         }
 
@@ -102,7 +101,7 @@ Hooks.on('updateChatMessage', async (msg, change, options) => {
                         msgObjects = getThisModuleSetting('clientMessageList')[msg.id];
                     }
                     let editHook;
-                    const requestParams = await messageParse(msg, true);
+                    const requestParams = await messageParser.parseMessage(msg, true);
                     if (requestParams) {
                         for (const request of requestParams) {
                             for (const linkedIndex in msgObjects) {
@@ -165,7 +164,7 @@ Hooks.on('deleteChatMessage', async (msg) => {
 });
 
 export async function tryPOST(msg, hookOverride = undefined) {
-    let requestParams = await messageParse(msg);
+    let requestParams = await messageParser.parseMessage(msg);
     // do post-parse checks, such as adding images to upload and editing webhook links
     if (requestParams && requestParams.length > 0) {
         let messageList;

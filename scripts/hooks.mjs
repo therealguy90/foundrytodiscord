@@ -1,13 +1,10 @@
-import { reformatMessage } from "./systemparsers/generic.mjs";
-import { PF2e_reformatMessage } from "./systemparsers/pf2e.mjs";
-import { DnD5e_reformatMessage } from "./systemparsers/dnd5e.mjs";
 import { dataToBlob, generateimglink } from "./helpers/parser/images.mjs";
 import { postParse, addEmbedsToRequests } from "./helpers/parser/messages.mjs";
 import { toHTML } from "./helpers/parser/enrich.mjs";
-import { getSystemParser, getThisModuleSetting } from "./helpers/modulesettings.mjs";
+import { getThisModuleSetting } from "./helpers/modulesettings.mjs";
 import { isUserMainGM } from "./helpers/userfilter.mjs";
 import * as api from '../api.js';
-import { tryPOST } from "../main.js";
+import { messageParser } from "../main.js";
 
 
 // Application header buttons
@@ -163,8 +160,7 @@ export async function initOtherHooks() {
                             break;
                     }
                     // Build Description
-                    const reformat = getReformatter();
-                    let description = await reformat(questData.description);
+                    let description = await messageParser.formatText(questData.description);
 
                     let fields = [];
                     // Build Objectives field
@@ -238,7 +234,6 @@ async function sendJournal(sheet, hookOverride = undefined) {
     const pageIndex = sheet.pageIndex;
     const pageData = sheet._pages[pageIndex];
     let formData = new FormData();
-    const reformat = getReformatter();
     let embeds = [];
     let msgText = "";
     switch (pageData.type) {
@@ -246,7 +241,7 @@ async function sendJournal(sheet, hookOverride = undefined) {
             embeds = [{
                 author: { name: "From Journal " + sheet.title },
                 title: pageData.name,
-                description: await reformat(await toHTML(pageData.text.content))
+                description: await messageParser.formatText(await toHTML(pageData.text.content))
             }];
             break;
         case "image":
@@ -368,19 +363,5 @@ async function sendImage(sheet, hookOverride = undefined) {
             .catch(error => {
                 ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
             });
-    }
-}
-
-function getReformatter() {
-    switch (game.system.id) {
-        case 'pf2e':
-            return PF2e_reformatMessage;
-            break;
-        case 'dnd5e':
-            return DnD5e_reformatMessage;
-            break;
-        default:
-            return reformatMessage;
-            break;
     }
 }
