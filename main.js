@@ -118,7 +118,7 @@ Hooks.on('updateChatMessage', async (msg, change, options) => {
                                         editHook = url + '/messages/' + message.id;
                                     }
                                     const { waitHook, formData } = await postParse(msg, request);
-                                    requestQueue.editMessage(waitHook, formData);
+                                    requestQueue.editMessage(editHook, formData);
                                 }
                             }
                         }
