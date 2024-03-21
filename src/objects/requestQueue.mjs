@@ -13,9 +13,14 @@ export class DiscordRequestQueue {
     constructor() {
         this._requestQueue = [];
         this._isBusy = false;
-        this._retries = 0;
     }
 
+    /**
+     * Adds a POST request to the queue using the webhook link and a FormData object.
+     * @param {string} hook - The webhook link.
+     * @param {FormData} formData - The FormData object of the message.
+     * @returns {Promise<Response>} - A Promise that is resolved with a Response object when the request goes through the queue.
+     */
     sendMessage(hook, formData) {
         return new Promise((resolve, reject) => {
             const completeRequestWebhook = `${!hook.includes("wait=true") ? `${hook}${hook.includes("?") ? "&" : "?"}wait=true` : hook}`;
@@ -30,6 +35,12 @@ export class DiscordRequestQueue {
         })
     }
 
+    /**
+     * Adds a PATCH request to the queue using the webhook link and a FormData object.
+     * @param {string} hook - The webhook link appended with /messages/ and the Discord Message ID.
+     * @param {FormData} formData - The FormData object of the message.
+     * @returns {Promise<Response>} - A Promise that is resolved with a Response object when the request goes through the queue.
+     */
     editMessage(hook, formData) {
         return new Promise((resolve, reject) => {
             this._requestQueue.push({
@@ -43,6 +54,11 @@ export class DiscordRequestQueue {
         });
     }
 
+    /**
+     * Adds a DELETE request to the queue using the webhook link.
+     * @param {string} hook - The webhook link appended with /messages/ and the Discord Message ID.
+     * @returns {Promise<Response>} - A Promise that is resolved with a Response object when the request goes through the queue.
+     */
     deleteMessage(hook) {
         return new Promise((resolve, reject) => {
             this._requestQueue.push({
@@ -56,7 +72,13 @@ export class DiscordRequestQueue {
         });
     }
 
-    deleteLinkedMessage(hook, chatMessageID){
+    /**
+     * Used internally for removing messages from the module's memory. Not to be used externally.
+     * @param {string} hook - The webhook link appended with /messages/ and the Discord Message ID.
+     * @param {string} chatMessageID - The ID of the ChatMessage object that the Discord Message is linked to.
+     * @returns {Promise<Response>} - A Promise that is resolved with a Response object when the request goes through the queue.
+     */
+    deleteLinkedMessage(hook, chatMessageID) {
         return new Promise((resolve, reject) => {
             this._requestQueue.push({
                 hook: hook,
@@ -70,7 +92,7 @@ export class DiscordRequestQueue {
         });
     }
 
-    clearQueue() {
+    #clearQueue() {
         this._requestQueue = [];
     }
 
@@ -106,7 +128,7 @@ export class DiscordRequestQueue {
                         console.log("foundrytodiscord | ඞඞඞඞඞ You called? We're going to clean the message queue! ඞඞඞඞඞ");
                         console.log("foundrytodiscord | Request queue cleared. Next request in 5 seconds...");
                         console.groupEnd();
-                        this.clearQueue();
+                        this.#clearQueue();
                         await this.#delay(5000);
                         this.#progressQueue();
                         return;
