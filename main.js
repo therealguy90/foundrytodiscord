@@ -10,15 +10,15 @@ import { DiscordRequestQueue, delay } from './src/objects/requestQueue.mjs';
 
 let messageParse;
 export const requestQueue = new DiscordRequestQueue();
+
 Hooks.once("init", function () {
     initModuleSettings();
     initLoginMonitor();
+    initOtherHooks();
     messageParse = getSystemParser();
 });
 
 Hooks.once("ready", async () => {
-    // Application and context menu buttons for all users
-    initOtherHooks();
     if (isUserMainGM()) {
         const curInviteURL = getThisModuleSetting('inviteURL');
         if (curInviteURL !== "" && !curInviteURL.endsWith("/")) {
