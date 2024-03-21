@@ -127,17 +127,12 @@ export class DiscordRequestQueue {
         try {
             const response = await fetch(hook, requestOptions);
             if (response.ok) {
-                if (method === "POST") {
-                    resolve({ response: response, message: await response.json() });
-                }
-                else {
-                    if (method === "DELETE") {
-                        if (ignoreRescuePartyFor > 0) {
-                            ignoreRescuePartyFor--;
-                        }
+                if (method === "DELETE") {
+                    if (ignoreRescuePartyFor > 0) {
+                        ignoreRescuePartyFor--;
                     }
-                    resolve(response)
                 }
+                resolve(response);
                 this._requestQueue.shift();
                 console.log(`foundrytodiscord | ${method} request succeeded.`);
                 this.#progressQueue(retry, ignoreRescuePartyFor);

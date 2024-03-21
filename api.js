@@ -1,10 +1,12 @@
 import { getThisModuleSetting } from "./scripts/helpers/modulesettings.mjs";
 import { getDefaultAvatarLink } from "./scripts/helpers/parser/images.mjs";
+import { tryPOST } from "./main.js";
 import { requestQueue } from "./main.js";
 
 Hooks.once("init", function () {
     game.modules.get('foundrytodiscord').api = {
         sendMessage,
+        sendMessageFromID,
         editMessage,
         deleteMessage,
         generateSendFormData
@@ -22,6 +24,13 @@ export function generateSendFormData(content, embeds = [], username = game.user.
     }));
     
     return formData;
+}
+
+export async function sendMessageFromID(messageID, hookOverride = undefined){
+    const message = game.messages.get(messageID);
+    if(message){
+        return await tryPOST(message, hookOverride);
+    }
 }
 
 export async function sendMessage(formData, isRoll = false, sceneID = game.user.viewedScene, hookOverride = undefined) {

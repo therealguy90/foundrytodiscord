@@ -77,8 +77,7 @@ export async function initOtherHooks() {
                 icon: '<i class="fa-brands fa-discord"></i>',
                 condition: game.user.isGM || getThisModuleSetting('allowPlayerSend'),
                 callback: async li => {
-                    let message = game.messages.get(li.attr("data-message-id"));
-                    await tryPOST(message);
+                    api.sendMessageFromID(li.attr("data-message-id"));
                 }
             },
             {
@@ -86,25 +85,12 @@ export async function initOtherHooks() {
                 icon: '<i class="fa-brands fa-discord"></i>',
                 condition: getThisModuleSetting('notesWebHookURL') !== "" && (getThisModuleSetting('allowPlayerSend') || game.user.isGM),
                 callback: async li => {
-                    const messageParse = getSystemParser();
-                    const message = game.messages.get(li.attr("data-message-id"));
-                    const requestParams = await messageParse(message);
-                    if (requestParams && requestParams.length > 0) {
-                        for (const request of requestParams) {
-                            const { waitHook, formData } = await postParse(message, request, getThisModuleSetting('notesWebHookURL'));
-                            if (waitHook) {
-                                const { response, dmessage } = await api.sendMessage(formData, false, undefined, waitHook)
-                                    .catch(error => {
-                                        ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
-                                    });
-                                if (response.ok) {
-                                    ui.notifications.info("Successfully sent to Discord Player Notes.");
-                                }
-                                else {
-                                    ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
-                                }
-                            }
-                        }
+                    const { response, message } = await api.sendMessageFromID(li.attr("data-message-id"), getThisModuleSetting('notesWebHookURL'));
+                    if (response.ok) {
+                        ui.notifications.info("Successfully sent to Discord Player Notes.");
+                    }
+                    else {
+                        ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
                     }
                 }
             },
