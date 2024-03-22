@@ -266,9 +266,10 @@ export class MessageParser {
         if (game.modules.get('monks-tokenbar')?.active && this._isTokenBarCard(message.content)) {
             return this._createTokenBarCard(message);
         }
-        else {
-            return [];
+        else if(this._isRollTableCard){
+            return await this._createRollTableEmbed(message);
         }
+        return [];
     }
 
     _createCardEmbed(message) {
@@ -379,8 +380,26 @@ export class MessageParser {
         return [{ title: title, description: desc.trim() }];
     }
 
-    _createGenericRollOrRollTableResultEmbed(message) {
+    async _createRollTableEmbed(message){
+        const embeds = this._createRollEmbed(message);
+        const div = document.createElement('div');
+        div.innerHTML = message.content;
+        const resultElement = div.querySelector(".result-text");
+        if(resultElement && resultElement.textContent){
+            embeds[0].description += `\n${await this.formatText(resultElement.innerHTML)}`;
+        }
+        return embeds;
+    }
 
+    _isRollTableCard(htmlString){
+        const div = document.createElement('div');
+        div.innerHTML = htmlString;
+        const divElement = div.querySelector('.table-draw');
+        if (divElement !== null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     _createTokenBarCard(message) {
