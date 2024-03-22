@@ -27,7 +27,10 @@ export class MessageParser {
         const enrichedMsg = await newEnrichedMessage(message, await this._getEnrichmentOptions(message));
         let constructedMessage = "";
         let embeds = await this._getSystemSpecificCards(enrichedMsg);
-        embeds = await this._getSystemAgnosticCards(enrichedMsg);
+        embeds = embeds.length !== 0 ? embeds : await this._getSystemAgnosticCards(enrichedMsg);
+        if(!embeds){
+            embeds = [];
+        }
         if (!constructedMessage || embeds.length === 0) {
             if (this.isCard(message.content) && message.rolls?.length < 1 && embeds.length === 0) {
                 constructedMessage = "";

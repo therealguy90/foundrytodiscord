@@ -19,25 +19,26 @@ export class MessageParserDnD5e extends MessageParser {
         htmldoc.innerHTML = reformattedText;
         if (htmldoc.hasChildNodes()) {
             // Format various elements
-            generic.formatTextBySelector('a.roll-link', text => `${dieIcon()}\`${text}\``, htmldoc);
+            this._formatTextBySelector('a.roll-link', text => `${dieIcon()}\`${text}\``, htmldoc);
             reformattedText = htmldoc.innerHTML;
         }
         return reformattedText;
     }
 
     async _getSystemSpecificCards(message) {
-        if (game.modules.get('midi-qol')?.active && this._isMidiMergeCard(enrichedMsg.content)) {
-            return await this._createMidiMergeCard(enrichedMsg);
+        if (game.modules.get('midi-qol')?.active && this._isMidiMergeCard(message.content)) {
+            return await this._createMidiMergeCard(message);
         }
-        else if (game.modules.get('midi-qol')?.active && enrichedMsg.flags?.midiqol?.undoDamage && this._isMidiDamageTable(enrichedMsg.content)) {
-            return await this._createMidiDamageTable(enrichedMsg);
+        else if (game.modules.get('midi-qol')?.active && message.flags?.midiqol?.undoDamage && this._isMidiDamageTable(message.content)) {
+            return await this._createMidiDamageTable(message);
         }
-        else if (game.modules.get('midi-qol')?.active && this._isMidiSingleHitCard(enrichedMsg.content)) {
-            return await this._createMidiSingleHitCard(enrichedMsg);
+        else if (game.modules.get('midi-qol')?.active && this._isMidiSingleHitCard(message.content)) {
+            return await this._createMidiSingleHitCard(message);
         }
-        else if (game.modules.get('midi-qol')?.active && this._isMidiSavesDisplayCard(enrichedMsg.content)) {
-            return await this._createMidiSavesDisplayCard(enrichedMsg);
+        else if (game.modules.get('midi-qol')?.active && this._isMidiSavesDisplayCard(message.content)) {
+            return await this._createMidiSavesDisplayCard(message);
         }
+        return [];
     }
 
     _createCardEmbed(message) {
@@ -398,7 +399,7 @@ export class MessageParserDnD5e extends MessageParser {
                     let rollBreakdown = "";
                     if (message && rollFormula) {
                         const roll = message.rolls.find(roll => roll.formula === rollFormula.textContent);
-                        rollBreakdown = generic.generateRollBreakdown(roll);
+                        rollBreakdown = this._generateRollBreakdown(roll);
                     }
                     return `${dieIcon()}**\`${rollFormula.textContent}\`**\n${dieIcon()}**Result: __${rollValue}__**||(${rollBreakdown})||`;
                 }

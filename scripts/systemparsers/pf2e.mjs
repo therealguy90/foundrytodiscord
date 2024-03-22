@@ -76,6 +76,7 @@ export class MessageParserPF2e extends MessageParser {
         else if (this._isConditionCard(message)) {
             return this._createConditionCardEmbed(message);
         }
+        return [];
     }
 
     async _createActionCardEmbed(message) {
