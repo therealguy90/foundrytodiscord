@@ -123,15 +123,20 @@ export class MessageParserPF2e extends MessageParser {
     }
 
     _createConditionCardEmbed(message) {
+        let title = ""
         let desc = ""
         const parser = new DOMParser();
         const doc = parser.parseFromString(message.content, "text/html");
         const participantConditions = doc.querySelector(".participant-conditions");
+        const currentConditionTitle = participantConditions.querySelector("h4");
+        if(currentConditionTitle?.textContent){
+            title = currentConditionTitle.textContent;
+        }
         const conditions = participantConditions.querySelectorAll("span");
         conditions.forEach(condition => {
             desc += "**" + condition.textContent + "**\n";
         });
-        return [{ description: desc.trim() }];
+        return [{title: title, description: desc.trim() }];
     }
 
     _parseTraits(text, isRoll = false) {
