@@ -1,16 +1,26 @@
-import { reformatMessage } from "./generic.mjs";
-import { PF2e_reformatMessage } from "./pf2e.mjs";
-import { DnD5e_reformatMessage } from "./dnd5e.mjs";
-import { dataToBlob, generateimglink } from "./helpers/images.mjs";
-import { addEmbedsToRequests } from "./helpers/messages.mjs";
-import { toHTML } from "./helpers/enrich.mjs";
+import { dataToBlob, generateimglink } from "./helpers/parser/images.mjs";
+import { postParse, addEmbedsToRequests } from "./helpers/parser/messages.mjs";
+import { toHTML } from "./helpers/parser/enrich.mjs";
 import { getThisModuleSetting } from "./helpers/modulesettings.mjs";
+import { isUserMainGM } from "./helpers/userfilter.mjs";
 import * as api from '../api.js';
-import { postParse } from "../main.js";
+import { messageParser } from "../main.js";
 
 
 // Application header buttons
-export async function initMenuHooks() {
+export async function initOtherHooks() {
+
+    Hooks.on('deleteScene', async scene => {
+        if (isUserMainGM()) {
+            // Used for Threaded Scenes to delete a thread map if a scene is deleted.
+            const threadedChatMap = getThisModuleSetting('threadedChatMap');
+            if (threadedChatMap.hasOwnProperty(scene.id)) {
+                delete threadedChatMap[scene.id];
+                game.settings.set('foundrytodiscord', 'threadedChatMap', threadedChatMap);
+            }
+        }
+    });
+
     Hooks.on('getJournalSheetHeaderButtons', async (sheet, buttons) => {
         buttons.unshift({
             label: "Send Page (Main Channel)",
@@ -55,6 +65,57 @@ export async function initMenuHooks() {
         }
     });
 
+    // For the "Send to Discord" context menu on chat messages.
+    // Seldom needed, but if chat mirroring is disabled, this is one way to circumvent it.
+    Hooks.on('getChatLogEntryContext', async (html, options) => {
+        options.unshift(
+            {
+                name: "Send (Main Webhook)",
+                icon: '<i class="fa-brands fa-discord"></i>',
+                condition: game.user.isGM || getThisModuleSetting('allowPlayerSend'),
+                callback: async li => {
+                    api.sendMessageFromID(li.attr("data-message-id"));
+                }
+            },
+            {
+                name: "Send (Player Notes)",
+                icon: '<i class="fa-brands fa-discord"></i>',
+                condition: getThisModuleSetting('notesWebHookURL') !== "" && (getThisModuleSetting('allowPlayerSend') || game.user.isGM),
+                callback: async li => {
+                    const { response, message } = await api.sendMessageFromID(li.attr("data-message-id"), getThisModuleSetting('notesWebHookURL'));
+                    if (response.ok) {
+                        ui.notifications.info("Successfully sent to Discord Player Notes.");
+                    }
+                    else {
+                        ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
+                    }
+                }
+            },
+            {
+                name: "Delete (Foundry Chat Only)",
+                icon: '<i class="fa-brands fa-discord"></i>',
+                condition: game.user.isGM,
+                callback: async li => {
+                    let message = game.messages.get(li.attr("data-message-id"));
+                    let msgObjects;
+                    if (getThisModuleSetting('messageList').hasOwnProperty(message.id) || getThisModuleSetting('clientMessageList').hasOwnProperty(message.id)) {
+                        if (game.user.isGM) {
+                            msgObjects = getThisModuleSetting('messageList')[message.id];
+                        } else {
+                            msgObjects = getThisModuleSetting('clientMessageList')[message.id];
+                        }
+                        delete msgObjects[message.id];
+                        if (game.user.isGM) {
+                            game.settings.set('foundrytodiscord', 'messageList', msgObjects);
+                        }
+                        else {
+                            game.settings.set('foundrytodiscord', 'clientMessageList', msgObjects);
+                        }
+                    }
+                    message.delete();
+                }
+            })
+    });
 
     //Forien's Quest Log
     if (game.modules.get("forien-quest-log")?.active) {
@@ -70,12 +131,12 @@ export async function initMenuHooks() {
                     let author = { name: "", icon_url: "" };
                     if (questData.giverData) {
                         author.name = questData.giverData.name;
-                        author.icon_url = generateimglink(questData.giverData.img);
+                        author.icon_url = await generateimglink(questData.giverData.img);
                     }
                     //
                     let thumbnail = { url: "" };
                     if (questData.splash) {
-                        thumbnail.url = generateimglink(questData.splash);
+                        thumbnail.url = await generateimglink(questData.splash);
                     }
                     //Build embed title
                     let title = "QUEST: " + questData._name;
@@ -99,8 +160,7 @@ export async function initMenuHooks() {
                             break;
                     }
                     // Build Description
-                    const reformat = getReformatter();
-                    let description = await reformat(questData.description);
+                    let description = await messageParser.formatText(questData.description);
 
                     let fields = [];
                     // Build Objectives field
@@ -146,7 +206,7 @@ export async function initMenuHooks() {
                     }];
                     const params = {
                         username: game.user.name,
-                        avatar_url: generateimglink(game.user.avatar),
+                        avatar_url: await generateimglink(game.user.avatar),
                         content: "",
                         embeds: embeds
                     };
@@ -174,7 +234,6 @@ async function sendJournal(sheet, hookOverride = undefined) {
     const pageIndex = sheet.pageIndex;
     const pageData = sheet._pages[pageIndex];
     let formData = new FormData();
-    const reformat = getReformatter();
     let embeds = [];
     let msgText = "";
     switch (pageData.type) {
@@ -182,7 +241,7 @@ async function sendJournal(sheet, hookOverride = undefined) {
             embeds = [{
                 author: { name: "From Journal " + sheet.title },
                 title: pageData.name,
-                description: await reformat(await toHTML(pageData.text.content))
+                description: await messageParser.formatText(await toHTML(pageData.text.content))
             }];
             break;
         case "image":
@@ -190,7 +249,7 @@ async function sendJournal(sheet, hookOverride = undefined) {
                 author: { name: "From Journal " + sheet.title },
                 title: pageData.name,
                 image: {
-                    url: generateimglink(pageData.src)
+                    url: await generateimglink(pageData.src)
                 },
                 footer: {
                     text: pageData.image.caption
@@ -216,8 +275,8 @@ async function sendJournal(sheet, hookOverride = undefined) {
     if (embeds.length > 0 || msgText !== "") {
         const user = game.user;
         const username = user.name;
-        const imgurl = generateimglink(game.user.avatar);
-        let allRequests = addEmbedsToRequests([{
+        const imgurl = await generateimglink(game.user.avatar);
+        let allRequests = await addEmbedsToRequests([{
             hook: undefined,
             params: {
                 username: username,
@@ -259,7 +318,7 @@ async function sendImage(sheet, hookOverride = undefined) {
         if (supportedFormats.includes(fileExt)) {
             const params = {
                 username: game.user.name,
-                avatar_url: generateimglink(game.user.avatar),
+                avatar_url: await generateimglink(game.user.avatar),
                 content: ""
             }
             formData.append('files[0]', imgblob, "foundrytodiscord_sharedimage." + fileExt);
@@ -280,7 +339,7 @@ async function sendImage(sheet, hookOverride = undefined) {
     }
     else {
         let link;
-        link = generateimglink(sheet.object);
+        link = await generateimglink(sheet.object);
         if (link === "") {
             console.error("foundrytodiscord | Your Invite URL isn't set! Image was not sent.");
             return;
@@ -288,7 +347,7 @@ async function sendImage(sheet, hookOverride = undefined) {
         msgText += link;
         const params = {
             username: game.user.name,
-            avatar_url: generateimglink(game.user.avatar),
+            avatar_url: await generateimglink(game.user.avatar),
             content: msgText
         }
         formData.append('payload_json', JSON.stringify(params));
@@ -304,19 +363,5 @@ async function sendImage(sheet, hookOverride = undefined) {
             .catch(error => {
                 ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
             });
-    }
-}
-
-function getReformatter() {
-    switch (game.system.id) {
-        case 'pf2e':
-            return PF2e_reformatMessage;
-            break;
-        case 'dnd5e':
-            return DnD5e_reformatMessage;
-            break;
-        default:
-            return reformatMessage;
-            break;
     }
 }

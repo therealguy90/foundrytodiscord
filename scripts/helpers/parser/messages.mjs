@@ -1,5 +1,5 @@
-import { getThisModuleSetting } from "./modulesettings.mjs";
-import { generateimglink } from "./images.mjs";
+import { getThisModuleSetting } from "../modulesettings.mjs";
+import { dataToBlob, generateimglink } from "./images.mjs";
 
 export function splitEmbed(embed, MAX_LENGTH = 4000) {
     let description = embed.description;
@@ -156,7 +156,7 @@ export function splitText(text, MAX_LENGTH) {
     return textArray;
 }
 
-export function addEmbedsToRequests(allRequests, hook, username, imgurl, embeds, user) {
+export async function addEmbedsToRequests(allRequests, hook, username, imgurl, embeds, user) {
     let embedSizeCharCount = 0;
     let discordSizeLimitedEmbeds = [];
     for (const embed of embeds) {
@@ -211,7 +211,7 @@ export function addEmbedsToRequests(allRequests, hook, username, imgurl, embeds,
             if (!embedGroup[0]?.author && getThisModuleSetting('showAuthor') && user && username !== user.name) {
                 embedGroup[0]["author"] = {
                     name: user.name,
-                    icon_url: generateimglink(user.avatar)
+                    icon_url: await generateimglink(user.avatar)
                 }
             }
             allRequests[allRequests.length - 1].params.embeds = embedGroup;
@@ -244,6 +244,165 @@ export function hexToColor(hex) {
 
 export function removeEmptyEmbeds(embeds) {
     return embeds.filter(embed => embed.title || embed.description || !embed.footer);
+}
+
+export function getPropertyByString(obj, propString) {
+    let props = propString.split('.');
+    let current = obj;
+
+    for (let i = 0; i < props.length; i++) {
+        if (current[props[i]] !== undefined) {
+            current = current[props[i]];
+        } else {
+            return undefined;
+        }
+    }
+    return current;
+}
+
+
+export function censorId(docid) {
+    // Censors IDs for anonymized names
+    const firstPart = docid.substring(0, 4);
+    const censoredId = `${firstPart}****`;
+
+    return censoredId;
+}
+
+
+export async function postParse(message, request, hookOverride = undefined) {
+    if (request.params.avatar_url === "") {
+        console.warn("foundrytodiscord | Your Invite URL is not set! Avatar images cannot be displayed on Discord.");
+    }
+    let formData = new FormData();
+    if (game.modules.get("chat-media")?.active || game.modules.get("chatgifs")?.active) {
+        const { formDataTemp, contentTemp } = getChatMediaAttachments(formData, request.params.content, message.content);
+        if (formDataTemp !== formData) {
+            formData = formDataTemp;
+        }
+        request.params.content = contentTemp;
+    }
+    if (message) {
+        if (request.params.content === "" && request.params.embeds.length === 0 && !formData.get('files[0]')) {
+            if (!message.content.includes('<img') && !message.content.includes('<video')) {
+                console.error('foundrytodiscord | Failed to send message after parsing: parser returned empty result');
+                return { waitHook: undefined, formData: {} };
+            }
+            else {
+                request.params.content += await addMediaLinks(message);
+            }
+            if (request.params.content === "") {
+                console.error('foundrytodiscord | Failed to send message after parsing: parser returned empty result');
+                return { waitHook: undefined, formData: {} };
+            }
+        }
+    }
+    let waitHook;
+    let hook;
+    if (hookOverride) {
+        hook = hookOverride;
+    }
+    else {
+        hook = request.hook;
+    }
+    if (hook) {
+        if (hook.includes("?")) {
+            waitHook = hook + "&wait=true";
+        }
+        else {
+            waitHook = hook + "?wait=true";
+        }
+    }
+    else {
+        waitHook = undefined;
+    }
+    formData.append('payload_json', JSON.stringify(request.params));
+    return { waitHook: waitHook, formData: formData };
+}
+
+function getChatMediaAttachments(formData, msgText, content) {
+    const parser = new DOMParser();
+    let doc = parser.parseFromString(content, "text/html");
+    let mediaDivs = doc.querySelectorAll('.chat-media-image, .giphy-container');
+    let filecount = 0;
+    if (mediaDivs.length > 0) {
+        mediaDivs.forEach((div) => {
+            const imgElement = div.querySelector('img');
+            const videoElement = div.querySelector('video');
+            if (imgElement) {
+                const dataSrc = imgElement.getAttribute('data-src');
+                const src = imgElement.getAttribute('src');
+                const altText = imgElement.getAttribute('alt');
+                let srcToUse;
+                if (dataSrc) {
+                    srcToUse = dataSrc;
+                }
+                else if (src) {
+                    srcToUse = src;
+                }
+                if (srcToUse) {
+                    if (srcToUse.startsWith("data")) {
+                        const blob = dataToBlob(srcToUse);
+                        formData.append(`files[${filecount}]`, blob, altText);
+                        filecount++;
+                    }
+                    else if (srcToUse.includes('http')) {
+                        if (msgText !== "") {
+                            msgText += "\n";
+                        }
+                        msgText += srcToUse;
+                    }
+                }
+            }
+
+            if (videoElement) {
+                const src = videoElement.getAttribute('src');
+
+                if (src) {
+                    if (src.includes('http')) {
+                        if (msgText !== "") {
+                            msgText += "\n";
+                        }
+                        msgText += src;
+                    }
+                }
+            }
+        });
+    }
+    return { formDataTemp: formData, contentTemp: msgText };
+}
+
+async function addMediaLinks(message) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(message.content, "text/html");
+    const images = doc.querySelectorAll('img');
+    let links = "";
+    for (const imgElement of images) {
+        const src = imgElement.getAttribute('src');
+        if (src.includes('http')) {
+            if (links !== "") {
+                links += "\n";
+            }
+            links += src;
+        }
+        else if (src) {
+            links += await generateimglink(src, false);
+        }
+    }
+    const videos = doc.querySelectorAll('video');
+    for(videoElement of videos){
+        const src = videoElement.getAttribute('src');
+        if (src.includes('http')) {
+            if (links !== "") {
+                links += "\n";
+            }
+            links += src;
+        }
+    }
+    if (links) {
+        console.log(`foundrytodiscord | Links found. Adding media from following sources: ${links}`);
+    }
+    return links;
 }
 
 export async function getMessageInfo(webhook, messageID) {
