@@ -12,7 +12,6 @@ export class MessageParser {
         this._genericRolls = true;
     }
 
-    
     async parseMessage(message, edit = false) {
         const enrichedMsg = await newEnrichedMessage(message, await this._getEnrichmentOptions(message));
         let constructedMessage = "";
@@ -266,7 +265,7 @@ export class MessageParser {
         if (game.modules.get('monks-tokenbar')?.active && this._isTokenBarCard(message.content)) {
             return this._createTokenBarCard(message);
         }
-        else if(this._isRollTableCard){
+        else if(this._isRollTableCard(message)){
             return await this._createRollTableEmbed(message);
         }
         return [];
