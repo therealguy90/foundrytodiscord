@@ -10,7 +10,7 @@ export class MessageParserPF2e extends MessageParser {
 
     constructor() {
         super();
-        this._polyglotPath = "system.traits.languages.value";
+        this._polyglotPath = "system.details.languages.value";
         this._genericRolls = false;
     }
 
