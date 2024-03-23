@@ -492,7 +492,7 @@ export class MessageParserPF2e extends MessageParser {
                 if (getThisModuleSetting('showFormula') && showDetails) {
                     desc += `${dieIcon()}**\`${message.rolls[0].formula}\`**\n`
                 }
-                desc += `~~${dieIcon()}Result: __${PF2e_getDiscardedRoll(message)}__~~\n`;
+                desc += `~~${dieIcon()}Result: __${this._getDiscardedRoll(message)}__~~\n`;
                 desc += `${dieIcon()}**Result: __${message.rolls[0].total}__**`;
                 if (showDetails && message.rolls[0].dice[0].faces === 20) {
                     if (message.rolls[0].result.startsWith('20 ')) {
