@@ -1,6 +1,7 @@
 import { getThisModuleSetting } from "../modulesettings.mjs";
 import { getDefaultAvatarLink } from "../parser/images.mjs";
 import { getMessageInfo } from "../parser/messages.mjs";
+import { updateServerStatus } from "./serverStatus.mjs";
 import * as api from "../../../api.js"
 
 let logoutListenersAdded = false;
@@ -58,7 +59,7 @@ async function beforeUnloadUserUpdate() {
 
 async function backToSetupUpdate() {
     const hook = getThisModuleSetting('webHookURL');
-    // let serverCloseMsg = undefined;
+    let serverCloseMsg = undefined;
     window.removeEventListener('beforeunload', beforeUnloadUserUpdate);
     adminDisconnect = true;
     if (hook && hook !== '' && getThisModuleSetting("userMonitor")) {
