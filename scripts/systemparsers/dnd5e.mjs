@@ -162,7 +162,7 @@ export class MessageParserDnD5e extends MessageParser {
                 if (result) {
                     const hide = game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails;
                     switch (true) {
-                        case getThisModuleSetting('forceShowRolls') || midiqol_messageHasPlayerOwner(message) || hide === 'none':
+                        case getThisModuleSetting('forceShowRolls') || this._midiMessageHasPlayerOwner(message) || hide === 'none':
                             rollFormula = element.querySelector(".dice-formula");
                             if (getThisModuleSetting('showFormula')) {
                                 rollValue = `${dieIcon()}**\`${rollFormula.textContent}\`**\n${dieIcon()}**Result: __${result}__`;
@@ -258,7 +258,7 @@ export class MessageParserDnD5e extends MessageParser {
         }
         element = divs.querySelector('.midi-qol-saves-display');
         if (element && element.textContent && game.settings.get("midi-qol", "ConfigSettings").autoCheckSaves !== "whisper") {
-            const saveTitle = await midiqol_getSaveDisplayTitle(message, element);
+            const saveTitle = await this._getMidiSaveDisplayTitle(message, element);
             const saveValues = this._midiParseTargetsFromDisplay(element);
             fields.push({ name: saveTitle, value: saveValues });
         }
