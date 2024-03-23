@@ -1,118 +1,38 @@
-/*import * as generic from './generic.mjs';
-import { anonEnabled, getThisModuleSetting }  from './helpers/modulesettings.mjs';*/
-// MOVE YOUR PARSER TO THE SCRIPTS FOLDER
+import { MessageParser } from "./scripts/systemparsers/generic.mjs"; // Change this import.
 
-/*  CUSTOM SYSTEM PARSER CREATION GUIDE:
-*   Please hide metadata that should be hidden to players.
-*
-*   My programming style may not work for you.
-*   If this is too complicated, shoot me a DM on Discord (@loki123) and we can talk about it.
-*   If you use a different programming style for message parsing, I may not be able to maintain it when issues arise.
-*   You can commission me on making a custom parser for other systems, or if many people request the system, 
-*   I'll do it pretty much for free, given help and testers.
-*
-*   The format of a custom system parser is as follows:
-*   1. a messageParserSystem(msg) (i.e. messageParserDnD5e) function
-*       - requirements: must return generic.getRequestParams(msg, constructedMessage, embeds);
-*           where msg is the ChatMessage passed to the parser, constructedMessage is the raw text content of the message,
-*           and embeds is the list of (up to) 10 embeds.
-*       - Add this parser to getSystemParser in modulesettings.mjs.
-*       - Do not worry about parsing HTML text in chat card parsers. Keep the raw HTML formatting until reformatMessage is called.
-*           All HTML parsing is already handled, unless it's system-specific, in which case, 
-*           it must be added to a custom parseHTMLText.
-*       - If you want to format a table from text that isn't exactly a table, parse2DTable exists, which does most of the work.
-*           HTML tables are already handled. Do not worry.
-*           Simply provide parse2DTable with a 2D array of your custom table. 
-*           First row of the array should be the table headers.
-*       - Make sure your code abides with the module settings!
-*
-*   2. a System_reformatMessage (i.e. DnD5e_reformatMessage) function
-*       - Custom @ tags, inline rolls, and etc must be formatted here.
-*       - Look at other parsers to find out how this works.
-*/
+export class MessageParserSystemID extends MessageParser{
 
-export async function messageParserSystem(msg){
-    let constructedMessage = '';
-    let embeds = [];
-    //make detectors for custom system chatcards here, or embeds in general. See the other parsers to know how to do it.
-    if (game.modules.get('monks-tokenbar')?.active && generic.tokenBar_isTokenBarCard(msg.content)) {
-        embeds = generic.tokenBar_createTokenBarCard(msg);
-    }
-    else if (generic.isCard(msg.content) && msg.rolls?.length < 1) {
-        constructedMessage = "";
-        if (getThisModuleSetting('sendEmbeds')) {
-            embeds = generic.createCardEmbed(msg); //Replace this with your own custom card parser if you like
-        }
-    }
-    else if (!msg.isRoll) {
-        if (generic.hasDiceRolls(msg.content)) {
-            embeds = generic.createHTMLDiceRollEmbed(msg);
-            const elements = document.createElement('div');
-            elements.innerHTML = msg.content;
-            const diceRolls = elements.querySelectorAll('.dice-roll');
-            for (const div of diceRolls) {
-                div.parentNode.removeChild(div);
-            }
-            msg.content = elements.innerHTML;
-        }
-        //Above snippet can be removed safely. 
-
-        /*Attempt polyglot support. This will ONLY work if the structure is similar:
-        * for PF2e and DnD5e, this would be actor.system.traits.languages.value
-        * polyglotize() can be edited for other systems. Make a new function in this file, copying polyglotize() from generic.mjs.
-        */
-        if (game.modules.get("polyglot")?.active && msg.flags?.polyglot?.language) {
-            constructedMessage = generic.polyglotize(msg);
-        }
-        if (constructedMessage === '') {
-            constructedMessage = msg.content;
-        }
-    }
-    else {
-        // Custom roll parsers go here, just assign them to the embeds variable and/or constructedMessage.
-        embeds = generic.createGenericRollEmbed(msg); // foundry /r command or other rolls not covered by your parser.
+    constructor(){
+        super();
+        this._polyglotPath = "system.traits.languages.value"; // Change this to fir  
+        this._genericRolls = false;
     }
 
-    if (embeds && embeds.length > 0) {
-        embeds[0].description = await System_reformatMessage(embeds[0].description, originDoc);
-        constructedMessage = (/<[a-z][\s\S]*>/i.test(msg.flavor) || msg.flavor === embeds[0].title) ? "" : msg.flavor;
-        //use anonymous behavior and replace instances of the token/actor's name in titles and descriptions
-        if (anonEnabled()) {
-            for (let i = 0; i < embeds.length; i++) {
-                embeds[i].title = generic.anonymizeText(embeds[i].title, msg);
-                embeds[i].description = generic.anonymizeText(embeds[i].description, msg);
-            }
-        }
-    }
-    if (anonEnabled()) {
-        constructedMessage = generic.anonymizeText(constructedMessage, msg);
-    }
-    constructedMessage = await System_reformatMessage(constructedMessage);
-    return generic.getRequestParams(msg, constructedMessage, embeds); //ALWAYS keep this as the return.
+    /* These methods can be overriden. Refer to other parsers as to how this is done.
+    * 
+    * _systemHTMLParser is used to parse custom css tags and text that your system uses.
+    * 
+    * _systemHTMLParser(htmlString) {
+    *     return htmlString;
+    * }
+    * 
+    * _getSystemSpecificCards is used for system- or module-specific chat cards that need special parsing.
+    * Note that "message" is already enriched.
+    * This will return an array of embeds. Refer to the Discord Webhook docs.
+    * async _getSystemSpecificCards(message) {
+    *     return [];
+    * }
+    * 
+    * 
+    * _getEnrichmentOptions is used for enriching system-specific text or links. Check your system's enricher.
+    * This should return an Object containing the enrichment options.
+    * _getEnrichmentOptions(message){
+    *     return {};
+    * }
+    * 
+    * 
+    * 
+    * 
+    * 
+    */
 }
-
-
-export async function System_reformatMessage(text){
-    let reformattedText = await generic.reformatMessage(text/*, System_parseHTMLText*/);
-    // Add more message reformatting here. For example, PF2e has @Damage[] and @Check[], 
-    // so there's a custom reformatter for that.
-    return reformattedText.trim();
-}
-
-/*
-    // OPTIONAL: a System_parseHTMLText() function, for formatting system-specific HTML styling.
-    // pass this to generic.reformatMessage(text, customHTMLParser)
-
-function System_parseHTMLText(htmlString){
-    // Do HTML parsing here. Here's a starter.
-    let reformattedText = htmlString;
-    const htmldoc = document.createElement('div');
-    htmldoc.innerHTML = reformattedText;
-    // Do edits to innerHTML here. Good luck with HTML parsing.
-
-
-    reformattedText = htmldoc.innerHTML;
-    // Note that this is merely an example. You can do whatever you want as long as you think it works.
-    return reformattedText;
-}
-*/
