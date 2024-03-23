@@ -184,7 +184,7 @@ let response = await ftd.sendMessageFromID("ZwQpsUpdEbruORfF");
 response = await ftd.sendMessage(myMessageContents);
 
 /**
- * Edits a message from a webhook's channel via the Discord Message ID.
+ * editMessage edits a message from a webhook's channel via the Discord Message ID.
  * @param {FormData} formData - A Discord-compatible FormData object.
  * @param {string} webhook - The webhook link. You can get this via Response.url when a message is sent successfully.
  * @param {string} messageID - The Discord Message ID. You can get this via (await Response.json()).id when a message is sent successfully.
@@ -197,7 +197,7 @@ const myEditContents = ftd.generateSendFormData("Message is Edited!");
 response = await ftd.editMessage(myEditContents, messageURL, message.id);
 
 /**
- * Deletes a message from a webhook's channel via the Discord Message ID.
+ * deleteMessage deletes a message from a webhook's channel via the Discord Message ID.
  * @param {string} webhook - The webhook link. You can get this via Response.url when a message is sent successfully.
  * @param {string} messageID - The Discord Message ID. You can get this via (await Response.json()).id when a message is sent successfully.
  * @returns {Promise<Response>} - The API response.
