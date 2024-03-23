@@ -159,47 +159,109 @@ Available methods:
 ### Refer to the [Discord Webhook documentation](https://discord.com/developers/docs/resources/webhook).
 
 ```javascript
-/* generateSendFormData allows anyone to formulate a simple message that can be sent to the webhook without much knowledge of javascript or the Discord API.
-*  Parameters:
-*  (string) content (required): A string of characters to be sent as a message. If you only want to send an embed, leave this as "".
-*  (Array) embeds (optional, default=[]): Up to 10 embeds can be included here. Refer to https://discord.com/developers/docs/resources/webhook for instructions on how to construct an embed.
-*  (string) username (optional, default=game.user.name): A custom username for your message. The default is your client username.
-*  (string) avatar_url (optional, default is the FoundryVTT icon): A link to a JPG, PNG, or WEBP that can be accessed publicly. This will be used as the avatar of the webhook for that message.
-*  Output: a FormData object containing parameters that are compatible with the Discord webhook, and can be used in junction with Foundry to Discord's API sendMessage() method.
-*/
-let myMessageContents = ftd.generateSendFormData("Hello, World!");
-```
 
-```javascript
-/* (async) sendMessage sends a message to the webhook.
-*  Parameters:
-*  (FormData) formData (required): A FormData object containing the specifics of the message being sent.
-*  (boolean) isRoll (optional, default=false): Determines whether the message being sent is ending up in the Webhook URL, or the Roll Webhook URL.
-*  (string) sceneID (optional, default=""): If your world is using the Threaded Scenes feature, inputting a scene ID here will let the module know where to send it.
-*  Output: Returns an Object with the API response and the Discord Message object in the format of { response, message }. These can later be used to edit or delete the message that was sent using editMessage() and deleteMessage() respectively.
-*/
-const responseAndMessage = await ftd.sendMessage(myMessageContents);
-```
+/**
+ * Generates a Discord-compatible FormData object to use as the request body. 
+ * @param {string} content - The text content of the message to send.
+ * @param {Array} embeds - An array of embeds (max 10.) Default: []
+ * @param {string} username - The username to be used on Discord. Default: game.user.name
+ * @param {string} avatar_url - The URL of an image that the webhook will use as an avatar. Default: FoundryVTT icon.
+ * @returns {FormData} - A Discord-compatible FormData object with the specified parameters.
+ */
+export function generateSendFormData(content, embeds = [], username = game.user.name, avatar_url = getDefaultAvatarLink()) {
+    const formData = new FormData();
+    formData.append("payload_json", JSON.stringify({
+        username: username,
+        avatar_url: avatar_url,
+        content: content,
+        embeds: embeds
+    }));
+    
+    return formData;
+}
 
-```javascript
-/* (async) editMessage edits a message in the channel or thread.
-*  Parameters:
-*  (FormData) formData (required): A FormData object containing the specifics of the message that will replace the contents of the specified message in discord.
-*  (string) webhook (required): The URL that was used to send the message. If you used sendMessage(), you can use the url in the response that it returns.
-*  (string) messageID (required): The Discord message ID of the message that will be edited.
-*  Output: This sort of request usually ends in a 204 code, which means no response body will be in the response, but editMessage() will return a response anyways for headers.
-*/
-await ftd.editMessage(newMessageFormData, responseAndMessage.response.url, responseAndMessage.message.id);
-```
 
-```javascript
-/* (async) deleteMessage deletes a message in the channel or thread.
-*  Parameters:
-*  (string) webhook (required): The URL that was used to send the message. If you used sendMessage(), you can use the url that it returns.
-*  (string) messageID (required): The Discord message ID of the message that will be edited.
-*  Output: This sort of request usually ends in a 204 code, which means no response body will be in the response, but deleteMessage() will return a response anyways for headers.
+/**
+* Sends a Foundry ChatMessage to a webhook via ID.
+* @param {string} messageID - The ID of the ChatMessage in game.messages
+* @param {string} hookOverride - Default: The WebHook URL or Roll WebHook URL you set in Foundry to Discord's settings. If this is overriden, the message will not be edited nor deleted by the module through Chat Mirroring.
+* @returns {Promise<Response>} - The API response. To get the message object, use response.json()
 */
-await ftd.deleteMessage(responseAndMessage.response.url, responseAndMessage.message.id);
+export async function sendMessageFromID(messageID, hookOverride = undefined){
+    const message = game.messages.get(messageID);
+    if(message){
+        return await tryPOST(message, hookOverride);
+    }
+}
+
+/**
+ * Sends a message to Discord using a FormData object.
+ * @param {FormData} formData - A Discord-compatible FormData object.
+ * @param {Boolean} isRoll - Default: False. If this is true, your message will be sent to the Roll WebHook URL if hookOverride is not defined.
+ * @param {string} sceneID - The ID of the scene, in the case of Threaded Scenes. Default: The currently viewed scene.
+ * @param {string} hookOverride - Default: The WebHook URL or Roll WebHook URL you set in Foundry to Discord's settings.
+ * @returns {Promise<Response>} - The API response. To get the message object, use response.json()
+ */
+export async function sendMessage(formData, isRoll = false, sceneID = game.user.viewedScene, hookOverride = undefined) {
+    let hook = "";
+    if (hookOverride) {
+        hook = hookOverride;
+    } else if (isRoll) {
+        if (sceneID !== "" && getThisModuleSetting("threadedChatMap").hasOwnProperty(sceneID)) {
+            hook = getThisModuleSetting("rollWebHookURL").split('?')[0] + "?thread_id=" + getThisModuleSetting('threadedChatMap')[sceneID].rollThreadId;
+        }
+        else {
+            hook = getThisModuleSetting("rollWebHookURL");
+        }
+    } else {
+        if (sceneID !== "" && getThisModuleSetting("threadedChatMap").hasOwnProperty(sceneID)) {
+            hook = getThisModuleSetting("webHookURL").split('?')[0] + "?thread_id=" + getThisModuleSetting('threadedChatMap')[sceneID].chatThreadId;
+        }
+        else {
+            hook = getThisModuleSetting("webHookURL");
+        }
+    }
+
+    return await requestQueue.sendMessage(hook, formData);
+}
+
+/**
+ * Edits a message from a webhook's channel via the Discord Message ID.
+ * @param {FormData} formData - A Discord-compatible FormData object.
+ * @param {string} webhook - The webhook link. You can get this via Response.url when a message is sent successfully.
+ * @param {string} messageID - The Discord Message ID. You can get this via (await Response.json()).id when a message is sent successfully.
+ * @returns {Promise<Response>} - The API response.
+ */
+export async function editMessage(formData, webhook, messageID) {
+    if (!webhook.includes('/messages/')) {
+        if (!webhook.includes('/messages/')) {
+            const querysplit = webhook.split('?');
+            webhook =  `${querysplit[0]}/messages/${messageID}${querysplit[1] ? `?${querysplit[1]}` : ""}`;
+        }
+    }
+
+    return await requestQueue.editMessage(webhook, formData);
+}
+
+/**
+ * Deletes a message from a webhook's channel via the Discord Message ID.
+ * @param {string} webhook - The webhook link. You can get this via Response.url when a message is sent successfully.
+ * @param {string} messageID - The Discord Message ID. You can get this via (await Response.json()).id when a message is sent successfully.
+ * @returns {Promise<Response>} - The API response.
+ */
+export async function deleteMessage(webhook, messageID) {
+    if (!webhook.includes('/messages/')) {
+        if (webhook.split('?').length > 1) {
+            const querysplit = webhook.split('?');
+            webhook = querysplit[0] + '/messages/' + messageID + '?' + querysplit[1];
+        } else {
+            webhook = webhook + '/messages/' + messageID;
+        }
+    }
+
+    return await requestQueue.deleteMessage(webhook);
+}
+
 ```
 
 --------------------------------------------------
