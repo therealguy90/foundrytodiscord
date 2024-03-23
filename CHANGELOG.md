@@ -1,4 +1,12 @@
-# 1.11.1
+# 2.0.0
+
+- Foundry to Discord has received a massive overhaul on the backend. Notably, the queueing system that was being used for Chat Mirroring is now used globally throughout the module, which means the API is now properly rate-limited. Functionally, everything still works the same way, but contact me ASAP about bugs and I'll fix them as soon as I can.
+- Included a new API method, `sendMessageFromID`, which will parse a ChatMessage from its ID and send it to a webhook.
+- #32 Roll Table Results are now parsed properly.
+- #33 Token file paths with spaces or other special characters are now properly displayed.
+- (pf2e) Current combatant's condition cards now have a title.
+
+## 1.11.1
 
 - Fix for "Admin has closed the server" appearing whether or not `Monitor User Login/Logout` is enabled
 - Fixes for Server Status Message going back up online when it's not supposed to.
