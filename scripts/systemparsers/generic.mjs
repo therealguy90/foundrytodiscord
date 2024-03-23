@@ -12,17 +12,7 @@ export class MessageParser {
         this._genericRolls = true;
     }
 
-    //To be overriden.
-    _systemHTMLParser(htmlString) {
-        return htmlString;
-    }
-
-    // Needs to be overriden later.
-    async _getSystemSpecificCards(message) {
-        return [];
-    }
-
-
+    
     async parseMessage(message, edit = false) {
         const enrichedMsg = await newEnrichedMessage(message, await this._getEnrichmentOptions(message));
         let constructedMessage = "";
@@ -110,6 +100,16 @@ export class MessageParser {
         }
         constructedMessage = await this.formatText(constructedMessage);
         return await this._getRequestParams(enrichedMsg, constructedMessage, embeds, edit);
+    }
+
+    // To be overriden.
+    _systemHTMLParser(htmlString) {
+        return htmlString;
+    }
+
+    // To be overriden.
+    async _getSystemSpecificCards(message) {
+        return [];
     }
 
     async formatText(text) {
