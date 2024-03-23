@@ -10,13 +10,15 @@ export function initLoginMonitor() {
     Hooks.on('userConnected', async (user, connected) => {
         if (!user.isSelf || isUserMainGM() || (!game.users.activeGM && isUserMainNonGM())) {
             const webhook = getThisModuleSetting('webHookURL');
-            const messageID = getThisModuleSetting('messageID');
             await sendUserMonitorMessage(user, connected);
-            if (webhook !== "" && messageID !== "") {
-                const response = await getMessageInfo(webhook, messageID);
-                const serverStatusMsg = await response.json();
-                if (serverStatusMsg?.embeds[0]?.description !== '## OFFLINE') {
-                    await updateServerStatus(true);
+            if (getThisModuleSetting('serverStatusMessage') && webhook !== "") {
+                const messageID = getThisModuleSetting('messageID');
+                if (messageID !== "") {
+                    const response = await getMessageInfo(webhook, messageID);
+                    const serverStatusMsg = await response.json();
+                    if (serverStatusMsg?.embeds[0]?.description !== '## OFFLINE') {
+                        await updateServerStatus(true);
+                    }
                 }
             }
         }
