@@ -13,6 +13,14 @@ export class MessageParser {
     }
 
     async parseMessage(message, edit = false) {
+        /* Enriching the message contents will ensure that all text we parse is in a proper HTML format, since
+        *  message objects stored from game.messages aren't enriched until they are rendered. While, yes, it's possible
+        *  to use the client-sided version of the ChatMessage object and bypass enrichment altogether, using 
+        *  the full ChatMessage object makes it consistent for everyone, considering this module can send messages
+        *  from either Player or GM clients. Rarely are custom enrichment options needed, since most systems don't use them,
+        *  and only the more developed systems really use enrichment like this. Mostly, this is needed to make content links
+        *  (such as UUID tags) consistent throughout all ChatMessages.
+        */ 
         const enrichedMsg = await newEnrichedMessage(message, await this._getEnrichmentOptions(message));
         let constructedMessage = "";
         let embeds = await this._getSystemSpecificCards(enrichedMsg);
