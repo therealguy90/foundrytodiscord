@@ -9,7 +9,7 @@ export class MessageParser {
 
     constructor() {
         this._polyglotPath = "system.traits.languages.value";
-        this._genericRolls = true;
+        this._genericRolls = true; // signifies the use of special roll cards, such as those from PF2e with trait tags slapped onto them.
     }
 
     async parseMessage(message, edit = false) {
@@ -29,6 +29,7 @@ export class MessageParser {
             embeds = [];
         }
         if (!constructedMessage || embeds.length === 0) {
+            // This may be moved to _getSystemAgnosticCards, but this is for detecting Foundry's native .chat-card styling.
             if (this.isCard(message.content) && message.rolls?.length < 1 && embeds.length === 0) {
                 constructedMessage = "";
                 if (getThisModuleSetting('sendEmbeds')) {
@@ -48,7 +49,7 @@ export class MessageParser {
                 }
                 /*Attempt polyglot support. This will ONLY work if the structure is similar:
                 * for DnD5e, this would be actor.system.traits.languages.value
-                * the polyglotize() function should be edited for other systems
+                * When inheriting MessageParser, _polyglotPath must be modified if this is different.
                 */
                 if (game.modules.get("polyglot")?.active && getThisModuleSetting('enablePolyglot') && enrichedMsg.flags?.polyglot?.language) {
                     constructedMessage = this._polyglotize(enrichedMsg);
