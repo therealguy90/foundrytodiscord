@@ -192,7 +192,7 @@ response = await ftd.sendMessage(myMessageContents);
  */
 
 const messageURL = response.url;
-const message = await response.json()); //Returns a Discord Message Object
+const message = await response.json(); //Returns a Discord Message Object
 const myEditContents = ftd.generateSendFormData("Message is Edited!");
 response = await ftd.editMessage(myEditContents, messageURL, message.id);
 
