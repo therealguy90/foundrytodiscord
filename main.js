@@ -185,12 +185,15 @@ export async function tryPOST(msg, hookOverride = undefined) {
             const { waitHook, formData } = await postParse(msg, request, hookOverride);
             if (waitHook) {
                 const response = await requestQueue.sendMessage(waitHook, formData);
-                const message = await response.json();
-                if (!hookOverride) {
-                    addSentMessage(msg.id, { url: response.url, message: message }, linkedMsgNum);
+                if (response) {
+                    if (!hookOverride) {
+                        const message = await response.json();
+                        addSentMessage(msg.id, { url: response.url, message: message }, linkedMsgNum);
+                    }
+                    return response;
                 }
                 else {
-                    return { response, message };
+                    return undefined;
                 }
             }
         }
