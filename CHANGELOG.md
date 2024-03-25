@@ -1,4 +1,8 @@
-# 2.0.0
+# 2.0.1
+
+- Hotfix for case-sensitive filesystems causing an import to not work.
+
+## 2.0.0
 
 - Foundry to Discord has received a massive overhaul on the backend. Notably, the queueing system that was being used for Chat Mirroring is now used globally throughout the module, which means the API is now properly rate-limited. Functionally, everything still works the same way, but contact me ASAP about bugs and I'll fix them as soon as I can.
 - Included a new API method, `sendMessageFromID`, which will parse a ChatMessage from its ID and send it to a webhook.
