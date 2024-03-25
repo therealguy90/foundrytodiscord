@@ -1,7 +1,7 @@
 import { initModuleSettings, getThisModuleSetting, getSystemParser } from './scripts/helpers/modulesettings.mjs';
 import { initOtherHooks } from './scripts/hooks.mjs';
 import { postParse } from './scripts/helpers/parser/messages.mjs';
-import { updateServerStatus, initSystemStatus } from './scripts/helpers/monitor/serverStatus.mjs';
+import { updateServerStatus, initSystemStatus } from './scripts/helpers/monitor/serverstatus.mjs';
 import { sendUserMonitorMessage } from './scripts/helpers/monitor/loginmonitor.mjs';
 import { initLoginMonitor } from './scripts/helpers/monitor/loginmonitor.mjs';
 import { isUserMainGM, isUserMainNonGM } from './scripts/helpers/userfilter.mjs';
