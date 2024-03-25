@@ -1,7 +1,7 @@
 import { getThisModuleSetting } from "../modulesettings.mjs";
 import { getDefaultAvatarLink } from "../parser/images.mjs";
 import { getMessageInfo } from "../parser/messages.mjs";
-import { updateserverStatus } from "./serverStatus.mjs";
+import { updateServerStatus } from "./serverstatus.mjs";
 import * as api from "../../../api.js"
 
 let logoutListenersAdded = false;
