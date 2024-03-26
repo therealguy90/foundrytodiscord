@@ -1,4 +1,8 @@
-# 2.0.1
+# 2.0.2
+
+- Hotfix for Forge users failing to post messages due to a difference in Forge's FilePicker. Temporary solution for now, which should work for most cases. If you have errors with token images on Forge in this version, make sure to remove any special characters.
+
+## 2.0.1
 
 - Hotfix for case-sensitive filesystems causing an import to not work.
 
