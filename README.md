@@ -208,7 +208,7 @@ response = await ftd.deleteMessage(myEditContents, messageURL, message.id);
 
 --------------------------------------------------
 
-Foundry to Discord will always be free and open-source. While you can support me via [ko-fi](https://ko-fi.com/loki123), I will never charge money to lock away features. I'm no expert in making modules (I make mistakes sometimes :P), but I hope you enjoy using Foundry to Discord for as long as I can keep updating.
+Foundry to Discord will always be free and open-source. While you can support me via [ko-fi](https://ko-fi.com/loki123), I will never lock away features for money. I'm no expert in making modules (I make mistakes sometimes :P), but I hope you enjoy using Foundry to Discord for as long as I can keep updating.
 
 --------------------------------------------------
 
