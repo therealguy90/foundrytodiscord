@@ -1,4 +1,9 @@
-# 2.0.2
+# 2.0.3
+
+- (pf2e) Fixes some rolls not sending.
+- Image filepaths located in the server are encoded fully now instead of crawling through the filepath manually. This will end up with a more normalized URL for the Discord avatar image. (Should've gone with this solution first rather than crawling, but after testing, it seems Foundry will error fetching on file names with some special characters anyways.)
+
+## 2.0.2
 
 - Hotfix for Forge users failing to post messages due to a difference in Forge's FilePicker. Temporary solution for now, which should work for most cases. If you have errors with token images on Forge in this version, make sure to remove any special characters.
 
