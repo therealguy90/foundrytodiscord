@@ -76,16 +76,16 @@ async function convertToValidURI(filePath) {
         }
         try {
             pathParts[0] = encodeURI(decodeURI(pathParts[0]));
-            const dataPath = await FilePicker.browse("data");
+            const dataPath = await FilePicker.browse("data", "");
             if (dataPath[key].includes(pathParts[0])) {
                 return "data";
             }
-            const publicPath = await FilePicker.browse("public");
+            const publicPath = await FilePicker.browse("public", "");
             if (publicPath[key].includes(pathParts[0])) {
                 return "public";
             }
         }
-        catch(error){
+        catch (error) {
             return undefined;
         }
         return undefined;
