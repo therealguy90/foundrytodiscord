@@ -35,7 +35,7 @@ export async function generateimglink(imgSrc, requireAvatarCompatible = true) {
         imgUrl = imgSrc;
     } else {
         if (getThisModuleSetting('inviteURL') !== "http://") {
-            imgUrl = `${getThisModuleSetting('inviteURL')}${await convertToValidURI(imgSrc)}`;
+            imgUrl = `${getThisModuleSetting('inviteURL')}${convertToValidURI(imgSrc)}`;
         }
         else {
             return "";
@@ -63,51 +63,11 @@ export function getDefaultAvatarLink() {
     }
 }
 
-async function convertToValidURI(filePath) {
-    filePath = filePath.replace(/\\/g, '/'); // failsafe
-    const pathParts = filePath.split("/");
-    const root = await async function () {
-        let key;
-        if (pathParts.length > 0) {
-            key = "dirs";
-        }
-        else {
-            key = "files";
-        }
-        try {
-            pathParts[0] = encodeURI(decodeURI(pathParts[0]));
-            const dataPath = await FilePicker.browse("data", "");
-            if (dataPath[key].includes(pathParts[0])) {
-                return "data";
-            }
-            const publicPath = await FilePicker.browse("public", "");
-            if (publicPath[key].includes(pathParts[0])) {
-                return "public";
-            }
-        }
-        catch (error) {
-            return undefined;
-        }
-        return undefined;
-    }();
-    if (root) {
-        let target = undefined;
-        if (pathParts.length > 0) {
-            for (const pathIndex in pathParts) {
-                if (Number(pathIndex) === pathParts.length - 1) {
-                    const fileName = encodeURI(decodeURI(pathParts[pathIndex]));
-                    return `${target ? [target, fileName].join("/") : fileName}`;
-                }
-                else {
-                    target = (await FilePicker.browse(root, `${target ? [target, pathParts[pathIndex]].join("/") : pathParts[pathIndex]}`)).target;
-                }
-            }
-        }
-        else {
-            return encodeURI(decodeURI(filePath));
-        }
+function convertToValidURI(filePath) {
+    if(filePath.includes("%")){
+        return filePath;
     }
-    else {
-        return filePath.trim().replace(" ", "%20");
+    else{
+        return encodeURIComponent(filePath);
     }
 }
