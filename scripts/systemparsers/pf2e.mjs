@@ -323,7 +323,7 @@ export class MessageParserPF2e extends MessageParser {
     }
 
     _createRollEmbed(message) {
-        if ((message.flavor !== null && message.flavor.length > 0) || (message.isDamageRoll && this._containsDamageDie(enrichedMsg.rolls))) {
+        if ((message.flavor !== null && message.flavor.length > 0) || (message.isDamageRoll && this._containsDamageDie(message.rolls))) {
             const div = document.createElement('div');
             div.innerHTML = message.flavor;
             let title = "";
