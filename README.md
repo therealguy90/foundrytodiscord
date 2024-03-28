@@ -68,12 +68,12 @@ While it will work with other systems, the extent of compatibility may vary. Reg
 
 4. Configure the module settings in Foundry.
     - Game Settings > Configure Settings > Foundry to Discord
-    - For the Invite URL, make sure your address is public. Use a tunneling software if you can't forward ports.
+    - For the Invite URL, make sure your address is public. Use a tunneling software if you can't forward ports. Do not include /join, only the first part of the URL is needed.
 
 Follow the hints provided by the settings, and use the webhook link from your channel as the Webhook URL. Also, ensure your invite URL is public, which means you'll need to be port-forwarded as usual. If you can't forward ports due to limitations, you can use a network tunnel to expose your port to the internet. [Tailscale](https://www.reddit.com/r/FoundryVTT/comments/15lt40x/easy_public_foundry_vtt_hosting_using_tailscale) is recommended for this purpose.
 
 **FAQ: Is the Invite URL necessary for the module to work?**
-- The full features **require** a public invite link to be added to the config. Otherwise, Discord can't access images located on your server for avatars and etc. This should be done manually, since some people use network tunneling software to expose a port to the public internet.
+- The full features **require** a public invite link to be added to the config. Otherwise, Discord can't access images located on your server for avatars and etc. This should be done manually, since some people use network tunneling software to expose a port to the public internet. For Forge users: use your forge-vtt.com link, and set your game to public, so this module can pick up images from your server.
 
 ---
 
