@@ -404,10 +404,10 @@ export class MessageParserDnD5e extends MessageParser {
                             const roll = message.rolls.find(roll => roll.formula === rollFormula.textContent);
                             rollBreakdown = this._generateRollBreakdown(roll);
                         }
-                        rollResults += `${dieIcon()}**\`${rollFormula.textContent}\`**\n${dieIcon()}**Result: __${rollValue}__**||(${rollBreakdown})||\n`;
+                        rollResults += `${dieIcon()}**\`${rollFormula.textContent}\`**\n${dieIcon()}**Result: __${rollValue}__**||(${rollBreakdown})||\n\n`;
                     }
                     else {
-                        rollResults += `${dieIcon()}**Result: __${rollValue}__**\n`;
+                        rollResults += `${dieIcon()}**Result: __${rollValue}__**\n\n`;
                     }
                 }
                 return rollResults.trim();
