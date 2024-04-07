@@ -270,7 +270,7 @@ export class MessageParserDnD5e extends MessageParser {
         }];
         return embeds;
     }
-    
+
     async _createMidiDamageTable(message) {
         const divs = document.createElement('div');
         divs.innerHTML = message.content;
@@ -331,7 +331,7 @@ export class MessageParserDnD5e extends MessageParser {
             return [{ title: "HP Updates", description: "" }];
         }
     }
-    
+
     async _createMidiSingleHitCard(message) {
         const divs = document.createElement('div');
         divs.innerHTML = message.content;
@@ -341,8 +341,8 @@ export class MessageParserDnD5e extends MessageParser {
         desc = this._midiParseTargetsFromDisplay(element);
         return [{ title: title, description: desc }];
     }
-    
-    
+
+
     _midiParseTargetsFromDisplay(element) {
         let parsedText = ""
         element.querySelectorAll('.midi-qol-flex-container, .target').forEach(targetContainer => {
@@ -385,7 +385,7 @@ export class MessageParserDnD5e extends MessageParser {
         });
         return parsedText;
     }
-    
+
     _midiParseDamageRollFromDisplay(element, message) {
         let hide = game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails;
         switch (true) {
@@ -393,23 +393,28 @@ export class MessageParserDnD5e extends MessageParser {
                 return `${dieIcon()}**Rolled**`;
                 break;
             default:
-                const rollValue = element.querySelector('h4.dice-total').textContent;
-                if (getThisModuleSetting('showFormula') && this._midiMessageHasPlayerOwner(message) || game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails === 'none') {
-                    const rollFormula = element.querySelector(".dice-formula");
-                    let rollBreakdown = "";
-                    if (message && rollFormula) {
-                        const roll = message.rolls.find(roll => roll.formula === rollFormula.textContent);
-                        rollBreakdown = this._generateRollBreakdown(roll);
+                const allDamageRolls = element.querySelectorAll(".midi-damage-roll");
+                let rollResults = "";
+                for (const damageRoll of allDamageRolls) {
+                    const rollValue = damageRoll.querySelector('h4.dice-total').textContent;
+                    if (getThisModuleSetting('showFormula') && this._midiMessageHasPlayerOwner(message) || game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails === 'none') {
+                        const rollFormula = damageRoll.querySelector(".dice-formula");
+                        let rollBreakdown = "";
+                        if (message && rollFormula) {
+                            const roll = message.rolls.find(roll => roll.formula === rollFormula.textContent);
+                            rollBreakdown = this._generateRollBreakdown(roll);
+                        }
+                        rollResults += `${dieIcon()}**\`${rollFormula.textContent}\`**\n${dieIcon()}**Result: __${rollValue}__**||(${rollBreakdown})||\n`;
                     }
-                    return `${dieIcon()}**\`${rollFormula.textContent}\`**\n${dieIcon()}**Result: __${rollValue}__**||(${rollBreakdown})||`;
+                    else {
+                        rollResults += `${dieIcon()}**Result: __${rollValue}__**\n`;
+                    }
                 }
-                else {
-                    return `${dieIcon()}**Result: __${rollValue}__**`;
-                }
+                return rollResults.trim();
                 break;
         }
     }
-    
+
     async _createMidiSavesDisplayCard(message) {
         const element = document.createElement('div');
         element.innerHTML = message.content;
@@ -429,7 +434,7 @@ export class MessageParserDnD5e extends MessageParser {
         }
         return [];
     }
-    
+
     async _getMidiSaveDisplayTitle(message, element) {
         let title = "";
         const strongTitle = element.querySelector("strong");
@@ -450,7 +455,7 @@ export class MessageParserDnD5e extends MessageParser {
         }
         return title;
     }
-    
+
     _isMidiMergeCard(htmlString) {
         const tempElement = document.createElement('div');
         tempElement.innerHTML = htmlString;
@@ -461,7 +466,7 @@ export class MessageParserDnD5e extends MessageParser {
             return false;
         }
     }
-    
+
     _isMidiDamageTable(htmlString) {
         const tempElement = document.createElement('div');
         tempElement.innerHTML = htmlString;
@@ -473,7 +478,7 @@ export class MessageParserDnD5e extends MessageParser {
             return false;
         }
     }
-    
+
     _isMidiSingleHitCard(htmlString) {
         const tempElement = document.createElement('div');
         tempElement.innerHTML = htmlString;
@@ -484,7 +489,7 @@ export class MessageParserDnD5e extends MessageParser {
             return false;
         }
     }
-    
+
     _isMidiSavesDisplayCard(htmlString) {
         const tempElement = document.createElement('div');
         tempElement.innerHTML = htmlString;
@@ -495,14 +500,14 @@ export class MessageParserDnD5e extends MessageParser {
             return false;
         }
     }
-    
+
     _midiMessageHasPlayerOwner(message) {
         if (!message.user) {
             return false;
         }
         return message.user.hasPlayerOwner;
     }
-    
+
     async _getEnrichmentOptions(message) {
         let originActor;
         if (message.flags?.dnd5e?.use?.itemUuid) {
