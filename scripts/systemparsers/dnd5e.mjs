@@ -395,14 +395,18 @@ export class MessageParserDnD5e extends MessageParser {
             default:
                 const allDamageRolls = element.querySelectorAll(".midi-damage-roll");
                 let rollResults = "";
+                const messageRolls = message.rolls.slice();
                 for (const damageRoll of allDamageRolls) {
-                    const rollValue = damageRoll.querySelector('h4.dice-total').textContent;
+                    const rollValue = damageRoll.querySelector('h4.dice-total').textContent.trim();
                     if (getThisModuleSetting('showFormula') && this._midiMessageHasPlayerOwner(message) || game.settings.get('midi-qol', 'ConfigSettings').hideRollDetails === 'none') {
                         const rollFormula = damageRoll.querySelector(".dice-formula");
                         let rollBreakdown = "";
                         if (message && rollFormula) {
-                            const roll = message.rolls.find(roll => roll.formula === rollFormula.textContent);
-                            rollBreakdown = this._generateRollBreakdown(roll);
+                            const rollIndex = messageRolls.findIndex(roll => roll && roll.formula === rollFormula.textContent && roll.total === Number(rollValue));
+                            if (rollIndex) {
+                                rollBreakdown = this._generateRollBreakdown(messageRolls[rollIndex]);
+                                messageRolls.splice(rollIndex, 1);
+                            }
                         }
                         rollResults += `${dieIcon()}**\`${rollFormula.textContent}\`**\n${dieIcon()}**Result: __${rollValue}__**||(${rollBreakdown})||\n\n`;
                     }
