@@ -1,4 +1,8 @@
-# 2.0.3
+# 2.0.4
+
+- Fix multiple damage types on midi-qol merge cards.
+
+## 2.0.3
 
 - (pf2e) Fixes some rolls not sending.
 - Image filepaths located in the server are encoded fully now instead of crawling through the filepath manually. This will end up with a more normalized URL for the Discord avatar image. (Should've gone with this solution first rather than crawling, but after testing, it seems Foundry will error fetching on file names with some special characters anyways.)
