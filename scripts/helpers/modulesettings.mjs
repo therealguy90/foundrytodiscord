@@ -196,7 +196,7 @@ export function initModuleSettings() {
         if (getThisModuleSetting("enablePolyglot")) {
             game.settings.register('foundrytodiscord', 'includeOnly', {
                 name: "(Polyglot) Understand only these languages:",
-                hint: "A comma-separated list of languages that you wish to ONLY be understood to be sent in Discord, separated by commas. Leave blank for normal Polyglot behavior.",
+                hint: "A comma-separated list of languages that you wish to ONLY be understood to be sent in Discord. Leave blank for normal Polyglot behavior.",
                 scope: "world",
                 config: true,
                 default: "",

@@ -20,12 +20,12 @@ export class MessageParser {
         *  from either Player or GM clients. Rarely are custom enrichment options needed, since most systems don't use them,
         *  and only the more developed systems really use enrichment like this. Mostly, this is needed to make content links
         *  (such as UUID tags) consistent throughout all ChatMessages.
-        */ 
+        */
         const enrichedMsg = await newEnrichedMessage(message, await this._getEnrichmentOptions(message));
         let constructedMessage = "";
         let embeds = await this._getSystemSpecificCards(enrichedMsg);
         embeds = embeds.length !== 0 ? embeds : await this._getSystemAgnosticCards(enrichedMsg);
-        if(!embeds){
+        if (!embeds) {
             embeds = [];
         }
         if (!constructedMessage || embeds.length === 0) {
@@ -274,7 +274,7 @@ export class MessageParser {
         if (game.modules.get('monks-tokenbar')?.active && this._isTokenBarCard(message.content)) {
             return this._createTokenBarCard(message);
         }
-        else if(this._isRollTableCard(message)){
+        else if (this._isRollTableCard(message)) {
             return await this._createRollTableEmbed(message);
         }
         return [];
@@ -388,18 +388,18 @@ export class MessageParser {
         return [{ title: title, description: desc.trim() }];
     }
 
-    async _createRollTableEmbed(message){
+    async _createRollTableEmbed(message) {
         const embeds = this._createRollEmbed(message);
         const div = document.createElement('div');
         div.innerHTML = message.content;
         const resultElement = div.querySelector(".result-text");
-        if(resultElement && resultElement.textContent){
+        if (resultElement && resultElement.textContent) {
             embeds[0].description += `\n${await this.formatText(resultElement.innerHTML)}`;
         }
         return embeds;
     }
 
-    _isRollTableCard(htmlString){
+    _isRollTableCard(htmlString) {
         const div = document.createElement('div');
         div.innerHTML = htmlString;
         const divElement = div.querySelector('.table-draw');
@@ -644,8 +644,21 @@ export class MessageParser {
         let listLanguages = [];
         const defaultLanguage = game.polyglot.languageProvider.defaultLanguage;
         const messageLanguage = message.flags.polyglot.language;
-        if (!(defaultLanguage === messageLanguage || game.polyglot.isLanguageUnderstood(messageLanguage))) {
-            if (getThisModuleSetting("includeOnly") === "") {
+        if (getThisModuleSetting("includeOnly") !== "") {
+            listLanguages.push(...getThisModuleSetting("includeOnly").split(",").map(item => item.trim().toLowerCase()));
+            try {
+                return this._polyglotReplaceString(message, listLanguages);
+            }
+            catch (e) {
+                console.log(`foundrytodiscord | Your system "${game.system.id}" does not support Polyglot integration with this module due to a different actor structure.`);
+                return message.content;
+            }
+        }
+        else {
+            if (defaultLanguage === messageLanguage || game.polyglot.isLanguageUnderstood(messageLanguage)) {
+                return message.contents
+            }
+            else {
                 try {
                     return this._polyglotReplaceString(message);
                 }
@@ -654,22 +667,6 @@ export class MessageParser {
                     return message.content;
                 }
             }
-            else {
-                listLanguages = getThisModuleSetting("includeOnly").split(",").map(item => item.trim().toLowerCase());
-                if (!listLanguages === null) {
-                    listLanguages = [];
-                }
-                try {
-                    return this._polyglotReplaceString(message, listLanguages);
-                }
-                catch (e) {
-                    console.log(`foundrytodiscord | Your system "${game.system.id}" does not support Polyglot integration with this module due to a different actor structure.`);
-                    return message.content;
-                }
-            }
-        }
-        else {
-            return message.content;
         }
     }
 
