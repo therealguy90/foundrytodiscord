@@ -1,4 +1,9 @@
-# 2.0.4
+# 2.0.5
+
+- #38 Fix Polyglot language check
+- Formatting improvement for html header tags
+
+## 2.0.4
 
 - Fix multiple damage types on midi-qol merge cards.
 
