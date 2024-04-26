@@ -226,9 +226,9 @@ export class MessageParser {
         const doc = document.createElement('div');
         doc.innerHTML = htmltext;
         const selectorsAndReplacers = [
-            { selector: "h1, h2", replacer: ["# ", "\n"] },
-            { selector: "h3, h4", replacer: ["## ", "\n"] },
-            { selector: "h5, h6", replacer: ["### ", "\n"] },
+            { selector: "h1, h2", replacer: ["\n# ", "\n"] },
+            { selector: "h3, h4", replacer: ["\n## ", "\n"] },
+            { selector: "h5, h6", replacer: ["\n### ", "\n"] },
             { selector: "strong, b", replacer: ["**", "**"] },
             { selector: "em, i", replacer: ["*", "*"] },
             { selector: "s", replacer: ["~~", "~~"] },
@@ -307,9 +307,8 @@ export class MessageParser {
         }
         if (descVisible) {
             let descList = div.querySelectorAll(".card-content");
-            descList.forEach(function (paragraph) {
-                let text = paragraph.innerHTML;
-                desc += text + "\n\n";
+            descList.forEach(paragraph => {
+                desc += `${paragraph.innerHTML}\n\n`;
             });
         }
 
