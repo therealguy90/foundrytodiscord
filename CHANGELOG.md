@@ -1,4 +1,8 @@
-# 2.0.5
+# 2.0.6
+
+- Hotfix for Polyglot sending an undefined message.
+
+## 2.0.5
 
 - #38 Fix Polyglot language check
 - Formatting improvement for html header tags
