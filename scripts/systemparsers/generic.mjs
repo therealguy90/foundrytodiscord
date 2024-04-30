@@ -655,7 +655,7 @@ export class MessageParser {
         }
         else {
             if (defaultLanguage === messageLanguage || game.polyglot.isLanguageUnderstood(messageLanguage)) {
-                return message.contents
+                return message.content;
             }
             else {
                 try {
