@@ -202,7 +202,7 @@ response = await ftd.editMessage(myEditContents, messageURL, message.id);
  * @param {string} messageID - The Discord Message ID. You can get this via (await Response.json()).id when a message is sent successfully.
  * @returns {Promise<Response>} - The API response.
  */
-response = await ftd.deleteMessage(myEditContents, messageURL, message.id);
+response = await ftd.deleteMessage(messageURL, message.id);
 
 ```
 
