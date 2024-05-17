@@ -193,16 +193,35 @@ export function initModuleSettings() {
             default: true,
             type: Boolean
         });
-        if (getThisModuleSetting("enablePolyglot")) {
-            game.settings.register('foundrytodiscord', 'includeOnly', {
-                name: "(Polyglot) Understand only these languages:",
-                hint: "A comma-separated list of languages that you wish to ONLY be understood to be sent in Discord. Leave blank for normal Polyglot behavior.",
-                scope: "world",
-                config: true,
-                default: "",
-                type: String
-            });
-        }
+        game.settings.register('foundrytodiscord', 'includeOnly', {
+            name: "(Polyglot) Understand only these languages:",
+            hint: "A comma-separated list of languages that you wish to ONLY be understood to be sent in Discord. Leave blank for normal Polyglot behavior.",
+            scope: "world",
+            config: true,
+            default: "",
+            type: String
+        });
+        game.settings.register('foundrytodiscord', 'includeLanguage', {
+            name: "(Polyglot) Show language in message",
+            hint: "Show the language of the message if the message is not in common language",
+            scope: "world",
+            config: true,
+            default: false,
+            type: Boolean
+        });
+        game.settings.register('foundrytodiscord', 'polyglotShowMode', {
+            name: "(Polyglot) Show obfuscated message, original, or both",
+            hint: "Omniglot language messages will not be obfuscated",
+            scope: "world",
+            config: true,
+            default: "showOriginal",
+            type: String,
+            choices: {
+                "showOriginal": "Obfuscate message only if none understand",
+                "showIfOne": "Obfuscate, but show original in spoilers if one understands",
+                "showAll": "Obfuscate, but show original in spoilers"
+            }
+        });
     }
     if (game.modules.get("anonymous")?.active) {
         game.settings.register('foundrytodiscord', 'enableAnon', {

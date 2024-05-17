@@ -4,6 +4,7 @@ import { getPropertyByString, censorId, removeEmptyEmbeds, splitText, addEmbedsT
 import { generateimglink } from '../helpers/parser/images.mjs';
 import { newEnrichedMessage, toHTML } from '../helpers/parser/enrich.mjs';
 import { getDieEmoji, getDocumentEmoji, swapOrNot, dieIcon, checkFails } from '../helpers/emojis/global.mjs';
+import { SeededRandom } from '../helpers/rng.mjs';
 
 export class MessageParser {
 
@@ -52,7 +53,7 @@ export class MessageParser {
                 * When inheriting MessageParser, _polyglotPath must be modified if this is different.
                 */
                 if (game.modules.get("polyglot")?.active && getThisModuleSetting('enablePolyglot') && enrichedMsg.flags?.polyglot?.language) {
-                    constructedMessage = this._polyglotize(enrichedMsg);
+                    constructedMessage = await this._polyglotize(enrichedMsg);
                 }
                 if (constructedMessage === '') {
                     constructedMessage = enrichedMsg.content;
@@ -639,50 +640,85 @@ export class MessageParser {
         }
     }
 
-    _polyglotize(message) {
+    async _polyglotize(message) {
         let listLanguages = [];
-        const defaultLanguage = game.polyglot.languageProvider.defaultLanguage;
-        const messageLanguage = message.flags.polyglot.language;
-        if (getThisModuleSetting("includeOnly") !== "") {
+        if (getThisModuleSetting("includeOnly").trim() !== "") {
             listLanguages.push(...getThisModuleSetting("includeOnly").split(",").map(item => item.trim().toLowerCase()));
-            try {
-                return this._polyglotReplaceString(message, listLanguages);
-            }
-            catch (e) {
-                console.log(`foundrytodiscord | Your system "${game.system.id}" does not support Polyglot integration with this module due to a different actor structure.`);
-                return message.content;
-            }
         }
-        else {
-            if (defaultLanguage === messageLanguage || game.polyglot.isLanguageUnderstood(messageLanguage)) {
+        try {
+            const languages = new Set();
+            const playerActors = game.actors.filter(a => a.hasPlayerOwner);
+            const messageLanguage = message.flags.polyglot.language;
+
+            if (listLanguages.length === 0) {
+                for (const actor of playerActors) {
+                    const characterLanguages = getPropertyByString(actor, this._polyglotPath) || getPropertyByString(actor, "system.traits.languages.value");
+                    if (!characterLanguages) {
+                        console.log(`foundrytodiscord | Your system "${game.system.id}" does not support Polyglot integration with this module due to a different actor structure.`);
+                        return message.content;
+                    }
+                    characterLanguages.forEach(languages.add, languages);
+                }
+            }
+            let constructedMessage = "";
+
+            if (getThisModuleSetting("includeLanguage")) {
+                constructedMessage = `||(${game.polyglot.languages[messageLanguage].label})||\n`;
+            }
+            const allUnderstand = (game.polyglot.languageProvider.defaultLanguage === messageLanguage && listLanguages.length === 0) || listLanguages.includes(game.polyglot.languageProvider.defaultLanguage);
+            if (allUnderstand) {
                 return message.content;
             }
-            else {
-                try {
-                    return this._polyglotReplaceString(message);
-                }
-                catch (e) {
-                    console.log(`foundrytodiscord | Your system "${game.system.id}" does not support Polyglot integration with this module due to a different actor structure.`)
-                    return message.content;
-                }
+            const oneUnderstands = (listLanguages.length === 0 && languages.has(messageLanguage)) || listLanguages.includes(messageLanguage);
+            switch (getThisModuleSetting("polyglotShowMode")) {
+                case "showOriginal":
+                    if (oneUnderstands) {
+                        constructedMessage += message.content;
+                    }
+                    else {
+                        constructedMessage += await this._polyglotScrambleMessage(message);
+                    }
+                    break;
+                case "showIfOne":
+                    constructedMessage += `${await this._polyglotScrambleMessage(message)}\n`;
+                    if (oneUnderstands) {
+                        constructedMessage += `<hr/>\n||${message.content.trim()}||`;
+                    }
+                    break;
+                case "showAll":
+                    constructedMessage += `${await this._polyglotScrambleMessage(message)}\n<hr/>\n||${message.content.trim()}||`;
+                    break;
+                default:
+                    break;
             }
+            return constructedMessage;
+        }
+        catch (e) {
+            console.log(`foundrytodiscord | Your system "${game.system.id}" does not support Polyglot integration with this module due to a different actor structure.`);
+            return message.content;
         }
     }
 
-    _polyglotReplaceString(message, listLanguages = []) {
-        const languages = new Set();
-        const playerActors = game.actors.filter(a => a.hasPlayerOwner);
-
-        for (const actor of playerActors) {
-            const characterLanguages = getPropertyByString(actor, this._polyglotPath) || getPropertyByString(actor, "system.traits.languages.value");
-            if (!characterLanguages) {
-                console.log(`foundrytodiscord | Your system "${game.system.id}" does not support Polyglot integration with this module due to a different actor structure.`);
-                return message.content;
+    async _polyglotScrambleMessage(message) {
+        const letters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
+        const timestamp = message.timestamp ? message.timestamp : Date.now();
+        const rng = new SeededRandom(timestamp);
+        let scrambledMessage = "";
+        const parsedParagraphs = (await this.formatText(message.content)).split("\n");
+        for (const paragraph of parsedParagraphs) {
+            let scrambledParagraph = "";
+            for (let i = 0; i < paragraph.length; i++) {
+                const letterIndex = rng.nextRange(0, 26);
+                if (paragraph[i] !== " ") {
+                    scrambledParagraph += letters[letterIndex];
+                }
+                else {
+                    scrambledParagraph += paragraph[i];
+                }
             }
-            characterLanguages.forEach(languages.add, languages);
+            scrambledMessage += `${scrambledParagraph}\n`;
         }
-
-        return listLanguages.length === 0 ? (languages.has(message.flags.polyglot.language) ? message.content : "*Unintelligible*") : (listLanguages.includes(message.flags.polyglot.language) ? message.content : "*Unintelligible*");
+        return `${scrambledMessage.trim()}`;
     }
 
     _anonymizeText(text, message) {
