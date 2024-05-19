@@ -647,23 +647,23 @@ export class MessageParser {
         }
         try {
             const languages = new Set();
-            const playerActors = game.actors.filter(a => a.hasPlayerOwner);
+            const playerActors = game.actors.filter(a => a.hasPlayerOwner && (getPropertyByString(a, this._polyglotPath) || getPropertyByString(a, "system.traits.languages.value")));
             const messageLanguage = message.flags.polyglot.language;
 
             if (listLanguages.length === 0) {
+                if (!playerActors && playerActors.length === 0) {
+                    console.log(`foundrytodiscord | Failed to find player-owned actors with specified language path "${this._polyglotPath}" for Polyglot integration.`);
+                    return message.content;
+                }
                 for (const actor of playerActors) {
                     const characterLanguages = getPropertyByString(actor, this._polyglotPath) || getPropertyByString(actor, "system.traits.languages.value");
-                    if (!characterLanguages) {
-                        console.log(`foundrytodiscord | Your system "${game.system.id}" does not support Polyglot integration with this module due to a different actor structure.`);
-                        return message.content;
-                    }
                     characterLanguages.forEach(languages.add, languages);
                 }
             }
             let constructedMessage = "";
 
             if (getThisModuleSetting("includeLanguage")) {
-                constructedMessage = `||(${game.polyglot.languages[messageLanguage].label})||\n`;
+                constructedMessage = `\`Language:\`||\`(${game.polyglot.languages[messageLanguage].label})\`||\n`;
             }
             const allUnderstand = (game.polyglot.languageProvider.defaultLanguage === messageLanguage && listLanguages.length === 0) || listLanguages.includes(game.polyglot.languageProvider.defaultLanguage);
             if (allUnderstand) {
@@ -694,7 +694,7 @@ export class MessageParser {
             return constructedMessage;
         }
         catch (e) {
-            console.log(`foundrytodiscord | Your system "${game.system.id}" does not support Polyglot integration with this module due to a different actor structure.`);
+            console.log(`foundrytodiscord | Polyglot integration failed due to an error: ${e}`);
             return message.content;
         }
     }
