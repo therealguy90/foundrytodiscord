@@ -506,10 +506,11 @@ export class MessageParserDnD5e extends MessageParser {
     }
 
     _midiMessageHasPlayerOwner(message) {
-        if (!message.user) {
+        const user = message.author || message.user;
+        if (!user) {
             return false;
         }
-        return message.user.hasPlayerOwner;
+        return user.hasPlayerOwner;
     }
 
     async _getEnrichmentOptions(message) {

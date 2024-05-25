@@ -372,8 +372,9 @@ export class MessageParser {
             }
         }
         const speakerActor = game.actors.get(message.speaker.actor);
+        const user = message.author || message.user; /*Will be removed in v13*/
         message.rolls.forEach(roll => {
-            if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))) {
+            if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !user.isGM))) {
                 desc += `${dieIcon()}**\`${roll.formula}\`**\n`
                 desc += `**${dieIcon()}Result: __${roll.total}__**`;
                 let rollBreakdown = this._generateRollBreakdown(roll);
@@ -890,17 +891,19 @@ export class MessageParser {
 
     async _getRequestParams(message, msgText, embeds, editMode = false) {
         const imgurl = await this._generateDiscordAvatar(message);
+        const user = message.author || message.user; /*Will be removed in v13*/
         let hook = "";
         if (message.isRoll && (!this.isCard(message.content) && message.rolls.length > 0)) {
-            if (getThisModuleSetting("threadedChatMap").hasOwnProperty(message.user.viewedScene)) {
-                hook = getThisModuleSetting("rollWebHookURL").split('?')[0] + "?thread_id=" + getThisModuleSetting('threadedChatMap')[message.user.viewedScene].rollThreadId;
+
+            if (getThisModuleSetting("threadedChatMap").hasOwnProperty(user.viewedScene)) {
+                hook = getThisModuleSetting("rollWebHookURL").split('?')[0] + "?thread_id=" + getThisModuleSetting('threadedChatMap')[user.viewedScene].rollThreadId;
             }
             else {
                 hook = getThisModuleSetting("rollWebHookURL");
             }
         } else {
-            if (getThisModuleSetting("threadedChatMap").hasOwnProperty(message.user.viewedScene)) {
-                hook = getThisModuleSetting("webHookURL").split('?')[0] + "?thread_id=" + getThisModuleSetting('threadedChatMap')[message.user.viewedScene].chatThreadId;
+            if (getThisModuleSetting("threadedChatMap").hasOwnProperty(user.viewedScene)) {
+                hook = getThisModuleSetting("webHookURL").split('?')[0] + "?thread_id=" + getThisModuleSetting('threadedChatMap')[user.viewedScene].chatThreadId;
             }
             else {
                 hook = getThisModuleSetting("webHookURL");
@@ -922,7 +925,8 @@ export class MessageParser {
             });
         }
         if (embeds && embeds.length > 0) {
-            allRequests = await addEmbedsToRequests(allRequests, hook, username, imgurl, embeds, message.user);
+            const user = message.author || message.user; /*Will be removed in v13*/
+            allRequests = await addEmbedsToRequests(allRequests, hook, username, imgurl, embeds, user);
         }
         // For edit requests, we will trim the amount of requests if and only if there are more requests than
         // linked messages for the edit. This makes it so that we don't need to make new messages to accommodate
@@ -1019,7 +1023,8 @@ export class MessageParser {
             return await generateimglink(aliasMatchedActor.prototypeToken.texture.src);
         }
 
-        return await generateimglink(message.user.avatar);
+        const user = message.author || message.user /*Will be removed in v13*/
+        return await generateimglink(user.avatar);
     }
 
     _generateDiscordUsername(message) {

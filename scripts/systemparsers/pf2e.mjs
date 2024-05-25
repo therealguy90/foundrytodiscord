@@ -450,7 +450,8 @@ export class MessageParserPF2e extends MessageParser {
             }
             desc += "\n";
             const speakerActor = game.actors.get(message.speaker.actor);
-            const showDetails = getThisModuleSetting('forceShowRolls') || speakerActor?.hasPlayerOwner || (!speakerActor && !message?.user?.isGM);
+            const user = message.author || message.user;
+            const showDetails = getThisModuleSetting('forceShowRolls') || speakerActor?.hasPlayerOwner || (!speakerActor && !user?.isGM);
             if (!message.isReroll) {
                 //Add roll information to embed:
                 message.rolls.forEach(roll => {
@@ -535,8 +536,9 @@ export class MessageParserPF2e extends MessageParser {
                 }
             }
             const speakerActor = game.actors.get(message.speaker.actor);
+            const user = message.author || message.user;
             message.rolls.forEach(roll => {
-                if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !message.user.isGM))) {
+                if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !user.isGM))) {
                     desc += `${dieIcon()}**\`${roll.formula}\`**\n`
                     desc += `**${dieIcon()}Result: __${roll.total}__**`;
                     let rollBreakdown = this._generateRollBreakdown(roll);

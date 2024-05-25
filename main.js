@@ -36,7 +36,8 @@ Hooks.once("ready", async () => {
 });
 
 Hooks.on('createChatMessage', async (msg) => {
-    if (msg.content === "ftd serveroff" && msg.user.isGM) {
+    const user = msg.author || msg.user /*Will be removed in v13*/
+    if (msg.content === "ftd serveroff" && user.isGM) {
         if (getThisModuleSetting('serverStatusMessage')) {
             if (getThisModuleSetting('messageID') && getThisModuleSetting('messageID') !== "") {
                 const response = await updateServerStatus(false);
