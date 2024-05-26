@@ -364,7 +364,7 @@ export class MessageParserPF2e extends MessageParser {
             //Add targets to embed:
             let targetPlayerTokens = [];
             if (game.modules.get("pf2e-toolbelt")?.active && message.flags["pf2e-toolbelt"]?.target?.targets?.length > 0) {
-                const targets = message.flags["pf2e-toolbelt"].target.targets;
+                const targets = message.flags["pf2e-toolbelt"].targetHelper.targets;
                 let targetString = "";
                 targets.forEach(target => {
                     const targetActor = fromUuidSync(target.actor);
@@ -512,7 +512,7 @@ export class MessageParserPF2e extends MessageParser {
                 desc += "\n";
             }
             let rollEmbeds = [{ title: title, description: desc }]
-            if (message.isDamageRoll && game.modules.get("pf2e-toolbelt")?.active && message.flags["pf2e-toolbelt"]?.target?.saves && targetPlayerTokens) {
+            if (message.isDamageRoll && game.modules.get("pf2e-toolbelt")?.active && message.flags["pf2e-toolbelt"]?.targetHelper?.saves && targetPlayerTokens) {
                 rollEmbeds = rollEmbeds.concat(this._createToolbeltSavesEmbed(message, targetPlayerTokens));
             }
 
@@ -702,10 +702,17 @@ export class MessageParserPF2e extends MessageParser {
     _generateRollBreakdown(roll, nextTerm = false) {
         let rollBreakdown = ""
         let termcount = 1;
+
+        /*Will be removed in v13*/
+        const diceTerm = foundry.dice.terms.DiceTerm || DiceTerm;
+        const operatorTerm = foundry.dice.terms.OperatorTerm || OperatorTerm;
+        const poolTerm = foundry.dice.terms.PoolTerm || PoolTerm;
+        const numericTerm = foundry.dice.terms.NumericTerm || NumericTerm;
+        
         roll.terms.forEach((term) => {
             let currentTermString = "";
             switch (true) {
-                case term instanceof DiceTerm:
+                case term instanceof diceTerm:
                     let i = 1;
                     if (!term.flavor.includes("persistent")) {
                         const notDieEmoji = function () {
@@ -723,7 +730,7 @@ export class MessageParserPF2e extends MessageParser {
                             } else if (dieResult.discarded || dieResult.rerolled) {
                                 tempTermString += `${swapOrNot(` ${dieResult.result}ˣ`, `[${getDieEmoji(term.faces, dieResult.result)}ˣ]`)}`;
                             }
-                            if (tempTermString !== "" && ((notDieEmoji && i < term.results.length) || (nextTerm && (roll.terms[termcount] && (!roll.terms[termcount] instanceof OperatorTerm))))) {
+                            if (tempTermString !== "" && ((notDieEmoji && i < term.results.length) || (nextTerm && (roll.terms[termcount] && (!roll.terms[termcount] instanceof operatorTerm))))) {
                                 tempTermString += " +";
                             }
                             currentTermString += tempTermString;
@@ -735,12 +742,12 @@ export class MessageParserPF2e extends MessageParser {
                     }
                     else {
                         currentTermString += `\`${term.expression}\``;
-                        if (nextTerm && (roll.terms[termcount] && (!roll.terms[termcount] instanceof OperatorTerm))) {
+                        if (nextTerm && (roll.terms[termcount] && (!roll.terms[termcount] instanceof operatorTerm))) {
                             currentTermString += " +";
                         }
                     }
                     break;
-                case term instanceof PoolTerm || term.hasOwnProperty("rolls"):
+                case term instanceof poolTerm || term.hasOwnProperty("rolls"):
                     let poolRollCnt = 1;
                     term.rolls.forEach(poolRoll => {
                         currentTermString += ` ${this._generateRollBreakdown(poolRoll, true)}`;
@@ -750,10 +757,10 @@ export class MessageParserPF2e extends MessageParser {
                         poolRollCnt++;
                     });
                     break;
-                case term instanceof OperatorTerm:
+                case term instanceof operatorTerm:
                     currentTermString += ` ${term.operator}`;
                     break;
-                case term instanceof NumericTerm:
+                case term instanceof numericTerm:
                     currentTermString += ` ${term.number}`
                     break;
                 case term.hasOwnProperty("operands"):
@@ -764,7 +771,7 @@ export class MessageParserPF2e extends MessageParser {
                         newTerms.push(operand);
                         if (j < terms.length) {
                             j++;
-                            newTerms.push(new OperatorTerm({ operator: term.operator }));
+                            newTerms.push(new foundry.dice.terms.OperatorTerm({ operator: term.operator }));
                         }
                     })
                     currentTermString += ` ${this._generateRollBreakdown({ terms: newTerms }, true)}`;
@@ -799,12 +806,12 @@ export class MessageParserPF2e extends MessageParser {
             return [];
         }
         const title = function () {
-            const save = message.flags["pf2e-toolbelt"].target.save;
+            const save = message.flags["pf2e-toolbelt"].targetHelper.save;
             const savecheck = game.i18n.localize(CONFIG.PF2E.saves[save.statistic]);
             return `${save.basic ? game.i18n.format("PF2E.InlineCheck.BasicWithSave", { save: savecheck }) : savecheck} Save (Players)`;
         }();
         let desc = "";
-        const saves = message.flags["pf2e-toolbelt"].target.saves
+        const saves = message.flags["pf2e-toolbelt"].targetHelper.saves
         tokens.forEach(token => {
             if (!saves[token.id]) {
                 return;

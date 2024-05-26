@@ -814,10 +814,17 @@ export class MessageParser {
     _generateRollBreakdown(roll, nextTerm = false) {
         let rollBreakdown = ""
         let termcount = 1;
+
+        /*Will be removed in v13*/
+        const diceTerm = foundry.dice.terms.DiceTerm || DiceTerm;
+        const operatorTerm = foundry.dice.terms.OperatorTerm || OperatorTerm;
+        const poolTerm = foundry.dice.terms.PoolTerm || PoolTerm;
+        const numericTerm = foundry.dice.terms.NumericTerm || NumericTerm;
+        
         roll.terms.forEach((term) => {
             let currentTermString = "";
             switch (true) {
-                case term instanceof DiceTerm:
+                case term instanceof diceTerm:
                     let i = 1;
                     const notDieEmoji = function () {
                         if (term.faces && getDieEmoji(term.faces)) {
@@ -834,7 +841,7 @@ export class MessageParser {
                         } else if (dieResult.discarded || dieResult.rerolled) {
                             tempTermString += `${swapOrNot(` ${dieResult.result}ˣ`, `[${getDieEmoji(term.faces, dieResult.result)}ˣ]`)}`;
                         }
-                        if (tempTermString !== "" && ((notDieEmoji && i < term.results.length) || (nextTerm && (roll.terms[termcount] && (!roll.terms[termcount] instanceof OperatorTerm))))) {
+                        if (tempTermString !== "" && ((notDieEmoji && i < term.results.length) || (nextTerm && (roll.terms[termcount] && (!roll.terms[termcount] instanceof operatorTerm))))) {
                             tempTermString += " +";
                         }
                         currentTermString += tempTermString;
@@ -844,7 +851,7 @@ export class MessageParser {
                         currentTermString = ` \`${term.faces ? `d${term.faces}` : ""}[${currentTermString.trim()}]\``;
                     }
                     break;
-                case term instanceof PoolTerm || term.hasOwnProperty("rolls"):
+                case term instanceof poolTerm || term.hasOwnProperty("rolls"):
                     let poolRollCnt = 1;
                     term.rolls.forEach(poolRoll => {
                         currentTermString += ` ${generateRollBreakdown(poolRoll, true)}`;
@@ -854,10 +861,10 @@ export class MessageParser {
                         poolRollCnt++;
                     });
                     break;
-                case term instanceof OperatorTerm:
+                case term instanceof operatorTerm:
                     currentTermString += ` ${term.operator}`;
                     break;
-                case term instanceof NumericTerm:
+                case term instanceof numericTerm:
                     currentTermString += ` ${term.number}`
                     break;
                 case term.hasOwnProperty("term"):
