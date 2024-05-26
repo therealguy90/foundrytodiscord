@@ -369,6 +369,9 @@ export class MessageParserPF2e extends MessageParser {
                 console.log(targets);
                 targets.forEach(target => {
                     const targetToken = fromUuidSync(target);
+                    if(!targetToken){
+                        return;
+                    }
                     const targetActor = targetToken.actor;
                     if (targetToken.hidden === true) {
                         return;
@@ -797,7 +800,6 @@ export class MessageParserPF2e extends MessageParser {
     }
 
     _createToolbeltSavesEmbed(message, tokens) {
-        console.log(tokens);
         if (!tokens) {
             return [];
         }
@@ -820,7 +822,7 @@ export class MessageParserPF2e extends MessageParser {
             else if (tokenSave.die === 1) {
                 desc += ` (${swapOrNot("Nat 1", getDieEmoji(20, 1))})`;
             }
-            desc += `\`(${this._parseDegree(tokenSave.success)})\``;
+            desc += `\`(${this._parseDegree(tokenSave.success)})\`\n`;
         })
         return [{ title: title, description: desc }];
     }
