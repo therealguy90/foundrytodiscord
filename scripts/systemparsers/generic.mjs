@@ -815,16 +815,10 @@ export class MessageParser {
         let rollBreakdown = ""
         let termcount = 1;
 
-        /*Will be removed in v13*/
-        const diceTerm = foundry.dice.terms.DiceTerm || DiceTerm;
-        const operatorTerm = foundry.dice.terms.OperatorTerm || OperatorTerm;
-        const poolTerm = foundry.dice.terms.PoolTerm || PoolTerm;
-        const numericTerm = foundry.dice.terms.NumericTerm || NumericTerm;
-        
         roll.terms.forEach((term) => {
             let currentTermString = "";
             switch (true) {
-                case term instanceof diceTerm:
+                case (foundry.dice && term instanceof foundry.dice.terms.DiceTerm) || term instanceof DiceTerm:
                     let i = 1;
                     const notDieEmoji = function () {
                         if (term.faces && getDieEmoji(term.faces)) {
@@ -841,7 +835,7 @@ export class MessageParser {
                         } else if (dieResult.discarded || dieResult.rerolled) {
                             tempTermString += `${swapOrNot(` ${dieResult.result}ˣ`, `[${getDieEmoji(term.faces, dieResult.result)}ˣ]`)}`;
                         }
-                        if (tempTermString !== "" && ((notDieEmoji && i < term.results.length) || (nextTerm && (roll.terms[termcount] && (!roll.terms[termcount] instanceof operatorTerm))))) {
+                        if (tempTermString !== "" && ((notDieEmoji && i < term.results.length) || (nextTerm && (roll.terms[termcount] && ((foundry.dice && !roll.terms[termcount] instanceof foundry.dice.terms.OperatorTerm) || !roll.terms[termcount] instanceof OperatorTerm))))) {
                             tempTermString += " +";
                         }
                         currentTermString += tempTermString;
@@ -851,7 +845,7 @@ export class MessageParser {
                         currentTermString = ` \`${term.faces ? `d${term.faces}` : ""}[${currentTermString.trim()}]\``;
                     }
                     break;
-                case term instanceof poolTerm || term.hasOwnProperty("rolls"):
+                case ((foundry.dice && term instanceof foundry.dice.terms.PoolTerm) || term instanceof PoolTerm) || term.hasOwnProperty("rolls"):
                     let poolRollCnt = 1;
                     term.rolls.forEach(poolRoll => {
                         currentTermString += ` ${generateRollBreakdown(poolRoll, true)}`;
@@ -861,10 +855,10 @@ export class MessageParser {
                         poolRollCnt++;
                     });
                     break;
-                case term instanceof operatorTerm:
+                case (foundry.dice && term instanceof foundry.dice.terms.OperatorTerm) || term instanceof OperatorTerm:
                     currentTermString += ` ${term.operator}`;
                     break;
-                case term instanceof numericTerm:
+                case (foundry.dice && term instanceof foundry.dice.terms.NumericTerm) || term instanceof NumericTerm:
                     currentTermString += ` ${term.number}`
                     break;
                 case term.hasOwnProperty("term"):

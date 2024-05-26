@@ -45,7 +45,7 @@ export class MessageParserPF2e extends MessageParser {
                 })
             }
             reformattedText = htmldoc.innerHTML;
-    
+
             //Old format for status effects. Kept this in for now, but will be removed later on.
             const statuseffectlist = htmldoc.querySelectorAll('.statuseffect-rules');
             if (statuseffectlist.length !== 0) {
@@ -63,7 +63,7 @@ export class MessageParserPF2e extends MessageParser {
                 reformattedText = tempdivs.innerHTML;
             }
         }
-    
+
         return reformattedText;
     }
 
@@ -129,14 +129,14 @@ export class MessageParserPF2e extends MessageParser {
         const doc = parser.parseFromString(message.content, "text/html");
         const participantConditions = doc.querySelector(".participant-conditions");
         const currentConditionTitle = participantConditions.querySelector("h4");
-        if(currentConditionTitle?.textContent){
+        if (currentConditionTitle?.textContent) {
             title = currentConditionTitle.textContent;
         }
         const conditions = participantConditions.querySelectorAll("span");
         conditions.forEach(condition => {
             desc += "**" + condition.textContent + "**\n";
         });
-        return [{title: title, description: desc.trim() }];
+        return [{ title: title, description: desc.trim() }];
     }
 
     _parseTraits(text, isRoll = false) {
@@ -363,12 +363,13 @@ export class MessageParserPF2e extends MessageParser {
 
             //Add targets to embed:
             let targetPlayerTokens = [];
-            if (game.modules.get("pf2e-toolbelt")?.active && message.flags["pf2e-toolbelt"]?.target?.targets?.length > 0) {
+            if (game.modules.get("pf2e-toolbelt")?.active && message.flags["pf2e-toolbelt"]?.targetHelper?.targets?.length > 0) {
                 const targets = message.flags["pf2e-toolbelt"].targetHelper.targets;
                 let targetString = "";
+                console.log(targets);
                 targets.forEach(target => {
-                    const targetActor = fromUuidSync(target.actor);
-                    const targetToken = fromUuidSync(target.token);
+                    const targetToken = fromUuidSync(target);
+                    const targetActor = targetToken.actor;
                     if (targetToken.hidden === true) {
                         return;
                     }
@@ -703,16 +704,10 @@ export class MessageParserPF2e extends MessageParser {
         let rollBreakdown = ""
         let termcount = 1;
 
-        /*Will be removed in v13*/
-        const diceTerm = foundry.dice.terms.DiceTerm || DiceTerm;
-        const operatorTerm = foundry.dice.terms.OperatorTerm || OperatorTerm;
-        const poolTerm = foundry.dice.terms.PoolTerm || PoolTerm;
-        const numericTerm = foundry.dice.terms.NumericTerm || NumericTerm;
-        
         roll.terms.forEach((term) => {
             let currentTermString = "";
             switch (true) {
-                case term instanceof diceTerm:
+                case (foundry.dice && term instanceof foundry.dice.terms.DiceTerm) || term instanceof DiceTerm:
                     let i = 1;
                     if (!term.flavor.includes("persistent")) {
                         const notDieEmoji = function () {
@@ -730,7 +725,7 @@ export class MessageParserPF2e extends MessageParser {
                             } else if (dieResult.discarded || dieResult.rerolled) {
                                 tempTermString += `${swapOrNot(` ${dieResult.result}ˣ`, `[${getDieEmoji(term.faces, dieResult.result)}ˣ]`)}`;
                             }
-                            if (tempTermString !== "" && ((notDieEmoji && i < term.results.length) || (nextTerm && (roll.terms[termcount] && (!roll.terms[termcount] instanceof operatorTerm))))) {
+                            if (tempTermString !== "" && ((notDieEmoji && i < term.results.length) || (nextTerm && (roll.terms[termcount] && ((foundry.dice && !roll.terms[termcount] instanceof foundry.dice.terms.OperatorTerm) || !roll.terms[termcount] instanceof OperatorTerm))))) {
                                 tempTermString += " +";
                             }
                             currentTermString += tempTermString;
@@ -742,12 +737,12 @@ export class MessageParserPF2e extends MessageParser {
                     }
                     else {
                         currentTermString += `\`${term.expression}\``;
-                        if (nextTerm && (roll.terms[termcount] && (!roll.terms[termcount] instanceof operatorTerm))) {
+                        if (nextTerm && (roll.terms[termcount] && ((foundry.dice && !roll.terms[termcount] instanceof foundry.dice.terms.OperatorTerm) ||!roll.terms[termcount] instanceof OperatorTerm))) {
                             currentTermString += " +";
                         }
                     }
                     break;
-                case term instanceof poolTerm || term.hasOwnProperty("rolls"):
+                case ((foundry.dice && term instanceof foundry.dice.terms.PoolTerm) || term instanceof PoolTerm) || term.hasOwnProperty("rolls"):
                     let poolRollCnt = 1;
                     term.rolls.forEach(poolRoll => {
                         currentTermString += ` ${this._generateRollBreakdown(poolRoll, true)}`;
@@ -757,10 +752,10 @@ export class MessageParserPF2e extends MessageParser {
                         poolRollCnt++;
                     });
                     break;
-                case term instanceof operatorTerm:
+                case (foundry.dice && term instanceof foundry.dice.terms.OperatorTerm) || term instanceof OperatorTerm:
                     currentTermString += ` ${term.operator}`;
                     break;
-                case term instanceof numericTerm:
+                case (foundry.dice && term instanceof foundry.dice.terms.NumericTerm) || term instanceof NumericTerm:
                     currentTermString += ` ${term.number}`
                     break;
                 case term.hasOwnProperty("operands"):
@@ -802,6 +797,7 @@ export class MessageParserPF2e extends MessageParser {
     }
 
     _createToolbeltSavesEmbed(message, tokens) {
+        console.log(tokens);
         if (!tokens) {
             return [];
         }
