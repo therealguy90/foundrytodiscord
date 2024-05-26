@@ -233,6 +233,7 @@ export async function addEmbedsToRequests(allRequests, hook, username, imgurl, e
 }
 
 export function hexToColor(hex) {
+    hex = hex.css || hex; /*Will be removed in v13*/
     // Remove the '#' character if it exists at the beginning of the hex string
     hex = hex.replace(/^#/, '');
 
