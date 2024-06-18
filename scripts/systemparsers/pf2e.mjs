@@ -767,9 +767,11 @@ export class MessageParserPF2e extends MessageParser {
                     let j = 1;
                     terms.forEach(operand => {
                         newTerms.push(operand);
+                        // To be removed in update
+                        const OpTerm = foundry.dice ? foundry.dice.terms.OperatorTerm : OperatorTerm;
                         if (j < terms.length) {
                             j++;
-                            newTerms.push(new foundry.dice.terms.OperatorTerm({ operator: term.operator }));
+                            newTerms.push(new OpTerm({ operator: term.operator }));
                         }
                     })
                     currentTermString += ` ${this._generateRollBreakdown({ terms: newTerms }, true)}`;
