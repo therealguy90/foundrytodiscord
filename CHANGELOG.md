@@ -1,4 +1,8 @@
-# 2.1.0
+# 2.1.1
+
+- (pf2e) Fix damage breakdowns not working properly in v11 when splash damage is included in a damage roll.
+
+## 2.1.0
 
 - Improved Polyglot integration. New config options are available for Polyglot, which allow for obscuring the original text in spoiler tags and showing the language of the original text.
 - (pf2e) Fixed Pf2e Toolbelt Target Helper compatibility.
