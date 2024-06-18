@@ -17,9 +17,8 @@ While it will work with other systems, the extent of compatibility may vary. Reg
 - To avoid Discord grouping up same-named messages, it sends the token ID to Discord with the replacement name (e.g., "Unknown NPC (V73O****)").
 
 **Polyglot:**
-- Detects the languages known by players and sends languages they don't know to Discord as "Unintelligible."
-- Adds options for the GM to specify which languages the module will "understand" and sends the rest to Discord as "Unintelligible."
-- Allows overriding "common" languages in your world to ensure they pass the Polyglot check and are sent to Discord as plaintext.
+- Detects the languages known by players and sends languages they don't know to Discord as jumbled letters.
+- Adds options for the GM to specify which languages the module will "understand".
 
 **Chat Media / Chat GIFs / Similar Modules:**
 - Sends image, video links, and uploaded images to Discord.
