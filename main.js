@@ -54,6 +54,9 @@ Hooks.on('createChatMessage', async (msg) => {
         return;
     }
     else if (!getThisModuleSetting('disableMessages')) {
+        if(msg.flags?.foundrytodiscord?.ignore){
+            return;
+        }
         if (getThisModuleSetting("ignoreWhispers") && msg.whisper.length > 0) {
             return;
         }
