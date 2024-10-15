@@ -1,4 +1,8 @@
-# 2.1.1
+# 2.1.2
+
+- Add support for ignoring messages to be mirrored. If ChatMessage.flags.foundrytodiscord.ignore is set to true, the message will not be mirrored.
+
+## 2.1.1
 
 - (pf2e) Fix damage breakdowns not working properly in v11 when splash damage is included in a damage roll.
 
