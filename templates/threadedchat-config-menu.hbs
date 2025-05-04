@@ -1,0 +1,91 @@
+<div class="threadedchat-wrapper">
+    <style>
+        .foundrytodiscord .tabs-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .foundrytodiscord .tabs {
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .foundrytodiscord .tabs-content {
+            flex-grow: 1;
+            overflow: auto;
+            box-sizing: border-box;
+            padding: 10px;
+        }
+    </style>
+
+    <div class="foundrytodiscord tabs-container">
+        <div class="foundrytodiscord tabs">
+            <nav class="foundrytodiscord tabs">
+                <h2 class="item" data-tab="sceneTab">Foundry to Discord: Scene-Thread Mapping</h2>
+            </nav>
+        </div>
+        <div style="display: flex; flex: unset;">
+            <span>
+                <p>Select a scene, and associate it with a Discord Thread! All chat from a scene will be directed to the
+                    associated thread and will override your default Webhook URL or Rolls Webhook URL. To get the ID of your thread,
+                    simply right-click on your thread in Discord, and <strong>Copy Thread ID</strong>. Make sure your
+                    Discord is in Developer Mode. Messages sent to Chat Thread IDs and Roll Thread IDs will be sent to
+                    threads in your main webhook URL and roll webhook URL respectively. You can leave either one blank, but if you want to update the thread IDs, you'll have to delete the entry first.
+                </p>
+            </span>
+        </div>
+        <div class="foundrytodiscord tabs-content">
+            <div data-tab="sceneTab">
+                <div>
+                    <div class="form-group" style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                        <label for="sceneId" style="white-space:nowrap;">Select Scene:</label>
+                        <select name="sceneId" id="sceneId" style="min-width:150px;">
+                            <option value="" disabled selected>Select scene</option>
+                            {{#each scenes}}
+                            <option value="{{this.id}}">{{this.name}}</option>
+                            {{/each}}
+                        </select>
+
+                        <label for="chatThreadId" style="white-space:nowrap;">Chat Thread ID:</label>
+                        <input type="text" name="chatThreadId" id="chatThreadId" style="min-width:150px;">
+
+                        <label for="rollThreadId" style="white-space:nowrap;">Roll Thread ID:</label>
+                        <input type="text" name="rollThreadId" id="rollThreadId" style="min-width:150px;">
+                        <button type="button" class="btn btn-primary add-entry">Add</button>
+                    </div>
+                </div>
+
+                <div class="table-container" style="overflow-x:auto; width: 100%; box-sizing: border-box;">
+                    <table class="table" style="width: 100%; table-layout: fixed; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: center; width: 30%">Scene Name</th>
+                                <th style="text-align: center; width: 30%">Chat Thread ID</th>
+                                <th style="text-align: center; width: 30%">Roll Thread ID</th>
+                                <th style="text-align: center; width: 10%"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="config-rows">
+                            {{#each threadedChatMap}}
+                            <tr>
+                                <td style="text-align: center;">{{this.sceneName}}</td>
+                                <td style="text-align: center;">{{this.chatThreadId}}</td>
+                                <td style="text-align: center;">{{this.rollThreadId}}</td>
+                                <td>
+                                    <button class="btn btn-danger delete-entry" data-scene-id-placeholder="{{@key}}">
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

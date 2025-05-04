@@ -1,0 +1,94 @@
+<div class="autopingform-wrapper">
+    <style>
+        .foundrytodiscord .tabs-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .foundrytodiscord .tabs {
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .foundrytodiscord .tabs-content {
+            flex-grow: 1;
+            overflow: auto;
+            box-sizing: border-box;
+            padding: 10px;
+        }
+    </style>
+
+    <div class="foundrytodiscord tabs-container">
+        <div class="foundrytodiscord tabs">
+            <nav class="foundrytodiscord tabs">
+                <h2 class="item" data-tab="autoPingTab">Foundry to Discord: Auto-Ping Mapper Tool</h2>
+            </nav>
+        </div>
+        <div style="display: flex; flex: unset;">
+            <span>
+                <p>This is a tool for pinging a Discord user whenever their @username is mentioned in chat.
+                    Enter a keyword (case-sensitive) and assign a Discord user ID or Role ID to it. Whenever that
+                    keyword is mentioned in
+                    Foundry Chat, for example, the keyword <code>foo</code>, when mentioned in chat as
+                    <strong>@foo</strong>, the ping
+                    that corresponds to it will replace the keyword. To get the ID, simply <strong>Right-Click on the
+                        user or role, and Copy ID.</strong>
+                    Enable Developer Mode for this to work.
+                </p>
+            </span>
+        </div>
+        <div class="foundrytodiscord tabs-content">
+            <div data-tab="autoPingTab">
+                <div>
+                    <div class="form-group" style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                        <label for="type" style="white-space:nowrap;">Type:</label>
+                        <select name="type" id="type" style="min-width:120px;">
+                            <option value="" disabled selected>Select type</option>
+                            <option value="User">User</option>
+                            <option value="Role">Role</option>
+                        </select>
+
+                        <label for="keyword" style="white-space:nowrap;">Keyword:</label>
+                        <input type="text" name="keyword" id="keyword" style="min-width:120px;">
+
+                        <label for="ID" style="white-space:nowrap;">ID:</label>
+                        <input type="text" name="ID" id="ID" style="min-width:120px;">
+                        <button type="button" class="btn btn-primary add-entry">Add</button>
+                    </div>
+                </div>
+
+
+                <div class="table-container" style="overflow-x:auto; width: 100%; box-sizing: border-box;">
+                    <table class="table" style="width: 100%; table-layout: fixed; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: center; width: 25%">Keyword</th>
+                                <th style="text-align: center; width: 25%">Type</th>
+                                <th style="text-align: center; width: 25%">ID</th>
+                                <th style="text-align: center; width: 25%"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="config-rows">
+                            {{#each autoPingMap}}
+                            <tr>
+                                <td style="text-align: center;">{{@key}}</td>
+                                <td style="text-align: center;">{{this.type}}</td>
+                                <td style="text-align: center;">{{this.ID}}</td>
+                                <td>
+                                    <button class="btn btn-danger delete-entry" data-keyword-placeholder="{{@key}}">
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
