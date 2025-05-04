@@ -372,7 +372,7 @@ export class MessageParser {
             }
         }
         const speakerActor = game.actors.get(message.speaker.actor);
-        const user = message.author || message.user; /*Will be removed in v13*/
+        const user = message.author;
         message.rolls.forEach(roll => {
             if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !user.isGM))) {
                 desc += `${dieIcon()}**\`${roll.formula}\`**\n`
@@ -818,7 +818,7 @@ export class MessageParser {
         roll.terms.forEach((term) => {
             let currentTermString = "";
             switch (true) {
-                case (foundry.dice && term instanceof foundry.dice.terms.DiceTerm) || term instanceof DiceTerm:
+                case (foundry.dice && term instanceof foundry.dice.terms.DiceTerm):
                     let i = 1;
                     const notDieEmoji = function () {
                         if (term.faces && getDieEmoji(term.faces)) {
@@ -835,7 +835,7 @@ export class MessageParser {
                         } else if (dieResult.discarded || dieResult.rerolled) {
                             tempTermString += `${swapOrNot(` ${dieResult.result}ˣ`, `[${getDieEmoji(term.faces, dieResult.result)}ˣ]`)}`;
                         }
-                        if (tempTermString !== "" && ((notDieEmoji && i < term.results.length) || (nextTerm && (roll.terms[termcount] && ((foundry.dice && !roll.terms[termcount] instanceof foundry.dice.terms.OperatorTerm) || !roll.terms[termcount] instanceof OperatorTerm))))) {
+                        if (tempTermString !== "" && ((notDieEmoji && i < term.results.length) || (nextTerm && (roll.terms[termcount] && ((foundry.dice && !roll.terms[termcount] instanceof foundry.dice.terms.OperatorTerm)))))) {
                             tempTermString += " +";
                         }
                         currentTermString += tempTermString;
@@ -845,7 +845,7 @@ export class MessageParser {
                         currentTermString = ` \`${term.faces ? `d${term.faces}` : ""}[${currentTermString.trim()}]\``;
                     }
                     break;
-                case ((foundry.dice && term instanceof foundry.dice.terms.PoolTerm) || term instanceof PoolTerm) || term.hasOwnProperty("rolls"):
+                case (foundry.dice && term instanceof foundry.dice.terms.PoolTerm) || term.hasOwnProperty("rolls"):
                     let poolRollCnt = 1;
                     term.rolls.forEach(poolRoll => {
                         currentTermString += ` ${generateRollBreakdown(poolRoll, true)}`;
@@ -855,10 +855,10 @@ export class MessageParser {
                         poolRollCnt++;
                     });
                     break;
-                case (foundry.dice && term instanceof foundry.dice.terms.OperatorTerm) || term instanceof OperatorTerm:
+                case (foundry.dice && term instanceof foundry.dice.terms.OperatorTerm):
                     currentTermString += ` ${term.operator}`;
                     break;
-                case (foundry.dice && term instanceof foundry.dice.terms.NumericTerm) || term instanceof NumericTerm:
+                case (foundry.dice && term instanceof foundry.dice.terms.NumericTerm):
                     currentTermString += ` ${term.number}`
                     break;
                 case term.hasOwnProperty("term"):
@@ -884,7 +884,7 @@ export class MessageParser {
             termcount++;
         });
         if (!nextTerm && rollBreakdown.includes("error")) {
-            console.error("foundrytodiscord | Could not parse dice emojis due to a unique roll structure.");
+            console.error("foundrytodiscord | Could not parse dice due to a unique roll structure.");
             return roll.result;
         }
         return rollBreakdown.trim();
@@ -892,7 +892,7 @@ export class MessageParser {
 
     async _getRequestParams(message, msgText, embeds, editMode = false) {
         const imgurl = await this._generateDiscordAvatar(message);
-        const user = message.author || message.user; /*Will be removed in v13*/
+        const user = message.author;
         let hook = "";
         if (message.isRoll && (!this.isCard(message.content) && message.rolls.length > 0)) {
 
@@ -926,7 +926,7 @@ export class MessageParser {
             });
         }
         if (embeds && embeds.length > 0) {
-            const user = message.author || message.user; /*Will be removed in v13*/
+            const user = message.author;
             allRequests = await addEmbedsToRequests(allRequests, hook, username, imgurl, embeds, user);
         }
         // For edit requests, we will trim the amount of requests if and only if there are more requests than
@@ -1024,7 +1024,7 @@ export class MessageParser {
             return await generateimglink(aliasMatchedActor.prototypeToken.texture.src);
         }
 
-        const user = message.author || message.user /*Will be removed in v13*/
+        const user = message.author;
         return await generateimglink(user.avatar);
     }
 
