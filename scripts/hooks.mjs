@@ -351,17 +351,12 @@ async function sendImage(sheet, hookOverride = undefined) {
             content: msgText
         }
         formData.append('payload_json', JSON.stringify(params));
-        api.sendMessage(formData, false, game.user.viewedScene, hookOverride)
-            .then(({ response, message }) => {
-                if (response.ok) {
-                    ui.notifications.info("Successfully sent to Discord.");
-                }
-                else {
-                    throw new Error("An error occurred.");
-                }
-            })
-            .catch(error => {
-                ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
-            });
+        response = await api.sendMessage(formData, false, game.user.viewedScene, hookOverride);
+        if (response.ok) {
+            ui.notifications.info("Successfully sent to Discord.");
+        }
+        else {
+            ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
+        }
     }
 }
