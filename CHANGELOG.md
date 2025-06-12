@@ -1,4 +1,10 @@
-# 2.1.2
+## 3.0.0
+
+- Attempts to fix the errors when sending an image to Discord.
+- Removes all v11 compatibility.
+- Removes all v13 deprecation warnings and make it fully compatible.
+
+## 2.1.2
 
 - Add support for ignoring messages to be mirrored. If ChatMessage.flags.foundrytodiscord.ignore is set to true, the message will not be mirrored.
 
