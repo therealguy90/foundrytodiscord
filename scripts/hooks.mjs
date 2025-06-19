@@ -7,12 +7,10 @@ import * as api from '../api.js';
 import { messageParser } from "../main.js";
 
 
-// Application header buttons
+// Application header buttons and other stuff
 export async function initOtherHooks() {
-
     Hooks.on('deleteScene', async scene => {
         if (isUserMainGM()) {
-            // Used for Threaded Scenes to delete a thread map if a scene is deleted.
             const threadedChatMap = getThisModuleSetting('threadedChatMap');
             if (threadedChatMap.hasOwnProperty(scene.id)) {
                 delete threadedChatMap[scene.id];
@@ -20,30 +18,20 @@ export async function initOtherHooks() {
             }
         }
     });
+    let imagePopoutHookString = "";
+    let chatLogHookString = "";
+    // Removed in v14
+    if (game.version.startsWith('13')) {
+        imagePopoutHookString = "getHeaderControlsImagePopout";
+        chatLogHookString = "getChatMessageContextOptions";
+    }
+    else {
+        imagePopoutHookString = "getImagePopoutHeaderButtons";
+        chatLogHookString = "getChatLogEntryContext";
+    }
 
-    Hooks.on('getJournalSheetHeaderButtons', async (sheet, buttons) => {
-        buttons.unshift({
-            label: "Send Page (Main Channel)",
-            class: 'send-page-to-discord',
-            icon: 'fa-brands fa-discord',
-            onclick: () => {
-                sendJournal(sheet);
-            }
-        });
-        if (getThisModuleSetting('notesWebHookURL') !== "" && (getThisModuleSetting('allowPlayerSend') || game.user.isGM)) {
-            buttons.unshift({
-                label: "Send Page (Notes)",
-                class: 'send-page-to-discord-notes',
-                icon: 'fa-brands fa-discord',
-                onclick: () => {
-                    sendJournal(sheet, getThisModuleSetting('notesWebHookURL'));
-                }
-            });
-        }
-    });
-
-    Hooks.on('getImagePopoutHeaderButtons', (sheet, buttons) => {
-        buttons.unshift(
+    Hooks.on(imagePopoutHookString, (app, controls) => {
+        controls.unshift(
             {
                 label: "Send Image (Main Channel)",
                 class: 'send-image-to-discord',
@@ -54,7 +42,7 @@ export async function initOtherHooks() {
             }
         );
         if (getThisModuleSetting('notesWebHookURL') !== "" && (getThisModuleSetting('allowPlayerSend') || game.user.isGM)) {
-            buttons.unshift({
+            controls.unshift({
                 label: "Send Image (Notes)",
                 class: 'send-image-to-discord-notes',
                 icon: 'fa-brands fa-discord',
@@ -64,10 +52,7 @@ export async function initOtherHooks() {
             });
         }
     });
-
-    // For the "Send to Discord" context menu on chat messages.
-    // Seldom needed, but if chat mirroring is disabled, this is one way to circumvent it.
-    Hooks.on('getChatLogEntryContext', async (html, options) => {
+    Hooks.on(chatLogHookString, async (html, options) => {
         options.unshift(
             {
                 name: "Send (Main Webhook)",
@@ -115,6 +100,18 @@ export async function initOtherHooks() {
                     message.delete();
                 }
             })
+    });
+
+    //v13 journal sheets have not updated to ApplicationV2 
+    Hooks.on('getJournalSheetHeaderButtons', async (sheet, buttons) => {
+        buttons.unshift({
+            label: "Send Page (Main Channel)",
+            class: 'send-page-to-discord',
+            icon: 'fa-brands fa-discord',
+            onclick: () => {
+                sendJournal(sheet);
+            }
+        });
     });
 
     //Forien's Quest Log
