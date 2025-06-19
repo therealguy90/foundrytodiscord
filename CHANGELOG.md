@@ -1,4 +1,8 @@
-## 3.0.0
+# 3.0.1
+
+- Fixes module context menu options and header controls not showing up.
+
+# 3.0.0
 
 - Attempts to fix the errors when sending an image to Discord.
 - Removes all v11 compatibility.
