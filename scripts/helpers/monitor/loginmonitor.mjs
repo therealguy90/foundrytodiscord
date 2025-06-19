@@ -29,10 +29,10 @@ export function initLoginMonitor() {
 
     Hooks.on('changeSidebarTab', async (app) => {
         if (!logoutListenersAdded && app.tabName === "settings") {
-            const element = app.element[0];
-            const logout = element.querySelector('button[data-action="logout"]');
-            const setup = element.querySelector('button[data-action="setup"]');
-            const forgevtt = element.querySelector('button[data-action="forgevtt"]');
+            const element = app.element[0] || app.element; //v12 compatibility
+            const logout = element.querySelector('button[data-app="logout"]') || element.querySelector('button[data-action="logout"]');
+            const setup = element.querySelector('button[data-app="setup"]') || element.querySelector('button[data-action="setup"]');
+            const forgevtt = element.querySelector('button[data-app="forgevtt"]') || element.querySelector('button[data-action="forgevtt"]');
             if (logout) {
                 logout.addEventListener('click', async () => {
                     window.removeEventListener('beforeunload', beforeUnloadUserUpdate);
