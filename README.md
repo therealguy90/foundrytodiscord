@@ -1,4 +1,4 @@
-[![Buy Me a Coffee](https://az743702.vo.msecnd.net/cdn/kofi3.png?v=0)](https://ko-fi.com/loki123)
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/C0C0OL95Y)
 
 # Foundry to Discord
 
