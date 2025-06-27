@@ -78,7 +78,7 @@ export class DiscordRequestQueue {
      * @param {string} chatMessageID - The ID of the ChatMessage object that the Discord Message is linked to.
      * @returns {Promise<Response>} - A Promise that is resolved with a Response object when the request goes through the queue.
      */
-    deleteLinkedMessage(hook, chatMessageID) {
+    _deleteLinkedMessage(hook, chatMessageID) {
         return new Promise((resolve, reject) => {
             this._requestQueue.push({
                 hook: hook,

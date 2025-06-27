@@ -224,7 +224,7 @@ function deleteAll(msg) {
             } else {
                 deleteHook = url + '/messages/' + discordMessage.id;
             }
-            requestQueue.deleteLinkedMessage(deleteHook, discordMessage.id);
+            requestQueue._deleteLinkedMessage(deleteHook, discordMessage.id);
             deleteSentMessage(msg.id, discordMessage.id)
         }
     }
