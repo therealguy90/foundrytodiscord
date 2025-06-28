@@ -1,4 +1,9 @@
-# 3.0.1
+# 3.0.2
+
+- Fixes image popout buttons not working.
+- Removes errors when sending journal sheet pages.
+
+## 3.0.1
 
 - Fixes module context menu options and header controls not showing up.
 
