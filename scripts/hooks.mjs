@@ -31,26 +31,32 @@ export async function initOtherHooks() {
     }
 
     Hooks.on(imagePopoutHookString, (app, controls) => {
+        console.log(controls);
         controls.unshift(
             {
                 label: "Send Image (Main Channel)",
                 class: 'send-image-to-discord',
                 icon: 'fa-brands fa-discord',
+                onClick: async () => {
+                    sendImage(app);
+                },
                 onclick: async () => {
-                    sendImage(sheet);
+                    sendImage(app);
                 }
-            }
-        );
-        if (getThisModuleSetting('notesWebHookURL') !== "" && (getThisModuleSetting('allowPlayerSend') || game.user.isGM)) {
-            controls.unshift({
+            },
+            {
                 label: "Send Image (Notes)",
                 class: 'send-image-to-discord-notes',
                 icon: 'fa-brands fa-discord',
+                onClick: async () => {
+                    sendImage(app, getThisModuleSetting('notesWebHookURL'));
+                },
                 onclick: async () => {
-                    sendImage(sheet, getThisModuleSetting('notesWebHookURL'));
-                }
-            });
-        }
+                    sendImage(app, getThisModuleSetting('notesWebHookURL'));
+                },
+                visible: getThisModuleSetting('notesWebHookURL') !== "" && (getThisModuleSetting('allowPlayerSend') || game.user.isGM)
+            }
+        );
     });
     Hooks.on(chatLogHookString, async (html, options) => {
         options.unshift(
@@ -59,7 +65,7 @@ export async function initOtherHooks() {
                 icon: '<i class="fa-brands fa-discord"></i>',
                 condition: game.user.isGM || getThisModuleSetting('allowPlayerSend'),
                 callback: async li => {
-                    api.sendMessageFromID(li.attr("data-message-id"));
+                    api.sendMessageFromID(li.getAttribute("data-message-id"));
                 }
             },
             {
@@ -67,7 +73,7 @@ export async function initOtherHooks() {
                 icon: '<i class="fa-brands fa-discord"></i>',
                 condition: getThisModuleSetting('notesWebHookURL') !== "" && (getThisModuleSetting('allowPlayerSend') || game.user.isGM),
                 callback: async li => {
-                    const { response, message } = await api.sendMessageFromID(li.attr("data-message-id"), getThisModuleSetting('notesWebHookURL'));
+                    const { response, message } = await api.sendMessageFromID(li.getAttribute("data-message-id"), getThisModuleSetting('notesWebHookURL'));
                     if (response.ok) {
                         ui.notifications.info("Successfully sent to Discord Player Notes.");
                     }
@@ -81,7 +87,7 @@ export async function initOtherHooks() {
                 icon: '<i class="fa-brands fa-discord"></i>',
                 condition: game.user.isGM,
                 callback: async li => {
-                    let message = game.messages.get(li.attr("data-message-id"));
+                    let message = game.messages.get(li.getAttribute("data-message-id"));
                     let msgObjects;
                     if (getThisModuleSetting('messageList').hasOwnProperty(message.id) || getThisModuleSetting('clientMessageList').hasOwnProperty(message.id)) {
                         if (game.user.isGM) {
@@ -209,18 +215,15 @@ export async function initOtherHooks() {
                     };
                     const formData = new FormData();
                     formData.append('payload_json', JSON.stringify(params));
-                    api.sendMessage(formData, false, game.user.viewedScene)
-                        .then(({ response, message }) => {
-                            if (response.ok) {
-                                ui.notifications.info("Successfully sent to Discord.");
-                            }
-                            else {
-                                throw new Error("An error occurred.");
-                            }
-                        })
+                    const response = api.sendMessage(formData, false, game.user.viewedScene)
                         .catch(error => {
                             ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
                         });
+                    if (response.ok) {
+                        ui.notifications.info("Successfully sent to Discord.");
+                    } else {
+                        throw new Error("An error occurred.");
+                    }
                 }
             });
         });
@@ -284,28 +287,28 @@ async function sendJournal(sheet, hookOverride = undefined) {
         }], undefined, username, imgurl, embeds, user);
         for (const request of allRequests) {
             const { waitHook, formData } = await postParse(undefined, request, hookOverride);
-            const { response, message } = await api.sendMessage(formData, false, game.user.viewedScene, waitHook)
+            const response = await api.sendMessage(formData, false, game.user.viewedScene, waitHook)
                 .catch(error => {
-                    ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
+                    ui.notifications.error("foundrytodiscord | An error occurred while trying to send to Discord. Check F12 for logs.");
                 });
-
             if (response.ok) {
-                ui.notifications.info("Successfully sent to Discord.");
+                ui.notifications.info("foundrytodiscord | Successfully sent to Discord.");
             }
             else {
-                throw new Error("An error occurred.");
+                throw new Error("foundrytodiscord | An error occurred.");
             }
         }
     }
 }
 
-async function sendImage(sheet, hookOverride = undefined) {
+async function sendImage(app, hookOverride = undefined) {
     let formData = new FormData();
     let msgText = "";
     let imgblob;
-    if (sheet.object.startsWith("data")) {
-        imgblob = dataToBlob(sheet.object);
-        const parts = sheet.object.split(';');
+    let src = app.options?.src || app.object; //AppV2 compatibility, removing in v14
+    if (src.startsWith("data")) { //if src is data string
+        imgblob = dataToBlob(app.object);
+        const parts = app.object.split(';');
         if (parts.length < 2) {
             return 'jpg';
         }
@@ -320,23 +323,21 @@ async function sendImage(sheet, hookOverride = undefined) {
             }
             formData.append('files[0]', imgblob, "foundrytodiscord_sharedimage." + fileExt);
             formData.append('payload_json', JSON.stringify(params));
-            api.sendMessage(formData, false, game.user.viewedScene, hookOverride)
-                .then(({ response, message }) => {
-                    if (response.ok) {
-                        ui.notifications.info("Successfully sent to Discord.");
-                    }
-                    else {
-                        throw new Error("An error occurred.");
-                    }
-                })
+            const response = await api.sendMessage(formData, false, game.user.viewedScene, hookOverride)
                 .catch(error => {
-                    ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
+                    ui.notifications.error("foundrytodiscord | An error occurred while trying to send to Discord. Check F12 for logs.");
                 });
+            if (response.ok) {
+                ui.notifications.info("foundrytodiscord | Successfully sent to Discord.");
+            }
+            else {
+                throw new Error("foundrytodiscord | An error occurred.");
+            }
         }
     }
-    else {
+    else { //if src is a URL
         let link;
-        link = await generateimglink(sheet.object);
+        link = await generateimglink(src);
         if (link === "") {
             console.error("foundrytodiscord | Your Invite URL isn't set! Image was not sent.");
             return;
@@ -348,12 +349,15 @@ async function sendImage(sheet, hookOverride = undefined) {
             content: msgText
         }
         formData.append('payload_json', JSON.stringify(params));
-        response = await api.sendMessage(formData, false, game.user.viewedScene, hookOverride);
+        const response = await api.sendMessage(formData, false, game.user.viewedScene, hookOverride)
+            .catch(error => {
+                ui.notifications.error("foundrytodiscord | An error occurred while trying to send to Discord. Check F12 for logs.");
+            });
         if (response.ok) {
-            ui.notifications.info("Successfully sent to Discord.");
+            ui.notifications.info("foundrytodiscord | Successfully sent to Discord.");
         }
         else {
-            ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
+            throw new Error("foundrytodiscord | An error occurred.");
         }
     }
 }
