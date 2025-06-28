@@ -40,7 +40,7 @@ export async function initOtherHooks() {
                 onClick: async () => {
                     sendImage(app);
                 },
-                onclick: async () => {
+                onclick: async () => { //janky v12 compatibility
                     sendImage(app);
                 }
             },
@@ -51,7 +51,7 @@ export async function initOtherHooks() {
                 onClick: async () => {
                     sendImage(app, getThisModuleSetting('notesWebHookURL'));
                 },
-                onclick: async () => {
+                onclick: async () => { //janky v12 compatibility
                     sendImage(app, getThisModuleSetting('notesWebHookURL'));
                 },
                 visible: getThisModuleSetting('notesWebHookURL') !== "" && (getThisModuleSetting('allowPlayerSend') || game.user.isGM)
