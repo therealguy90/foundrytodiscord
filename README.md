@@ -29,9 +29,6 @@ While it will work with other systems, the extent of compatibility may vary. Reg
 **Forien's Quest Log:**
 - Adds a button to the window of a Quest that allows the details to be sent to Discord.
 
-**Pf2e Target Damage:**
-- Multiple targets are also sent to Discord.
-
 **Pf2e Toolbelt:**
 - Target damage helper save results are displayed if they're from a player.
 
