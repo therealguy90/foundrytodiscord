@@ -1,4 +1,8 @@
-# 3.0.2
+# 3.0.3
+
+- Small fix to v12 compatibility.
+
+## 3.0.2
 
 - Fixes image popout buttons not working.
 - Removes errors when sending journal sheet pages.
