@@ -83,15 +83,21 @@ export class MessageParserPF2e extends MessageParser {
         const div = document.createElement('div');
         div.innerHTML = message.content;
         let desc = "";
-        let title;
+        let title = "";
         const actionDiv = document.createElement('div');
         actionDiv.innerHTML = message.flavor;
         const h4Element = actionDiv.querySelector("h4.action");
-        const subtitle = actionDiv.querySelector(".subtitle");
-        const actionGlyph = actionDiv.querySelector(".action-glyph");
-        title = `${h4Element ? h4Element.querySelector("strong") ? h4Element.querySelector("strong").textContent : h4Element.textContent : ""} ${subtitle ? subtitle.textContent : ""}`;
-        if (getThisModuleSetting("prettierEmojis") && title && actionGlyph && actionGlyphEmojis.hasOwnProperty(actionGlyph.textContent.trim().toLowerCase())) {
-            title += actionGlyph.textContent.toLowerCase().replace(/1|2|3|f|r/g, match => actionGlyphEmojis[match])
+        const actionGlyph = h4Element?.querySelector(".action-glyph") || undefined;
+        if (actionGlyph) {
+            if (getThisModuleSetting('prettierEmojis')) {
+                actionGlyph.outerHTML = actionGlyph.textContent.toLowerCase().replace(/1|2|3|4|5|a|d|t|f|r/g, match => actionGlyphEmojis[match]);
+            }
+            else {
+                actionGlyph.remove();
+            }
+        }
+        if (h4Element) {
+            title = h4Element.innerHTML.trim().replace(/\s+/g, ' ');
         }
         desc = `${this._parseTraits(message.flavor)}\n`;
         let speakerActor;
@@ -178,7 +184,7 @@ export class MessageParserPF2e extends MessageParser {
         }
         if (traits.trim() !== "") {
             return `\`${traits.trim()}\`\n`;
-        }
+        }        
         else {
             return "";
         }
@@ -740,7 +746,7 @@ export class MessageParserPF2e extends MessageParser {
                     }
                     else {
                         currentTermString += `\`${term.expression}\``;
-                        if (nextTerm && (roll.terms[termcount] && ((foundry.dice && !roll.terms[termcount] instanceof foundry.dice.terms.OperatorTerm) ||!roll.terms[termcount] instanceof OperatorTerm))) {
+                        if (nextTerm && (roll.terms[termcount] && ((foundry.dice && !roll.terms[termcount] instanceof foundry.dice.terms.OperatorTerm) || !roll.terms[termcount] instanceof OperatorTerm))) {
                             currentTermString += " +";
                         }
                     }
