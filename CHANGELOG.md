@@ -1,4 +1,8 @@
-# 3.0.3
+# 3.0.4
+
+- (pf2e) Fixes title spacing for parsed action card embeds.
+
+## 3.0.3
 
 - Small fix to v12 compatibility.
 
