@@ -31,7 +31,6 @@ export async function initOtherHooks() {
     }
 
     Hooks.on(imagePopoutHookString, (app, controls) => {
-        console.log(controls);
         controls.unshift(
             {
                 label: "Send Image (Main Channel)",
@@ -65,7 +64,7 @@ export async function initOtherHooks() {
                 icon: '<i class="fa-brands fa-discord"></i>',
                 condition: game.user.isGM || getThisModuleSetting('allowPlayerSend'),
                 callback: async li => {
-                    api.sendMessageFromID(li.getAttribute("data-message-id"));
+                    api.sendMessageFromID(li.getAttribute("data-message-id") || li.attr("data-message-id")); //v12 compatibility
                 }
             },
             {
@@ -73,7 +72,7 @@ export async function initOtherHooks() {
                 icon: '<i class="fa-brands fa-discord"></i>',
                 condition: getThisModuleSetting('notesWebHookURL') !== "" && (getThisModuleSetting('allowPlayerSend') || game.user.isGM),
                 callback: async li => {
-                    const { response, message } = await api.sendMessageFromID(li.getAttribute("data-message-id"), getThisModuleSetting('notesWebHookURL'));
+                    const { response, message } = await api.sendMessageFromID(li.getAttribute("data-message-id") || li.attr("data-message-id") , getThisModuleSetting('notesWebHookURL')); //v12 compatibility
                     if (response.ok) {
                         ui.notifications.info("Successfully sent to Discord Player Notes.");
                     }
@@ -87,7 +86,7 @@ export async function initOtherHooks() {
                 icon: '<i class="fa-brands fa-discord"></i>',
                 condition: game.user.isGM,
                 callback: async li => {
-                    let message = game.messages.get(li.getAttribute("data-message-id"));
+                    let message = game.messages.get(li.getAttribute("data-message-id") || li.attr("data-message-id")); //v12 compatibility
                     let msgObjects;
                     if (getThisModuleSetting('messageList').hasOwnProperty(message.id) || getThisModuleSetting('clientMessageList').hasOwnProperty(message.id)) {
                         if (game.user.isGM) {
