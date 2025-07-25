@@ -64,7 +64,16 @@ export async function initOtherHooks() {
                 icon: '<i class="fa-brands fa-discord"></i>',
                 condition: game.user.isGM || getThisModuleSetting('allowPlayerSend'),
                 callback: async li => {
-                    api.sendMessageFromID(li.getAttribute("data-message-id") || li.attr("data-message-id")); //v12 compatibility
+                    const response = await api.sendMessageFromID(li.getAttribute ? li.getAttribute("data-message-id") : li.attr("data-message-id")) //v12 compatibility
+                        .catch(error => {
+                            ui.notifications.error("foundrytodiscord | An error occurred while trying to send to Discord. Check F12 for logs.");
+                        });
+                    if (response?.ok) {
+                        ui.notifications.info("Successfully sent to Discord.");
+                    }
+                    else {
+                        throw new Error("foundrytodiscord | An error occurred.");
+                    }
                 }
             },
             {
@@ -72,12 +81,15 @@ export async function initOtherHooks() {
                 icon: '<i class="fa-brands fa-discord"></i>',
                 condition: getThisModuleSetting('notesWebHookURL') !== "" && (getThisModuleSetting('allowPlayerSend') || game.user.isGM),
                 callback: async li => {
-                    const { response, message } = await api.sendMessageFromID(li.getAttribute("data-message-id") || li.attr("data-message-id") , getThisModuleSetting('notesWebHookURL')); //v12 compatibility
-                    if (response.ok) {
+                    const response = await api.sendMessageFromID(li.getAttribute ? li.getAttribute("data-message-id") : li.attr("data-message-id") /*v12 compatibility*/, getThisModuleSetting('notesWebHookURL'))
+                        .catch(error => {
+                            ui.notifications.error("foundrytodiscord | An error occurred while trying to send to Discord. Check F12 for logs.");
+                        });
+                    if (response?.ok) {
                         ui.notifications.info("Successfully sent to Discord Player Notes.");
                     }
                     else {
-                        ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
+                        throw new Error("foundrytodiscord | An error occurred.");
                     }
                 }
             },
@@ -86,7 +98,7 @@ export async function initOtherHooks() {
                 icon: '<i class="fa-brands fa-discord"></i>',
                 condition: game.user.isGM,
                 callback: async li => {
-                    let message = game.messages.get(li.getAttribute("data-message-id") || li.attr("data-message-id")); //v12 compatibility
+                    const message = game.messages.get(li.getAttribute ? li.getAttribute("data-message-id") : li.attr("data-message-id")); //v12 compatibility
                     let msgObjects;
                     if (getThisModuleSetting('messageList').hasOwnProperty(message.id) || getThisModuleSetting('clientMessageList').hasOwnProperty(message.id)) {
                         if (game.user.isGM) {
