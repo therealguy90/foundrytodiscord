@@ -230,7 +230,7 @@ export async function initOtherHooks() {
                         .catch(error => {
                             ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
                         });
-                    if (response.ok) {
+                    if (response?.ok) {
                         ui.notifications.info("Successfully sent to Discord.");
                     } else {
                         throw new Error("An error occurred.");
@@ -302,7 +302,7 @@ async function sendJournal(sheet, hookOverride = undefined) {
                 .catch(error => {
                     ui.notifications.error("foundrytodiscord | An error occurred while trying to send to Discord. Check F12 for logs.");
                 });
-            if (response.ok) {
+            if (response?.ok) {
                 ui.notifications.info("foundrytodiscord | Successfully sent to Discord.");
             }
             else {
@@ -338,7 +338,7 @@ async function sendImage(app, hookOverride = undefined) {
                 .catch(error => {
                     ui.notifications.error("foundrytodiscord | An error occurred while trying to send to Discord. Check F12 for logs.");
                 });
-            if (response.ok) {
+            if (response?.ok) {
                 ui.notifications.info("foundrytodiscord | Successfully sent to Discord.");
             }
             else {
@@ -364,7 +364,7 @@ async function sendImage(app, hookOverride = undefined) {
             .catch(error => {
                 ui.notifications.error("foundrytodiscord | An error occurred while trying to send to Discord. Check F12 for logs.");
             });
-        if (response.ok) {
+        if (response?.ok) {
             ui.notifications.info("foundrytodiscord | Successfully sent to Discord.");
         }
         else {
