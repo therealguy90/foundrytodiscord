@@ -139,7 +139,7 @@ export async function initOtherHooks() {
                 class: 'send-to-discord',
                 icon: 'fa-brands fa-discord',
                 onclick: async () => {
-                    const questData = app._quest;
+                    const questData = app.quest;
                     let embeds = [];
                     //Build author object
                     let author = { name: "", icon_url: "" };
@@ -151,9 +151,9 @@ export async function initOtherHooks() {
                     let thumbnail = { url: "" };
                     if (questData.splash) {
                         thumbnail.url = await generateimglink(questData.splash);
-                    }
+                    } 
                     //Build embed title
-                    let title = "QUEST: " + questData._name;
+                    let title = "QUEST: " + questData.name;
                     switch (questData.status) {
                         case "active":
                             title = ":arrow_forward: " + title;
@@ -226,7 +226,7 @@ export async function initOtherHooks() {
                     };
                     const formData = new FormData();
                     formData.append('payload_json', JSON.stringify(params));
-                    const response = api.sendMessage(formData, false, game.user.viewedScene)
+                    const response = await api.sendMessage(formData, false, game.user.viewedScene)
                         .catch(error => {
                             ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
                         });
