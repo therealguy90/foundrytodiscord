@@ -354,18 +354,20 @@ export class MessageParserDnD5e extends MessageParser {
             const target = targetContainer.querySelector('.midi-qol-target-npc-Player.midi-qol-target-name, .midi-qol-playerTokenName');
             if (target) {
                 const icon = targetContainer.querySelector("i");
-                if (icon && game.settings.get('dnd5e', 'attackRollVisibility') !== "none") {
-                    switch (icon.className) {
-                        case "midi-qol-hit-symbol fas fa-xmark":
-                            parsedTarget += swapOrNot(":negative_squared_cross_mark:", checkFails["xmark"]);
-                            break;
-                        case "midi-qol-hit-symbol fas fa-check":
-                            parsedTarget += swapOrNot(":white_check_mark:", checkFails["check"]);
-                            break;
-                        case "midi-qol-hit-symbol fas fa-check-double":
-                            parsedTarget += swapOrNot(":white_check_mark::white_check_mark:", checkFails["doublecheck"]);
-                            break;
+                let resultSymbol = "";
+                if (icon) {
+                    if(icon.className.includes("fa-xmark")){
+                        resultSymbol = swapOrNot(":negative_squared_cross_mark:", checkFails["xmark"]);
                     }
+                    else if(icon.className.includes("fa-check")){
+                        resultSymbol = swapOrNot(":white_check_mark:", checkFails["check"]);
+                    }
+                    else if(icon.className.includes("fa-check-double")){
+                        resultSymbol = swapOrNot(":white_check_mark::white_check_mark:", checkFails["doublecheck"]);
+                    }
+                }
+                if((icon?.className.includes("midi-qol-hits-symbol") && game.settings.get('dnd5e', 'attackRollVisibility') !== "none") || (icon?.className.includes("midi-qol-save-symbol") && game.settings.get('dnd5e', 'challengeVisibility') !== "none")){
+                    parsedTarget += resultSymbol;
                 }
                 parsedTarget += `**${target.textContent.trim()}**`;
                 // For attack hits:
@@ -375,8 +377,8 @@ export class MessageParserDnD5e extends MessageParser {
                     parsedTarget += ` (${swapOrNot(":shield:", shieldEmoji)}**__${ac.textContent}__**)`;
                 }
                 // For spell saves:
-                const save = targetContainer.querySelector(".midi-qol-save-total");
-                if (save && game.settings.get("midi-qol", "ConfigSettings").autoCheckSaves !== "allNoRoll") {
+                const save = targetContainer.querySelector("h4.dice-total");
+                if (save && (game.settings.get('dnd5e', 'challengeVisibility') !== "none" || (game.settings.get('dnd5e', 'challengeVisibility') === "players" && !targetContainer.className.includes("midi-qol-npc-target")))) {
                     parsedTarget += `: ${dieIcon(20)}**__${save.textContent}__**`;
                 }
             }
@@ -403,11 +405,11 @@ export class MessageParserDnD5e extends MessageParser {
                         let rollBreakdown = "";
                         if (message && rollFormula) {
                             const rollIndex = messageRolls.findIndex(roll => roll && roll.formula === rollFormula.textContent && roll.total === Number(rollValue));
-                            if (rollIndex) {
+                            if (rollIndex >= 0) {
                                 rollBreakdown = this._generateRollBreakdown(messageRolls[rollIndex]);
                                 messageRolls.splice(rollIndex, 1);
                             }
-                        }
+                        }   
                         rollResults += `${dieIcon()}**\`${rollFormula.textContent}\`**\n${dieIcon()}**Result: __${rollValue}__**||(${rollBreakdown})||\n\n`;
                     }
                     else {
