@@ -147,6 +147,7 @@ export class MessageParserDnD5e extends MessageParser {
     }
 
     async _createMidiMergeCard(message) {
+        console.log(message);
         let embeds = this._createCardEmbed(message);
         const divs = document.createElement('div');
         divs.innerHTML = message.content;
@@ -237,7 +238,7 @@ export class MessageParserDnD5e extends MessageParser {
         if (element && game.settings.get('midi-qol', 'ConfigSettings').autoCheckHit === 'all') {
             const hitValues = this._midiParseTargetsFromDisplay(element);
             if (hitValues && hitValues !== "") {
-                fields.push({ name: "Results", value: hitValues });
+                fields.push({ name: "Targets", value: hitValues });
             }
         }
         element = divs.querySelector('.midi-qol-other-damage-roll');
@@ -344,8 +345,9 @@ export class MessageParserDnD5e extends MessageParser {
 
 
     _midiParseTargetsFromDisplay(element) {
+        console.log(element);
         let parsedText = ""
-        element.querySelectorAll('.midi-qol-flex-container, .target').forEach(targetContainer => {
+        element.querySelectorAll('.midi-qol-target-select').forEach(targetContainer => {
             let parsedTarget = "";
             const result = targetContainer.querySelector('strong');
             if (result) {
@@ -353,16 +355,17 @@ export class MessageParserDnD5e extends MessageParser {
             }
             const target = targetContainer.querySelector('.midi-qol-target-npc-Player.midi-qol-target-name, .midi-qol-playerTokenName');
             if (target) {
-                const icon = targetContainer.querySelector(".midi-qol-target-name").querySelector("i");
-                if (icon) {
+                const icon = targetContainer.querySelector("i");
+                console.log(icon.className);
+                if (icon && game.settings.get('dnd5e', 'attackRollVisibility') !== "none") {
                     switch (icon.className) {
-                        case "fas fa-times":
+                        case "midi-qol-hit-symbol fas fa-xmark":
                             parsedTarget += swapOrNot(":negative_squared_cross_mark:", checkFails["xmark"]);
                             break;
-                        case "fas fa-check":
+                        case "midi-qol-hit-symbol fas fa-check":
                             parsedTarget += swapOrNot(":white_check_mark:", checkFails["check"]);
                             break;
-                        case "fas fa-check-double":
+                        case "midi-qol-hit-symbol fas fa-check-double":
                             parsedTarget += swapOrNot(":white_check_mark::white_check_mark:", checkFails["doublecheck"]);
                             break;
                     }
@@ -370,7 +373,7 @@ export class MessageParserDnD5e extends MessageParser {
                 parsedTarget += `**${target.textContent.trim()}**`;
                 // For attack hits:
                 let ac = targetContainer.querySelector("i.fas.fa-shield-halved");
-                if (ac && game.settings.get('midi-qol', 'ConfigSettings').displayHitResultNumeric) {
+                if (ac && game.settings.get('dnd5e', 'attackRollVisibility') === "all") {
                     ac = ac.parentNode;
                     parsedTarget += ` (${swapOrNot(":shield:", shieldEmoji)}**__${ac.textContent}__**)`;
                 }
@@ -463,7 +466,7 @@ export class MessageParserDnD5e extends MessageParser {
     _isMidiMergeCard(htmlString) {
         const tempElement = document.createElement('div');
         tempElement.innerHTML = htmlString;
-        const midiQOLItemCard = tempElement.querySelector('.midi-qol-item-card, .midi-chat-card.item-card');
+        const midiQOLItemCard = tempElement.querySelector('.midi-qol-item-card, .midi-chat-card.item-card, .activation-card');
         if (midiQOLItemCard) {
             return true;
         } else {

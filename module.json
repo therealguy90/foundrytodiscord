@@ -41,7 +41,7 @@
         "type": "module",
         "manifest": "https://gitlab.com/tposney/midi-qol/raw/v11/package/module.json",
         "compatibility": {
-          "verified": "11.4.7"
+          "verified": "13.0.21"
         }
       },
       {
