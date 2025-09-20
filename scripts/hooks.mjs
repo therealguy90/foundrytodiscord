@@ -318,8 +318,8 @@ async function sendImage(app, hookOverride = undefined) {
     let imgblob;
     let src = app.options?.src || app.object; //AppV2 compatibility, removing in v14
     if (src.startsWith("data")) { //if src is data string
-        imgblob = dataToBlob(app.object);
-        const parts = app.object.split(';');
+        imgblob = dataToBlob(src);
+        const parts = src.split(';');
         if (parts.length < 2) {
             return 'jpg';
         }
