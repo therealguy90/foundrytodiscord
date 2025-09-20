@@ -147,7 +147,6 @@ export class MessageParserDnD5e extends MessageParser {
     }
 
     async _createMidiMergeCard(message) {
-        console.log(message);
         let embeds = this._createCardEmbed(message);
         const divs = document.createElement('div');
         divs.innerHTML = message.content;
@@ -345,7 +344,6 @@ export class MessageParserDnD5e extends MessageParser {
 
 
     _midiParseTargetsFromDisplay(element) {
-        console.log(element);
         let parsedText = ""
         element.querySelectorAll('.midi-qol-target-select').forEach(targetContainer => {
             let parsedTarget = "";
@@ -356,7 +354,6 @@ export class MessageParserDnD5e extends MessageParser {
             const target = targetContainer.querySelector('.midi-qol-target-npc-Player.midi-qol-target-name, .midi-qol-playerTokenName');
             if (target) {
                 const icon = targetContainer.querySelector("i");
-                console.log(icon.className);
                 if (icon && game.settings.get('dnd5e', 'attackRollVisibility') !== "none") {
                     switch (icon.className) {
                         case "midi-qol-hit-symbol fas fa-xmark":
