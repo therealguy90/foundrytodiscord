@@ -4,7 +4,7 @@ export class MessageParserSystemID extends MessageParser{
 
     constructor(){
         super();
-        this._polyglotPath = "system.traits.languages.value"; // Change this to fir  
+        this._polyglotPath = "system.traits.languages.value"; // Change this to your system's language path (must be an array, otherwise you might need to override _getPolyglotLanguages)
         this._genericRolls = false;
     }
 
