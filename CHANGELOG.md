@@ -2,7 +2,7 @@
 
 - #50 Fixes right-click to send messages manually.
 - #53 (forien-quest-log) Fix quest details not sending.
-- #56 (midi-qol) Fixes title spacing for parsed action card embeds.
+- #56 (midi-qol) Fixes roll card formatting.
 - Fixes image data blobs from image popout windows not sending.
 
 ## 3.0.4
