@@ -67,6 +67,7 @@ export async function initOtherHooks() {
                     const response = await api.sendMessageFromID(li.getAttribute ? li.getAttribute("data-message-id") : li.attr("data-message-id")) //v12 compatibility
                         .catch(error => {
                             ui.notifications.error("foundrytodiscord | An error occurred while trying to send to Discord. Check F12 for logs.");
+                            console.error(error);
                         });
                     if (response?.ok) {
                         ui.notifications.info("Successfully sent to Discord.");
@@ -84,6 +85,7 @@ export async function initOtherHooks() {
                     const response = await api.sendMessageFromID(li.getAttribute ? li.getAttribute("data-message-id") : li.attr("data-message-id") /*v12 compatibility*/, getThisModuleSetting('notesWebHookURL'))
                         .catch(error => {
                             ui.notifications.error("foundrytodiscord | An error occurred while trying to send to Discord. Check F12 for logs.");
+                            console.error(error);
                         });
                     if (response?.ok) {
                         ui.notifications.info("Successfully sent to Discord Player Notes.");
@@ -229,6 +231,7 @@ export async function initOtherHooks() {
                     const response = await api.sendMessage(formData, false, game.user.viewedScene)
                         .catch(error => {
                             ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
+                            console.error(error);
                         });
                     if (response?.ok) {
                         ui.notifications.info("Successfully sent to Discord.");
@@ -301,6 +304,7 @@ async function sendJournal(sheet, hookOverride = undefined) {
             const response = await api.sendMessage(formData, false, game.user.viewedScene, waitHook)
                 .catch(error => {
                     ui.notifications.error("foundrytodiscord | An error occurred while trying to send to Discord. Check F12 for logs.");
+                    console.error(error);
                 });
             if (response?.ok) {
                 ui.notifications.info("foundrytodiscord | Successfully sent to Discord.");
@@ -337,6 +341,7 @@ async function sendImage(app, hookOverride = undefined) {
             const response = await api.sendMessage(formData, false, game.user.viewedScene, hookOverride)
                 .catch(error => {
                     ui.notifications.error("foundrytodiscord | An error occurred while trying to send to Discord. Check F12 for logs.");
+                    console.error(error);
                 });
             if (response?.ok) {
                 ui.notifications.info("foundrytodiscord | Successfully sent to Discord.");
@@ -363,6 +368,7 @@ async function sendImage(app, hookOverride = undefined) {
         const response = await api.sendMessage(formData, false, game.user.viewedScene, hookOverride)
             .catch(error => {
                 ui.notifications.error("foundrytodiscord | An error occurred while trying to send to Discord. Check F12 for logs.");
+                console.error(error);
             });
         if (response?.ok) {
             ui.notifications.info("foundrytodiscord | Successfully sent to Discord.");
