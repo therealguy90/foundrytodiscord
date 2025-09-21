@@ -374,7 +374,7 @@ export class MessageParser {
         const speakerActor = game.actors.get(message.speaker.actor);
         const user = message.author;
         message.rolls.forEach(roll => {
-            if (getThisModuleSetting('showFormula') && (speakerActor?.hasPlayerOwner || (!speakerActor && !user.isGM))) {
+            if (getThisModuleSetting('showFormula') && (getThisModuleSetting('forceShowRolls') ||(speakerActor?.hasPlayerOwner || (!speakerActor && !user.isGM)))) {
                 desc += `${dieIcon()}**\`${roll.formula}\`**\n`
                 desc += `**${dieIcon()}Result: __${roll.total}__**`;
                 let rollBreakdown = this._generateRollBreakdown(roll);
