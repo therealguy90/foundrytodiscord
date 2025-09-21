@@ -94,6 +94,15 @@ export class MessageParserPF1 extends MessageParser {
                     }
                 }
                 damageElement = attackElement.querySelector(`.attack-damage, .damage`);
+                const criticalDamage = damageElement.querySelector(`[data-damage-type="critical"]`);
+                if (criticalDamage) {
+                    const damageTotal = criticalDamage.querySelector(".fake-inline-roll").textContent.trim().replace(/\s+/g, ' ');
+                    for (const a of criticalDamage.querySelectorAll("a")) {
+                        a.remove();
+                    }
+                    damageFieldValue += `\n**${criticalDamage.textContent} (${damageTotal})**\n`;
+
+                }
                 const critDamageRolls = attack.critDamage;
                 if (critDamageRolls) {
                     const damageTableBody = attackElement.querySelector("tbody");
@@ -109,7 +118,7 @@ export class MessageParserPF1 extends MessageParser {
                                     .join(", ");
                                 if (types) typeText = ` ${types}`;
                             }
-                            damageFieldValue += `\n**Critical Damage**\n\`${roll.formula}\`\n${dieIcon()}**\`${roll.total}${typeText}\`**||(${this._generateRollBreakdown(roll)})||\n`;
+                            damageFieldValue += `\`${roll.formula}\`\n${dieIcon()}**\`${roll.total}${typeText}\`**||(${this._generateRollBreakdown(roll)})||\n`;
                         }
                     }
                 }
@@ -121,7 +130,11 @@ export class MessageParserPF1 extends MessageParser {
         if (fields[fields.length - 1]?.name === "\u200b") {
             fields.pop(); //Remove last spacer field for cleanup
         }
-        return [{ title: title, description: desc, fields: fields }];
+        const embeds = [{ title: title, description: desc, footer: { text: this._getCardFooter(message.content) } }];
+        if(fields.length > 0) {
+            embeds.push({title: title, description: " ", fields: fields });
+        }
+        return embeds;
     }
 
     async _createLevelUpEmbed(message) {
