@@ -5,7 +5,7 @@ export class MessageParserPF1 extends MessageParser {
 
     constructor() {
         super();
-        this._polyglotPath = "system.traits.languages.value"; // Change this to your system's language path (must be an array, otherwise you might need to override _getPolyglotLanguages)
+        this._polyglotPath = "system.traits.languages.standard";
         this._genericRolls = false;
     }
 
