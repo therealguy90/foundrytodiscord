@@ -881,6 +881,9 @@ export class MessageParser {
                         }
                     });
                     break;
+                case typeof term === "string":
+                    currentTermString += ` ${term}`;
+                    break;
                 default:
                     currentTermString += "error";
                     break;
