@@ -41,23 +41,7 @@ export class MessageParserPF1 extends MessageParser {
         let fields = [];
         const title = div.querySelector(".item-name").textContent;
         const cardContentElement = div.querySelector(".card-content");
-        /*
-        //case of Spell item
-        const spellDescElement = div.querySelector(".spell-description");
-        if (spellDescElement) {
-            for (const breakElement of spellDescElement.querySelectorAll("br")) {
-                breakElement.remove();
-            }
-            //desc += spellDescElement.innerHTML.trim();
-        }
-        const itemDescHeaderElement = div.querySelector(".description-header");
-        if (itemDescHeaderElement) {
-            //desc += itemDescHeaderElement.outerHTML;
-        }
-        const itemDescBodyElement = div.querySelector(".description-body");
-        if(itemDescBodyElement){
-            //desc += itemDescBodyElement.innerHTML.trim();
-        }*/
+
         desc += cardContentElement?.innerHTML.trim() ?? ""; // Card Body
         for (const attackElement of div.querySelectorAll(".chat-attack")) {
             const rollIndex = Number(attackElement.getAttribute("data-index") ?? "-1");
@@ -65,61 +49,78 @@ export class MessageParserPF1 extends MessageParser {
             //Attack Roll
             const attackTitleElement = attackElement.querySelector(`.attack-flavor.alt, .attack-flavor[colspan="2"]`);
             const attack = message.systemRolls.attacks[rollIndex];
+            console.log(attack.attack);
             const attackRoll = attack.attack;
-            let attackFieldValue = `\`${attackRoll.formula}\`\n${dieIcon(20)}**\`${attackRoll.total}\`**||(${this._generateRollBreakdown(attackRoll)})||`
-            const critConfirmElement = attackElement.querySelector(`.attack-flavor.crit-confirm`);
-            console.log(message.systemRolls.attacks[rollIndex]);
-            if (critConfirmElement) {
-                const critConfirm = attack.critConfirm;
-                attackFieldValue += `\n**${critConfirmElement.textContent}**\n\`${critConfirm.formula}\`\n${dieIcon(20)}**\`${critConfirm.total}\`**||(${this._generateRollBreakdown(critConfirm)})||`;
+            if (attackRoll) {
+                let attackFieldValue = `\`${attackRoll.formula}\`\n${dieIcon(20)}**\`${attackRoll.total}\`**||(${this._generateRollBreakdown(attackRoll)})||\n`
+                const critConfirmElement = attackElement.querySelector(`.attack-flavor.crit-confirm`);
+                if (critConfirmElement) {
+                    const critConfirm = attack.critConfirm;
+                    attackFieldValue += `\n**${critConfirmElement.textContent}**\n\`${critConfirm.formula}\`\n${dieIcon(20)}**\`${critConfirm.total}\`**||(${this._generateRollBreakdown(critConfirm)})||`;
+                }
+                fields.push({ name: attackTitleElement ? attackTitleElement.textContent : "", value: attackFieldValue, inline: true });
             }
-            fields.push({ name: attackTitleElement ? attackTitleElement.textContent : "", value: attackFieldValue, inline: true });
-
-            console.log(message);
-
             //Damage Roll
-            const damageElement = attackElement.querySelector(`.attack-damage, .damage`);
+            let damageElement = attackElement.querySelector(`.attack-damage, .damage`);
             if (damageElement) {
                 const normalDamage = damageElement.querySelector(`[data-damage-type="normal"]`);
+                damageElement = normalDamage ? normalDamage : damageElement;
                 const damageRolls = attack.damage;
                 let title = "";
                 let damageFieldValue = "";
-                if (normalDamage) {
-                    const damageTotal = normalDamage.querySelector(".fake-inline-roll").textContent.trim().replace(/\s+/g, ' ');
-                    for (const a of normalDamage.querySelectorAll("a")) {
+                if (damageElement) {
+                    const damageTotal = damageElement.querySelector(".fake-inline-roll").textContent.trim().replace(/\s+/g, ' ');
+                    for (const a of damageElement.querySelectorAll("a")) {
                         a.remove();
                     }
-                    title = `${normalDamage.textContent} (${damageTotal})`;
+                    title = `${damageElement.textContent} (${damageTotal})`;
 
                 }
                 if (damageRolls) {
-                    for (const damage of damageRolls) {
-                        damageFieldValue += `\`${damage.formula}\`\n${dieIcon()}**\`${damage.total}\`**||(${this._generateRollBreakdown(damage)})||\n`;
+                    const damageTableBody = attackElement.querySelector("tbody");
+                    if (damageTableBody) {
+                        const normalDamageCells = damageTableBody.querySelectorAll("td.roll.damage.normal");
+                        const normalTypeCells = damageTableBody.querySelectorAll("td.damage-types");
+                        for (let i = 0; i < normalDamageCells.length && i < damageRolls.length; i++) {
+                            const roll = damageRolls[i];
+                            let typeText = "";
+                            if (normalTypeCells[i]) {
+                                const types = Array.from(normalTypeCells[i].querySelectorAll(".damage-type .name"))
+                                    .map(e => e.textContent.trim())
+                                    .join(", ");
+                                if (types) typeText = ` ${types}`;
+                            }
+                            damageFieldValue += `\`${roll.formula}\`\n${dieIcon()}**\`${roll.total}${typeText}\`**||(${this._generateRollBreakdown(roll)})||\n`;
+                        }
                     }
                 }
+                damageElement = attackElement.querySelector(`.attack-damage, .damage`);
                 const critDamageRolls = attack.critDamage;
                 if (critDamageRolls) {
-                    const critDamage = damageElement.querySelector(`[data-damage-type="critical"]`);
-                    if (critDamage) {
-                        const damageTotal = normalDamage.querySelector(".fake-inline-roll").textContent.trim().replace(/\s+/g, ' ');
-                        for (const a of critDamage.querySelectorAll("a")) {
-                            a.remove();
-                        }
-                        damageFieldValue += `\n**${critDamage.textContent} (${damageTotal})\n**`;
-                        for (const damage of critDamageRolls) {
-                            damageFieldValue += `\`${damage.formula}\`\n${dieIcon()}**\`${damage.total}\`**||(${this._generateRollBreakdown(damage)})||\n`;
+                    const damageTableBody = attackElement.querySelector("tbody");
+                    if (damageTableBody) {
+                        const critDamageCells = damageTableBody.querySelectorAll("td.roll.damage.critical");
+                        const critTypeCells = damageTableBody.querySelectorAll("td.damage-type");
+                        for (let i = 0; i < critDamageCells.length && i < critDamageRolls.length; i++) {
+                            const roll = critDamageRolls[i];
+                            let typeText = "";
+                            if (critTypeCells[i]) {
+                                const types = Array.from(critTypeCells[i].querySelectorAll(".damage-type .name"))
+                                    .map(e => e.textContent.trim())
+                                    .join(", ");
+                                if (types) typeText = ` ${types}`;
+                            }
+                            damageFieldValue += `\n**Critical Damage**\n\`${roll.formula}\`\n${dieIcon()}**\`${roll.total}${typeText}\`**||(${this._generateRollBreakdown(roll)})||\n`;
                         }
                     }
                 }
+                title = await this.formatText(title);
                 fields.push({ name: title, value: damageFieldValue, inline: true });
             }
-            console.log(attack);
-
-
-            fields.push({ name: "\u200b", value: "\u200b" });
+            fields.push({ name: "\u200b", value: "\u200b" }); //Spacer field
         }
         if (fields[fields.length - 1]?.name === "\u200b") {
-            fields.pop();
+            fields.pop(); //Remove last spacer field for cleanup
         }
         return [{ title: title, description: desc, fields: fields }];
     }
