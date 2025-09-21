@@ -393,16 +393,21 @@ export class MessageParser {
         const embeds = this._createRollEmbed(message);
         const div = document.createElement('div');
         div.innerHTML = message.content;
-        const resultElement = div.querySelector(".result-text");
-        if (resultElement && resultElement.textContent) {
-            embeds[0].description += `\n${await this.formatText(resultElement.innerHTML)}`;
+        const resultArrayElement = div.querySelector(".table-results");
+        for (const resultRow of resultArrayElement.querySelectorAll('li')) {
+            const resultName = resultRow.querySelector('.name');
+            const description = resultRow.querySelector('.description') ?? " ";
+            embeds[0].description += `\n<hr>${dieIcon(20)} ${await this.formatText(resultName ? resultName.outerHTML : "")}\n${await this.formatText(description.innerHTML)}`;
         }
+        /*if (resultElement && resultElement.textContent) {
+            embeds[0].description += `\n${await this.formatText(resultElement.innerHTML)}`;
+        }*/
         return embeds;
     }
 
-    _isRollTableCard(htmlString) {
+    _isRollTableCard(message) {
         const div = document.createElement('div');
-        div.innerHTML = htmlString;
+        div.innerHTML = message.content;
         const divElement = div.querySelector('.table-draw');
         if (divElement !== null) {
             return true;
@@ -1019,7 +1024,7 @@ export class MessageParser {
         }
 
         // Probably need to remove this, honestly. Doesn't do anything in practice.
-        const aliasMatchedActor = game.actors.find(actor => actor.name === message.alias);
+        const aliasMatchedActor = game.actors.find(actor => actor.name === message.author);
         if (aliasMatchedActor?.prototypeToken?.texture?.src) {
             return await generateimglink(aliasMatchedActor.prototypeToken.texture.src);
         }
