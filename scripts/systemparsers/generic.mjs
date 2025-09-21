@@ -399,9 +399,6 @@ export class MessageParser {
             const description = resultRow.querySelector('.description') ?? " ";
             embeds[0].description += `\n<hr>${dieIcon(20)} ${await this.formatText(resultName ? resultName.outerHTML : "")}\n${await this.formatText(description.innerHTML)}`;
         }
-        /*if (resultElement && resultElement.textContent) {
-            embeds[0].description += `\n${await this.formatText(resultElement.innerHTML)}`;
-        }*/
         return embeds;
     }
 
