@@ -847,10 +847,13 @@ export class MessageParser {
                         currentTermString = ` \`${term.faces ? `d${term.faces}` : ""}[${currentTermString.trim()}]\``;
                     }
                     break;
+                case (foundry.dice && term instanceof foundry.dice.terms.FunctionTerm):
+                    currentTermString += term.result;
+                    break;
                 case (foundry.dice && term instanceof foundry.dice.terms.PoolTerm) || term.hasOwnProperty("rolls"):
                     let poolRollCnt = 1;
                     term.rolls.forEach(poolRoll => {
-                        currentTermString += ` ${generateRollBreakdown(poolRoll, true)}`;
+                        currentTermString += ` ${this._generateRollBreakdown(poolRoll, true)}`;
                         if (poolRollCnt <= term.rolls.length) {
                             currentTermString += " +";
                         }
@@ -864,16 +867,16 @@ export class MessageParser {
                     currentTermString += ` ${term.number}`
                     break;
                 case term.hasOwnProperty("term"):
-                    currentTermString += ` (${generateRollBreakdown({ terms: [term.term] }, true)})`;
+                    currentTermString += ` (${this._generateRollBreakdown({ terms: [term.term] }, true)})`;
                     break;
                 case term.hasOwnProperty("roll"):
-                    currentTermString += ` ${generateRollBreakdown(term.roll, true)}`;
+                    currentTermString += ` ${this._generateRollBreakdown(term.roll, true)}`;
                     break;
                 case term.hasOwnProperty("terms"):
                     term.terms.forEach(termTerm => {
                         if (termTerm.rolls) {
                             termTerm.rolls.forEach(termTermRoll => {
-                                currentTermString += ` ${generateRollBreakdown(termTermRoll, true)}`;
+                                currentTermString += ` ${this._generateRollBreakdown(termTermRoll, true)}`;
                             })
                         }
                     });
