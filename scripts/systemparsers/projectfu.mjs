@@ -1,5 +1,6 @@
 import { dieIcon } from "../helpers/emojis/global.mjs";
 import { centerTextInWidth } from "../helpers/parser/messages.mjs";
+import { parse2DTable } from "../helpers/parser/tables.mjs";
 import { MessageParser } from "./generic.mjs"; // Change this import.
 
 export class MessageParserProjectFU extends MessageParser {
@@ -232,6 +233,43 @@ export class MessageParserProjectFU extends MessageParser {
                     const damCheckElement = damageResultElement.querySelector('.detail-desc');
                     fields.push(...parseFieldsFromCheckElement(damCheckElement));
 
+                }
+            }
+        }
+
+        // Type 3: Group Check
+
+        const groupCheckAttribs = descriptionDiv.querySelectorAll('.spin2win')
+        if (groupCheckAttribs) {
+            let title = "\u200b";
+            let value = "\u200b";
+            for (const attribElement of groupCheckAttribs) {
+                title = `${dieIcon()}${attribElement.textContent.trim()}`;
+                fields.push({ name: title, value: value, inline: true });
+            }
+            title = "\u200b";
+            value = "\u200b";
+            const supporterTableElement = descriptionDiv.querySelector('.group-check-supporters');
+            let supporterTable = [];
+            if (supporterTableElement) {
+                let row = [];
+                for (const supporterTableHeaderCell of supporterTableElement.querySelector('.group-check-supporters-title').querySelectorAll('div')) {
+                    row.push(supporterTableHeaderCell.textContent.trim());
+                }
+                if (row.length > 0) {
+                    supporterTable.push(row);
+                }
+                row = [];
+                for (const supporterTableContentCell of supporterTableElement.querySelector('.group-check-supporters-supporter').querySelectorAll('div')) {
+                    row.push(supporterTableContentCell.textContent.trim());
+                }
+                if (row.length > 0) {
+                    supporterTable.push(row);
+                }
+                const reformattedTable = parse2DTable(supporterTable);
+                value = `${reformattedTable}`;
+                if (fields.length > 0) {
+                    fields.push({ name: title, value: value });
                 }
             }
         }
