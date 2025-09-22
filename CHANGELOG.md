@@ -1,4 +1,8 @@
-# 3.1.0
+# 3.1.1
+
+- (projectfu) Support Group Check cards.
+
+## 3.1.0
 
 - Preliminary support for Pf1e.
 - Preliminary support for ProjectFU.
