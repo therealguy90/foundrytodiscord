@@ -1,7 +1,7 @@
 /* Parsing an HTML table into readable plaintext is difficult.
 *  The method that is used here is as follows:
 *  HTML table is converted into a 2D array. Next, the column widths are dynamically set using the widths of the contents.
-*  Discord embeds can only fit 74-75 characters per line of fixed-width characters, so widths are reduced, starting from the largest width
+*  Discord embeds can only fit 69-70 characters per line of fixed-width characters, so widths are reduced, starting from the largest width
 *  Once the table fits, it is then formatted, splitting cells that do not meet the maximum width into several lines.
 *  Then, it is padded, and finally, joined.
 */
@@ -58,7 +58,7 @@ export function parse2DTable(tableData) {
         }
         columnWidthTotal += columnWidths[i];
     }
-    const MAX_EMBED_CHARACTER_WIDTH = 74;
+    const MAX_EMBED_CHARACTER_WIDTH = 69;
     if (columnWidthTotal <= MAX_EMBED_CHARACTER_WIDTH) {
         let headerWidths = [];
         let totalHeaderWidths = 0;
