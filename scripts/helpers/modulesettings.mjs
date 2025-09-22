@@ -5,6 +5,7 @@ import { MessageParserPF1 } from '../systemparsers/pf1.mjs';
 import { MessageParserProjectFU } from '../systemparsers/projectfu.mjs';
 import { ThreadedChatConfig } from '../../src/forms/threadedchatconfig.mjs'
 import { AutoPingConfig } from '../../src/forms/autopingconfig.mjs';
+import { updateServerStatus } from './monitor/serverstatus.mjs';
 let SYSTEM_ID;
 
 export function initModuleSettings() {
@@ -294,6 +295,58 @@ export function initModuleSettings() {
         default: false,
         type: Boolean
     });
+
+
+    // Register hotkeys
+    game.keybindings.register('foundrytodiscord', 'screenshotButton', {
+        name: "Take a Screenshot",
+        hint: "Screenshots the canvas that is visible to you, and allows you to send it to Discord.",
+        editable: [
+            {
+                key: "Not Set"
+            }
+        ],
+        onDown: async () => {
+            canvas.app.render();
+            let data = await canvas.app.renderer.extract.base64();
+            const ip = new ImagePopout(data, {
+                title: "Screen Capture",
+            });
+            ip.render(true);
+        },
+        onUp: () => { },
+        restricted: !getThisModuleSetting('allowPlayerSend'),
+        precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL
+    });
+
+    game.keybindings.register('foundrytodiscord', 'serverStatusOffline', {
+        name: "Set Server Status Offline",
+        hint: "Sets the server status on your channel to Offline.",
+        editable: [
+            {
+                key: "Not Set"
+            }
+        ],
+        onDown: async () => {
+            if (getThisModuleSetting('serverStatusMessage')) {
+                if (getThisModuleSetting('messageID') && getThisModuleSetting('messageID') !== "") {
+                    const response = await updateServerStatus(false);
+                    if (response.ok) {
+                        console.log('foundrytodiscord | Server state set to OFFLINE');
+                        ChatMessage.create({ content: 'Server state set to OFFLINE.', speaker: { alias: "Foundry to Discord" }, whisper: [game.user.id] });
+                    }
+                    else {
+                        console.error('foundrytodiscord | Error editing embed:', response.status, response.statusText);
+                    }
+                }
+            }
+        },
+        onUp: () => { },
+        restricted: true,
+        precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL
+
+    });
+
 }
 
 export function getThisModuleSetting(settingName) {
