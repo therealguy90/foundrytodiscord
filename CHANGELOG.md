@@ -1,4 +1,14 @@
-# 3.0.5
+# 3.1.0
+
+- Preliminary support for Pf1e.
+- Preliminary support for ProjectFU.
+- #55 Adds hotkey (unset by default) to take a screenshot.
+- #46 Adds hotkey (unset by default) to set your server status message to Offline.
+- Fix rolltable results not appearing.
+- Fix generic roll breakdowns not appearing even when forced.
+- Minor parser improvements across the board.
+
+## 3.0.5
 
 - #50 Fixes right-click to send messages manually.
 - #53 (forien-quest-log) Fix quest details not sending.
