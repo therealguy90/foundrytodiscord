@@ -21,7 +21,7 @@ export function htmlTo2DTable(table) {
     return tableData;
 }
 
-export function parse2DTable(tableData) {
+export function parse2DTable(tableData, MAX_EMBED_CHARACTER_WIDTH = 69) {
     let columnWidths = []
     // Output the 2D array containing the table data
     // Initialize columnWidths with zeros
@@ -58,7 +58,7 @@ export function parse2DTable(tableData) {
         }
         columnWidthTotal += columnWidths[i];
     }
-    const MAX_EMBED_CHARACTER_WIDTH = 69;
+    
     if (columnWidthTotal <= MAX_EMBED_CHARACTER_WIDTH) {
         let headerWidths = [];
         let totalHeaderWidths = 0;
