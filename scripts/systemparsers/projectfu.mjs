@@ -58,22 +58,22 @@ export class MessageParserProjectFU extends MessageParser {
 
         const clockElement = descriptionDiv.querySelector('.unique-clock');
         console.log(clockElement);
-        if(clockElement){
+        if (clockElement) {
             chatDescription += "\n";
             const currentElement = clockElement.querySelector('.stat-current');
             const maxElement = clockElement.querySelector('.stat-max');
             const current = currentElement ? Number(currentElement.textContent.trim()) : -1;
             const max = maxElement ? Number(maxElement.textContent.trim()) : -1;
-            if (current >= 0 && max >= 0){
+            if (current >= 0 && max >= 0) {
                 const progressLabel = clockElement.querySelector('.progress');
-                if(progressLabel){
+                if (progressLabel) {
                     chatDescription += `**${progressLabel.getAttribute('data-tooltip')}: ** `
                 }
-                for(let i = 0; i < current; i++){
+                for (let i = 0; i < current; i++) {
                     //chatDescription += ":white_large_square:";
                     chatDescription += ":white_square_button:";
                 }
-                for(let i = 0; i < max - current; i++){
+                for (let i = 0; i < max - current; i++) {
                     //chatDescription += ":white_square_button:";
                     chatDescription += ":white_large_square:";
                 }
@@ -88,7 +88,7 @@ export class MessageParserProjectFU extends MessageParser {
         }
 
         for (const descBlock of descriptionDiv.querySelectorAll(`div.detail-desc:not([id="results"]):not(.difficulty)`)) {
-            if (descBlock.querySelector('label.total, label.title, label.detail, label.damageType')) continue; // Skip any result text
+            if (descBlock.querySelector('label.total, label.title, label.detail, label.damageType, .spin2win, .group-check-supporters')) continue; // Skip any unnecessary text
             detailDescription += descBlock.innerHTML + "\n";
         }
 
@@ -110,20 +110,28 @@ export class MessageParserProjectFU extends MessageParser {
             let vsDiff = "";
             const vsContainer = attrCheckContainer.querySelector('.vs-container');
             const difficulty = attrCheckContainer.querySelector('.difficulty');
+            let line = "";
+
             if (vsContainer) {
-                vsDiff += `**${await centerTextInWidth(`${vsContainer.textContent.trim()} `)}`;
+                line += vsContainer.textContent.trim() + " ";
             }
+
             if (difficulty) {
                 const diffTitle = difficulty.querySelector('label.title');
-                const diffDetail = difficulty.querySelector('label.detail');
                 if (diffTitle) {
-                    vsDiff += `${await centerTextInWidth(diffTitle.textContent.trim() + ":")}`;
+                    line += diffTitle.textContent.trim() + ":";
                 }
-                vsDiff += "**\n";
+                if (line.trim() !== "") {
+                    vsDiff += `**${await centerTextInWidth(line)}**\n`;
+                }
+                const diffDetail = difficulty.querySelector('label.detail');
                 if (diffDetail) {
                     vsDiff += `**\`${await centerTextInWidth(diffDetail.textContent.trim())}\`**\n`;
                 }
+            } else if (line.trim() !== "") {
+                vsDiff += `**${await centerTextInWidth(line)}**\n`;
             }
+
             detailDescription += vsDiff;
             if (message.rolls.length === 1) {
                 detailDescription += `\n${dieIcon()}**\`${message.rolls[0].formula}\`**`
