@@ -156,6 +156,39 @@ export function splitText(text, MAX_LENGTH) {
     return textArray;
 }
 
+export async function centerTextInWidth(text, totalWidth = 70) {
+    if (typeof text !== "string") text = String(text);
+    let reformattedText = text.replace(/\s+/g, ' ');
+    // filler for spaces
+    const SPACE = " ";
+
+    function splitText(str, width) {
+        const words = str.split(' ');
+        const lines = [];
+        let line = "";
+
+        for (const word of words) {
+            if ((line + (line ? " " : "") + word).length > width) {
+                if (line) lines.push(line);
+                line = word;
+            } else {
+                line += (line ? " " : "") + word;
+            }
+        }
+        if (line) lines.push(line);
+        return lines;
+    }
+
+    const lines = splitText(reformattedText, totalWidth);
+    return lines.map(line => {
+        if (line.length >= totalWidth) return `\`${line}\``;
+        const spaces = totalWidth - line.length;
+        const left = Math.floor(spaces / 2);
+        const right = spaces - left;
+        return `\`${SPACE.repeat(left) + line + SPACE.repeat(right)}\``;
+    }).join('\n');
+}
+
 export async function addEmbedsToRequests(allRequests, hook, username, imgurl, embeds, user) {
     let embedSizeCharCount = 0;
     let discordSizeLimitedEmbeds = [];
@@ -391,7 +424,7 @@ async function addMediaLinks(message) {
         }
     }
     const videos = doc.querySelectorAll('video');
-    for(videoElement of videos){
+    for (videoElement of videos) {
         const src = videoElement.getAttribute('src');
         if (src.includes('http')) {
             if (links !== "") {
