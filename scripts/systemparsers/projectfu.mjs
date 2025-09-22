@@ -254,14 +254,18 @@ export class MessageParserProjectFU extends MessageParser {
             if (supporterTableElement) {
                 let row = [];
                 for (const supporterTableHeaderCell of supporterTableElement.querySelector('.group-check-supporters-title').querySelectorAll('div')) {
-                    row.push(supporterTableHeaderCell.textContent.trim());
+                    if (supporterTableHeaderCell.textContent) {
+                        row.push(supporterTableHeaderCell.textContent.trim());
+                    }
                 }
                 if (row.length > 0) {
                     supporterTable.push(row);
                 }
                 row = [];
                 for (const supporterTableContentCell of supporterTableElement.querySelector('.group-check-supporters-supporter').querySelectorAll('div')) {
-                    row.push(supporterTableContentCell.textContent.trim());
+                    if (supporterTableContentCell.textContent) {
+                        row.push(supporterTableContentCell.textContent.trim());
+                    }
                 }
                 if (row.length > 0) {
                     supporterTable.push(row);
