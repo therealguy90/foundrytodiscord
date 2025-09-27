@@ -169,6 +169,7 @@ export class MessageParser {
             if (dataLinks.length > 0) {
                 for (const link of dataLinks) {
                     const newLink = link.cloneNode(true);
+                    if (newLink.textContent.trim().length > 0) {
                     const uuid = newLink.getAttribute('data-uuid');
                     const document = await fromUuid(uuid);
                     let emoji = "";
@@ -200,8 +201,9 @@ export class MessageParser {
                     else {
                         emoji = swapOrNot(":x:", getDocumentEmoji("broken"));
                     }
-                    newLink.innerHTML = `${emoji}\`${newLink.textContent}\``;
+                        newLink.innerHTML = `${emoji}\`${newLink.textContent.trim()}\``;
                     link.parentNode.replaceChild(newLink, link);
+                    }
                 }
             }
             reformattedText = htmldoc.innerHTML;
