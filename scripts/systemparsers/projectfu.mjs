@@ -15,6 +15,7 @@ export class MessageParserProjectFU extends MessageParser {
         const htmldoc = document.createElement('div');
         htmldoc.innerHTML = reformattedText;
         if (htmldoc.hasChildNodes()) {
+            this._removeElementsBySelector('span.button', htmldoc);
             this._formatTextBySelector('summary', text => `**${text}**\n`, htmldoc);
             reformattedText = htmldoc.innerHTML;
         }
