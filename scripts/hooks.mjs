@@ -222,7 +222,7 @@ export async function initOtherHooks() {
                     }];
                     const params = {
                         username: game.user.name,
-                        avatar_url: await generateimglink(game.user.avatar),
+                        avatar_url: await generateimglink(game.user.avatar, true),
                         content: "",
                         embeds: embeds
                     };
@@ -333,7 +333,7 @@ async function sendImage(app, hookOverride = undefined) {
         if (supportedFormats.includes(fileExt)) {
             const params = {
                 username: game.user.name,
-                avatar_url: await generateimglink(game.user.avatar),
+                avatar_url: await generateimglink(game.user.avatar, true),
                 content: ""
             }
             formData.append('files[0]', imgblob, "foundrytodiscord_sharedimage." + fileExt);
@@ -361,7 +361,7 @@ async function sendImage(app, hookOverride = undefined) {
         msgText += link;
         const params = {
             username: game.user.name,
-            avatar_url: await generateimglink(game.user.avatar),
+            avatar_url: await generateimglink(game.user.avatar, true),
             content: msgText
         }
         formData.append('payload_json', JSON.stringify(params));

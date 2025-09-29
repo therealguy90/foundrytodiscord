@@ -24,35 +24,36 @@ export function dataToBlob(base64String) {
     return new Blob(byteArrays, { type: mimeType });
 }
 
-// Image links from server
-export async function generateimglink(imgSrc, requireAvatarCompatible = true) {
-    const supportedFormats = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-    let imgUrl;
-    if (!imgSrc || (imgSrc && imgSrc === "")) {
-        return getDefaultAvatarLink()
-    }
-    if (imgSrc.includes("http")) {
-        imgUrl = imgSrc;
-    } else {
-        if (getThisModuleSetting('inviteURL') !== "http://") {
-            imgUrl = `${getThisModuleSetting('inviteURL')}${convertToValidURI(imgSrc)}`;
+
+export async function imageIsAvatarCompatible(src) {
+    try {
+        const supportedFormats = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        const urlParts = src.split('.');
+        let fileExtension = urlParts[urlParts.length - 1].toLowerCase();
+        if (fileExtension.split('?').length > 1) {
+            fileExtension = fileExtension.split('?')[0];
         }
-        else {
-            return "";
-        }
-    }
-    const urlParts = imgUrl.split('.');
-    let fileExtension = urlParts[urlParts.length - 1].toLowerCase();
-    if (fileExtension.split('?').length > 1) {
-        fileExtension = fileExtension.split('?')[0];
-    }
-    if (!requireAvatarCompatible || supportedFormats.includes(fileExtension)) {
-        return imgUrl;
-    }
-    else {
-        return getDefaultAvatarLink();
+        return supportedFormats.includes(fileExtension);
+    }catch(e){
+        return false;
     }
 }
+
+// Image links from server
+export async function generateimglink(imgSrc, requireAvatarCompatible = false) {
+    const defaultavatar = getDefaultAvatarLink();
+    if (!imgSrc) return defaultavatar;
+
+    if (requireAvatarCompatible && !(await imageIsAvatarCompatible(imgSrc))) {
+        return defaultavatar;
+    }
+
+    if (imgSrc.includes("http")) return imgSrc;
+
+    const base = getThisModuleSetting("inviteURL");
+    return base !== "http://" ? `${base}${convertToValidURI(imgSrc)}` : "";
+}
+
 
 export function getDefaultAvatarLink() {
     if (getThisModuleSetting('inviteURL') !== "http://") {
@@ -64,10 +65,10 @@ export function getDefaultAvatarLink() {
 }
 
 function convertToValidURI(filePath) {
-    if(filePath.includes("%")){
+    if (filePath.includes("%")) {
         return filePath;
     }
-    else{
+    else {
         return encodeURIComponent(filePath);
     }
 }

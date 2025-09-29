@@ -1,7 +1,7 @@
 import { htmlTo2DTable, parse2DTable } from '../helpers/parser/tables.mjs';
 import { anonEnabled, getThisModuleSetting } from '../helpers/modulesettings.mjs';
 import { getPropertyByString, censorId, removeEmptyEmbeds, splitText, addEmbedsToRequests } from '../helpers/parser/messages.mjs';
-import { generateimglink } from '../helpers/parser/images.mjs';
+import { generateimglink, getDefaultAvatarLink } from '../helpers/parser/images.mjs';
 import { newEnrichedMessage, toHTML } from '../helpers/parser/enrich.mjs';
 import { getDieEmoji, getDocumentEmoji, swapOrNot, dieIcon, checkFails } from '../helpers/emojis/global.mjs';
 import { SeededRandom } from '../helpers/rng.mjs';
@@ -170,39 +170,39 @@ export class MessageParser {
                 for (const link of dataLinks) {
                     const newLink = link.cloneNode(true);
                     if (newLink.textContent.trim().length > 0) {
-                    const uuid = newLink.getAttribute('data-uuid');
-                    const document = await fromUuid(uuid);
-                    let emoji = "";
-                    if (document) {
-                        switch (true) {
-                            case document instanceof Actor:
-                                emoji = swapOrNot(":bust_in_silhouette:", getDocumentEmoji("actor"));
-                                break;
-                            case document instanceof Scene:
-                                emoji = swapOrNot(":map:", getDocumentEmoji("scene"));
-                                break;
-                            case document instanceof Macro:
-                                emoji = swapOrNot(":link:", getDocumentEmoji("macro"));
-                                break;
-                            case document instanceof JournalEntry:
-                                emoji = swapOrNot(":book:", getDocumentEmoji("journal"));
-                                break;
-                            case document instanceof RollTable:
-                                emoji = swapOrNot(":page_facing_up:", getDocumentEmoji("rolltable"));
-                                break;
-                            case document instanceof Folder:
-                                emoji = swapOrNot(":file_folder:", getDocumentEmoji("folder"));
-                                break;
-                            default:
-                                emoji = swapOrNot(":baggage_claim:", getDocumentEmoji("item"));
-                                break;
+                        const uuid = newLink.getAttribute('data-uuid');
+                        const document = await fromUuid(uuid);
+                        let emoji = "";
+                        if (document) {
+                            switch (true) {
+                                case document instanceof Actor:
+                                    emoji = swapOrNot(":bust_in_silhouette:", getDocumentEmoji("actor"));
+                                    break;
+                                case document instanceof Scene:
+                                    emoji = swapOrNot(":map:", getDocumentEmoji("scene"));
+                                    break;
+                                case document instanceof Macro:
+                                    emoji = swapOrNot(":link:", getDocumentEmoji("macro"));
+                                    break;
+                                case document instanceof JournalEntry:
+                                    emoji = swapOrNot(":book:", getDocumentEmoji("journal"));
+                                    break;
+                                case document instanceof RollTable:
+                                    emoji = swapOrNot(":page_facing_up:", getDocumentEmoji("rolltable"));
+                                    break;
+                                case document instanceof Folder:
+                                    emoji = swapOrNot(":file_folder:", getDocumentEmoji("folder"));
+                                    break;
+                                default:
+                                    emoji = swapOrNot(":baggage_claim:", getDocumentEmoji("item"));
+                                    break;
+                            }
                         }
-                    }
-                    else {
-                        emoji = swapOrNot(":x:", getDocumentEmoji("broken"));
-                    }
+                        else {
+                            emoji = swapOrNot(":x:", getDocumentEmoji("broken"));
+                        }
                         newLink.innerHTML = `${emoji}\`${newLink.textContent.trim()}\``;
-                    link.parentNode.replaceChild(newLink, link);
+                        link.parentNode.replaceChild(newLink, link);
                     }
                 }
             }
@@ -1010,34 +1010,30 @@ export class MessageParser {
     }
 
     async _generateDiscordAvatar(message) {
-        // Prioritize chat-portrait for parity
-        if (game.modules.get("chat-portrait")?.active && message.flags["chat-portrait"]?.src) {
-            return await generateimglink(message.flags["chat-portrait"].src);
-        }
+        const defaultavatar = getDefaultAvatarLink();
 
-        if (message.speaker?.scene && message.speaker.token) {
-            const speakerToken = game.scenes.get(message.speaker.scene).tokens.get(message.speaker.token);
-            if (speakerToken?.texture?.src && speakerToken?.texture.src !== "") {
-                return await generateimglink(speakerToken.texture.src);
-            }
-        }
+        const trySrc = async (src) => {
+            if (!src) return undefined;
+            const img = await generateimglink(src, true);
+            return img && img !== defaultavatar ? img : undefined;
+        };
 
-        if (message.speaker?.actor) {
-            const speakerActor = game.actors.get(message.speaker.actor);
-            if (speakerActor?.prototypeToken?.texture?.src) {
-                return await generateimglink(speakerActor.prototypeToken.texture.src);
-            }
-        }
+        const sources = [
+            message.flags["chat-portrait"]?.src, // Prioritize chat-portrait for parity
+            game.scenes?.get(message.speaker?.scene)?.tokens?.get(message.speaker?.token)?.texture?.src,
+            game.actors?.get(message.speaker?.actor)?.prototypeToken?.texture?.src,
+            game.actors?.get(message.speaker?.actor)?.img,
+            message.author?.avatar
+        ];
+        console.log(sources);
 
-        // Probably need to remove this, honestly. Doesn't do anything in practice.
-        const aliasMatchedActor = game.actors.find(actor => actor.name === message.author);
-        if (aliasMatchedActor?.prototypeToken?.texture?.src) {
-            return await generateimglink(aliasMatchedActor.prototypeToken.texture.src);
+        for (let i = 0; i < sources.length; i++) {
+            const imgUrl = await trySrc(sources[i]);
+            if (imgUrl) return imgUrl;
         }
-
-        const user = message.author;
-        return await generateimglink(user.avatar);
+        return defaultavatar;
     }
+
 
     _generateDiscordUsername(message) {
         let username = message.alias;
