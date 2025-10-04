@@ -1,4 +1,8 @@
-# 3.1.1
+# 3.1.2
+
+- Improved Discord avatar detection logic, with priority in order of token image -> prototype token image -> actor image -> user avatar
+
+## 3.1.1
 
 - (projectfu) Support Group Check cards.
 
