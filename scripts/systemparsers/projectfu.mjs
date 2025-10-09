@@ -59,7 +59,6 @@ export class MessageParserProjectFU extends MessageParser {
         // Clock (if any)
 
         const clockElement = descriptionDiv.querySelector('.unique-clock');
-        console.log(clockElement);
         if (clockElement) {
             chatDescription += "\n";
             const currentElement = clockElement.querySelector('.stat-current');

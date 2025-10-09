@@ -1025,7 +1025,6 @@ export class MessageParser {
             game.actors?.get(message.speaker?.actor)?.img,
             message.author?.avatar
         ];
-        console.log(sources);
 
         for (let i = 0; i < sources.length; i++) {
             const imgUrl = await trySrc(sources[i]);

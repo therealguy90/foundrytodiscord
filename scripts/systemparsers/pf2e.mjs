@@ -372,7 +372,6 @@ export class MessageParserPF2e extends MessageParser {
             if (game.modules.get("pf2e-toolbelt")?.active && message.flags["pf2e-toolbelt"]?.targetHelper?.targets?.length > 0) {
                 const targets = message.flags["pf2e-toolbelt"].targetHelper.targets;
                 let targetString = "";
-                console.log(targets);
                 targets.forEach(target => {
                     const targetToken = fromUuidSync(target);
                     if(!targetToken){
