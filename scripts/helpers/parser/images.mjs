@@ -65,10 +65,9 @@ export function getDefaultAvatarLink() {
 }
 
 function convertToValidURI(filePath) {
-    if (filePath.includes("%")) {
-        return filePath;
-    }
-    else {
+    try {
+        return decodeURI(filePath) !== filePath ? filePath : encodeURI(filePath);
+    } catch {
         return encodeURI(filePath);
     }
 }
