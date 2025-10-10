@@ -69,6 +69,6 @@ function convertToValidURI(filePath) {
         return filePath;
     }
     else {
-        return encodeURIComponent(filePath);
+        return encodeURI(filePath);
     }
 }
