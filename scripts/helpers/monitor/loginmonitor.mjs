@@ -63,7 +63,7 @@ async function backToSetupUpdate() {
     window.removeEventListener('beforeunload', beforeUnloadUserUpdate);
     adminDisconnect = true;
     if (hook && hook !== '' && getThisModuleSetting("userMonitor")) {
-        const formData = api.generateSendFormData("Admin has closed the server.");
+        const formData = api.generateSendFormData(game.i18n.localize("foundrytodiscord.loginMonitor.adminClosedServer"));
         serverCloseMsg = await api.sendMessage(formData, false, "");
     }
     await updateServerStatus(false);
@@ -91,11 +91,22 @@ export async function sendUserMonitorMessage(user, userConnected) {
     }
     const hook = getThisModuleSetting('webHookURL');
     if (hook && hook !== '') {
+        const action = userConnected ? "connected" : "disconnected";
+        const direction = userConnected ? "to" : "from";
+        const connectionMessage = game.i18n.format("foundrytodiscord.loginMonitor.userConnectionStatus", {
+            userName: user.name,
+            action: action,
+            direction: direction,
+            worldTitle: game.world.title,
+            activeUsers: numActive,
+            totalUsers: Array.from(game.users).length
+        });
+        
         const formData = new FormData();
         formData.append("payload_json", JSON.stringify({
             username: game.world.title,
             avatar_url: getDefaultAvatarLink(),
-            content: `User ${user.name} ${userConnected ? "connected" : "disconnected"} ${userConnected ? "to" : "from"} ${game.world.title}. __**(${numActive}/${Array.from(game.users).length})**__`,
+            content: connectionMessage,
         }));
         return await api.sendMessage(formData, false, "");
     }

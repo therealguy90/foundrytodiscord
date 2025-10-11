@@ -78,6 +78,20 @@
       "editLongerThanDiscordMessages": "Foundry to Discord tried to edit a message, but the resulting edit is longer than the amount of discord messages that were linked to the message.",
       "fillOutAllFields": "Please fill out all fields."
     },
+    "loginMonitor": {
+      "userConnectionStatus": "User {userName} {action} {direction} {worldTitle}. __**({activeUsers}/{totalUsers})**__",
+      "adminClosedServer": "Admin has closed the server."
+    },
+    "statusMonitor": {
+      "setupTitle": "Server Status Setup Instructions",
+      "setupDescription": "**IMPORTANT**: A limitation of this module is that it can *only* detect your world as online if a Gamemaster account is online. A command 'ftd serveroff' is also needed to set this message to OFFLINE.\n\n**Step 1:** Pin this message so that everyone can find it easily on your channel.\n**Step 2**: Right click on this message and click on **\"Copy Message ID\"**. Your Discord app must have **User Settings > Advanced > Developer Mode** turned **ON** for this to appear.\n**Step 3**: Go to **Configure Settings > Foundry to Discord > Server Status Message ID** and **paste** the copied ID from Step 2. Afterwards, save your settings, and it should prompt your world to restart.\n**Step 4**: Look at this message again after your world restarts. It should appear as the correct server status message.",
+      "serverStatusTitle": "Server Status: {worldId}",
+      "onlineStatus": "## ONLINE",
+      "offlineStatus": "## OFFLINE",
+      "inviteLink": "**Invite Link: **{inviteURL}",
+      "activeUsers": "__**{activeUsers}/{totalUsers} Active Users**__",
+      "offlineFooter": "Have a GM type \"ftd serveroff\" in Foundry to set your server status to OFFLINE. This will persist until the next time a GM logs in."
+    },
     "settings": {
       "inviteURL": {
         "name": "Game Invite URL",
