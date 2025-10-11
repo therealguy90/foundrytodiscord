@@ -1,4 +1,4 @@
-# 3.1.2
+# 3.1.3
 
 - Fix URI encoding on images with query parameters (@tmudway)
 - Add localization file and localize messages
