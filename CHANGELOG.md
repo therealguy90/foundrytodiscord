@@ -1,5 +1,10 @@
 # 3.1.2
 
+- Fix URI encoding on images with query parameters (@tmudway)
+- Add localization file and localize messages
+
+## 3.1.2
+
 - Improved Discord avatar detection logic, with priority in order of token image -> prototype token image -> actor image -> user avatar
 
 ## 3.1.1
