@@ -2,6 +2,7 @@ import { dataToBlob, generateimglink } from "./helpers/parser/images.mjs";
 import { postParse, addEmbedsToRequests } from "./helpers/parser/messages.mjs";
 import { toHTML } from "./helpers/parser/enrich.mjs";
 import { getThisModuleSetting } from "./helpers/modulesettings.mjs";
+import { localizeWithPrefix } from "./helpers/localization.mjs";
 import { isUserMainGM } from "./helpers/userfilter.mjs";
 import * as api from '../api.js';
 import { messageParser } from "../main.js";
@@ -66,14 +67,14 @@ export async function initOtherHooks() {
                 callback: async li => {
                     const response = await api.sendMessageFromID(li.getAttribute ? li.getAttribute("data-message-id") : li.attr("data-message-id")) //v12 compatibility
                         .catch(error => {
-                            ui.notifications.error("foundrytodiscord | An error occurred while trying to send to Discord. Check F12 for logs.");
-                            console.error(error);
+                            ui.notifications.error(localizeWithPrefix("foundrytodiscord.error.sendToDiscord", {}, false));
+                            console.error(localizeWithPrefix("foundrytodiscord.error.generic", {}, false));
                         });
                     if (response?.ok) {
-                        ui.notifications.info("Successfully sent to Discord.");
+                        ui.notifications.info(localizeWithPrefix("foundrytodiscord.info.successfullySent", {}, false));
                     }
                     else {
-                        throw new Error("foundrytodiscord | An error occurred.");
+                        throw new Error(localizeWithPrefix("foundrytodiscord.error.generic", {}, false));
                     }
                 }
             },
@@ -84,14 +85,14 @@ export async function initOtherHooks() {
                 callback: async li => {
                     const response = await api.sendMessageFromID(li.getAttribute ? li.getAttribute("data-message-id") : li.attr("data-message-id") /*v12 compatibility*/, getThisModuleSetting('notesWebHookURL'))
                         .catch(error => {
-                            ui.notifications.error("foundrytodiscord | An error occurred while trying to send to Discord. Check F12 for logs.");
-                            console.error(error);
+                            ui.notifications.error(localizeWithPrefix("foundrytodiscord.error.sendToDiscord", {}, false));
+                            console.error(localizeWithPrefix("foundrytodiscord.error.generic", {}, false));
                         });
                     if (response?.ok) {
-                        ui.notifications.info("Successfully sent to Discord Player Notes.");
+                        ui.notifications.info(localizeWithPrefix("foundrytodiscord.info.successfullySent", {}, false));
                     }
                     else {
-                        throw new Error("foundrytodiscord | An error occurred.");
+                        throw new Error(localizeWithPrefix("foundrytodiscord.error.generic", {}, false));
                     }
                 }
             },
@@ -230,13 +231,13 @@ export async function initOtherHooks() {
                     formData.append('payload_json', JSON.stringify(params));
                     const response = await api.sendMessage(formData, false, game.user.viewedScene)
                         .catch(error => {
-                            ui.notifications.error("An error occurred while trying to send to Discord. Check F12 for logs.");
+                            ui.notifications.error(localizeWithPrefix("foundrytodiscord.notifications.errorSendingToDiscord", {}, false));
                             console.error(error);
                         });
                     if (response?.ok) {
-                        ui.notifications.info("Successfully sent to Discord.");
+                        ui.notifications.info(localizeWithPrefix("foundrytodiscord.notifications.successfullySentToDiscord", {}, false));
                     } else {
-                        throw new Error("An error occurred.");
+                        throw new Error(localizeWithPrefix("foundrytodiscord.error.generic", {}, false));
                     }
                 }
             });
@@ -278,12 +279,12 @@ async function sendJournal(sheet, hookOverride = undefined) {
                     msgText = (getThisModuleSetting('inviteURL') + pageData.src);
                 }
                 else {
-                    ui.notifications.error("foundrytodiscord | Invite URL not set!");
+                    ui.notifications.error(localizeWithPrefix("foundrytodiscord.error.inviteURLNotSet", {}, false));
                 }
             }
             break;
         default:
-            ui.notifications.warn("Journal page type not supported.");
+            ui.notifications.warn(localizeWithPrefix("foundrytodiscord.notifications.journalPageNotSupported", {}, false));
             break;
     }
     if (embeds.length > 0 || msgText !== "") {
@@ -303,14 +304,14 @@ async function sendJournal(sheet, hookOverride = undefined) {
             const { waitHook, formData } = await postParse(undefined, request, hookOverride);
             const response = await api.sendMessage(formData, false, game.user.viewedScene, waitHook)
                 .catch(error => {
-                    ui.notifications.error("foundrytodiscord | An error occurred while trying to send to Discord. Check F12 for logs.");
+                    ui.notifications.error(localizeWithPrefix("foundrytodiscord.notifications.errorSendingToDiscord", {}, true));
                     console.error(error);
                 });
             if (response?.ok) {
-                ui.notifications.info("foundrytodiscord | Successfully sent to Discord.");
+                ui.notifications.info(localizeWithPrefix("foundrytodiscord.notifications.successfullySentToDiscord", {}, true));
             }
             else {
-                throw new Error("foundrytodiscord | An error occurred.");
+                throw new Error(localizeWithPrefix("foundrytodiscord.error.generic", {}, true));
             }
         }
     }
@@ -340,14 +341,14 @@ async function sendImage(app, hookOverride = undefined) {
             formData.append('payload_json', JSON.stringify(params));
             const response = await api.sendMessage(formData, false, game.user.viewedScene, hookOverride)
                 .catch(error => {
-                    ui.notifications.error("foundrytodiscord | An error occurred while trying to send to Discord. Check F12 for logs.");
+                    ui.notifications.error(localizeWithPrefix("foundrytodiscord.notifications.errorSendingToDiscord", {}, true));
                     console.error(error);
                 });
             if (response?.ok) {
-                ui.notifications.info("foundrytodiscord | Successfully sent to Discord.");
+                ui.notifications.info(localizeWithPrefix("foundrytodiscord.notifications.successfullySentToDiscord", {}, true));
             }
             else {
-                throw new Error("foundrytodiscord | An error occurred.");
+                throw new Error(localizeWithPrefix("foundrytodiscord.error.generic", {}, true));
             }
         }
     }
@@ -355,7 +356,7 @@ async function sendImage(app, hookOverride = undefined) {
         let link;
         link = await generateimglink(src);
         if (link === "") {
-            console.error("foundrytodiscord | Your Invite URL isn't set! Image was not sent.");
+            console.error(localizeWithPrefix("foundrytodiscord.logs.inviteURLNotSet"));
             return;
         }
         msgText += link;
@@ -367,14 +368,14 @@ async function sendImage(app, hookOverride = undefined) {
         formData.append('payload_json', JSON.stringify(params));
         const response = await api.sendMessage(formData, false, game.user.viewedScene, hookOverride)
             .catch(error => {
-                ui.notifications.error("foundrytodiscord | An error occurred while trying to send to Discord. Check F12 for logs.");
+                ui.notifications.error(localizeWithPrefix("foundrytodiscord.notifications.errorSendingToDiscord", {}, true));
                 console.error(error);
             });
         if (response?.ok) {
-            ui.notifications.info("foundrytodiscord | Successfully sent to Discord.");
+            ui.notifications.info(localizeWithPrefix("foundrytodiscord.notifications.successfullySentToDiscord", {}, true));
         }
         else {
-            throw new Error("foundrytodiscord | An error occurred.");
+            throw new Error(localizeWithPrefix("foundrytodiscord.error.generic", {}, true));
         }
     }
 }

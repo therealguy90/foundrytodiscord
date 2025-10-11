@@ -25,20 +25,12 @@
     <div class="foundrytodiscord tabs-container">
         <div class="foundrytodiscord tabs">
             <nav class="foundrytodiscord tabs">
-                <h2 class="item" data-tab="autoPingTab">Foundry to Discord: Auto-Ping Mapper Tool</h2>
+                <h2 class="item" data-tab="autoPingTab">{{localize 'foundrytodiscord.autoping.title'}}</h2>
             </nav>
         </div>
         <div style="display: flex; flex: unset;">
             <span>
-                <p>This is a tool for pinging a Discord user whenever their @username is mentioned in chat.
-                    Enter a keyword (case-sensitive) and assign a Discord user ID or Role ID to it. Whenever that
-                    keyword is mentioned in
-                    Foundry Chat, for example, the keyword <code>foo</code>, when mentioned in chat as
-                    <strong>@foo</strong>, the ping
-                    that corresponds to it will replace the keyword. To get the ID, simply <strong>Right-Click on the
-                        user or role, and Copy ID.</strong>
-                    Enable Developer Mode for this to work.
-                </p>
+                <p>{{localize 'foundrytodiscord.autoping.description'}}</p>
             </span>
         </div>
         <div class="foundrytodiscord tabs-content">
@@ -47,9 +39,9 @@
                     <div class="form-group" style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
                         <label for="type" style="white-space:nowrap;">Type:</label>
                         <select name="type" id="type" style="min-width:120px;">
-                            <option value="" disabled selected>Select type</option>
-                            <option value="User">User</option>
-                            <option value="Role">Role</option>
+                            <option value="" disabled selected>{{localize 'foundrytodiscord.autoping.selectType'}}</option>
+                            <option value="User">{{localize 'foundrytodiscord.autoping.user'}}</option>
+                            <option value="Role">{{localize 'foundrytodiscord.autoping.role'}}</option>
                         </select>
 
                         <label for="keyword" style="white-space:nowrap;">Keyword:</label>
@@ -79,9 +71,7 @@
                                 <td style="text-align: center;">{{this.type}}</td>
                                 <td style="text-align: center;">{{this.ID}}</td>
                                 <td>
-                                    <button class="btn btn-danger delete-entry" data-keyword-placeholder="{{@key}}">
-                                        Delete
-                                    </button>
+                                    <button class="btn btn-danger delete-entry" data-keyword-placeholder="{{@key}}">{{localize 'foundrytodiscord.autoping.delete'}}</button>
                                 </td>
                             </tr>
                             {{/each}}

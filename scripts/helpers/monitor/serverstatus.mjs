@@ -1,6 +1,7 @@
 import * as api from "../../../api.js";
 import { getDefaultAvatarLink } from '../parser/images.mjs';
 import { getThisModuleSetting } from '../modulesettings.mjs';
+import { localizeWithPrefix } from '../localization.mjs';
 
 
 // For Server Status Message
@@ -72,7 +73,7 @@ export async function updateServerStatus(online, noneActive = false) {
 
         editedMessage.append('payload_json', body);
 
-        console.log('foundrytodiscord | Attempting to edit server status...');
+        console.log(localizeWithPrefix("foundrytodiscord.logs.attemptingEditServerStatus"));
         return await api.editMessage(editedMessage, getThisModuleSetting('webHookURL'), getThisModuleSetting('messageID'));
     }
 }

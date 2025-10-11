@@ -306,7 +306,7 @@ export function censorId(docid) {
 
 export async function postParse(message, request, hookOverride = undefined) {
     if (request.params.avatar_url === "") {
-        console.warn("foundrytodiscord | Your Invite URL is not set! Avatar images cannot be displayed on Discord.");
+        console.warn(game.i18n.localize("foundrytodiscord.warningInviteURLNotSet"));
     }
     let formData = new FormData();
     if (game.modules.get("chat-media")?.active || game.modules.get("chatgifs")?.active) {
@@ -319,14 +319,14 @@ export async function postParse(message, request, hookOverride = undefined) {
     if (message) {
         if (request.params.content === "" && request.params.embeds.length === 0 && !formData.get('files[0]')) {
             if (!message.content.includes('<img') && !message.content.includes('<video')) {
-                console.error('foundrytodiscord | Failed to send message after parsing: parser returned empty result');
+                console.error(game.i18n.localize("foundrytodiscord.error.parserEmptyResult"));
                 return { waitHook: undefined, formData: {} };
             }
             else {
                 request.params.content += await addMediaLinks(message);
             }
             if (request.params.content === "") {
-                console.error('foundrytodiscord | Failed to send message after parsing: parser returned empty result');
+                console.error(game.i18n.localize("foundrytodiscord.error.failedParsing"));
                 return { waitHook: undefined, formData: {} };
             }
         }
@@ -434,7 +434,7 @@ async function addMediaLinks(message) {
         }
     }
     if (links) {
-        console.log(`foundrytodiscord | Links found. Adding media from following sources: ${links}`);
+        console.log(game.i18n.format("foundrytodiscord.info.mediaLinksFound", { links }));
     }
     return links;
 }
@@ -451,6 +451,6 @@ export async function getMessageInfo(webhook, messageID) {
     };
     return await fetch(webhook, requestOptions)
         .catch(error => {
-            console.error('foundrytodiscord | Error getting message information:', error);
+            console.error(game.i18n.localize("foundrytodiscord.error.getMessageInfo"), error);
         });
 }

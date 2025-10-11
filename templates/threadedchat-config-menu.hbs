@@ -25,26 +25,21 @@
     <div class="foundrytodiscord tabs-container">
         <div class="foundrytodiscord tabs">
             <nav class="foundrytodiscord tabs">
-                <h2 class="item" data-tab="sceneTab">Foundry to Discord: Scene-Thread Mapping</h2>
+                <h2 class="item" data-tab="sceneTab">{{localize 'foundrytodiscord.threadedchat.title'}}</h2>
             </nav>
         </div>
         <div style="display: flex; flex: unset;">
             <span>
-                <p>Select a scene, and associate it with a Discord Thread! All chat from a scene will be directed to the
-                    associated thread and will override your default Webhook URL or Rolls Webhook URL. To get the ID of your thread,
-                    simply right-click on your thread in Discord, and <strong>Copy Thread ID</strong>. Make sure your
-                    Discord is in Developer Mode. Messages sent to Chat Thread IDs and Roll Thread IDs will be sent to
-                    threads in your main webhook URL and roll webhook URL respectively. You can leave either one blank, but if you want to update the thread IDs, you'll have to delete the entry first.
-                </p>
+                <p>{{localize 'foundrytodiscord.threadedchat.description'}}</p>
             </span>
         </div>
         <div class="foundrytodiscord tabs-content">
             <div data-tab="sceneTab">
                 <div>
                     <div class="form-group" style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-                        <label for="sceneId" style="white-space:nowrap;">Select Scene:</label>
+                        <label for="sceneId" style="white-space:nowrap;">{{localize 'foundrytodiscord.threadedchat.selectScene'}}:</label>
                         <select name="sceneId" id="sceneId" style="min-width:150px;">
-                            <option value="" disabled selected>Select scene</option>
+                            <option value="" disabled selected>{{localize 'foundrytodiscord.threadedchat.selectScene'}}</option>
                             {{#each scenes}}
                             <option value="{{this.id}}">{{this.name}}</option>
                             {{/each}}
@@ -76,9 +71,7 @@
                                 <td style="text-align: center;">{{this.chatThreadId}}</td>
                                 <td style="text-align: center;">{{this.rollThreadId}}</td>
                                 <td>
-                                    <button class="btn btn-danger delete-entry" data-scene-id-placeholder="{{@key}}">
-                                        Delete
-                                    </button>
+                                    <button class="btn btn-danger delete-entry" data-scene-id-placeholder="{{@key}}">{{localize 'foundrytodiscord.threadedchat.delete'}}</button>
                                 </td>
                             </tr>
                             {{/each}}

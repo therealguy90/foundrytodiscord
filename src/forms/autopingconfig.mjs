@@ -1,4 +1,5 @@
 import { getThisModuleSetting } from "../../scripts/helpers/modulesettings.mjs";
+import { localizeWithPrefix } from "../../scripts/helpers/localization.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
@@ -28,7 +29,7 @@ export class AutoPingConfig extends HandlebarsApplicationMixin(ApplicationV2) {
 
     _prepareContext(options) {
         const autoPingMap = getThisModuleSetting('autoPingMap') ?? {};
-        console.log("[AutoPingConfig] Rendering with autoPingMap:", autoPingMap);
+        console.log(localizeWithPrefix("foundrytodiscord.logs.autoPingConfigRendering", {}, false), autoPingMap);
         return { autoPingMap };
     }
 
@@ -42,7 +43,7 @@ export class AutoPingConfig extends HandlebarsApplicationMixin(ApplicationV2) {
             const ID = document.getElementById("ID").value.trim();
     
             if (!type || !keyword || !ID) {
-                ui.notifications.error('Please fill out all fields.');
+                ui.notifications.error(localizeWithPrefix("foundrytodiscord.notifications.fillOutAllFields", {}, false));
                 return;
             }
     

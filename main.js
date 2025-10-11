@@ -14,10 +14,11 @@ Hooks.once("init", function () {
     initModuleSettings();
     initLoginMonitor();
     initOtherHooks();
-    messageParser = getSystemParser();
 });
 
 Hooks.once("ready", async () => {
+    messageParser = getSystemParser();
+    
     if (isUserMainGM()) {
         const curInviteURL = getThisModuleSetting('inviteURL');
         if (curInviteURL !== "" && !curInviteURL.endsWith("/")) {
@@ -28,7 +29,7 @@ Hooks.once("ready", async () => {
         }
         await initSystemStatus();
     }
-    console.log("foundrytodiscord | Ready");
+    console.log(game.i18n.localize("foundrytodiscord.ready"));
     //PLACEHOLDER
     if ((isUserMainGM() || (!game.users.activeGM && isUserMainNonGM())) || game.users.filter(user => user.active).length === 1) {
         await sendUserMonitorMessage(game.user, true);
@@ -42,12 +43,12 @@ Hooks.on('createChatMessage', async (msg) => {
             if (getThisModuleSetting('messageID') && getThisModuleSetting('messageID') !== "") {
                 const response = await updateServerStatus(false);
                 if (response.ok) {
-                    console.log('foundrytodiscord | Server state set to OFFLINE');
-                    ChatMessage.create({ content: 'Server state set to OFFLINE.', speaker: { alias: "Foundry to Discord" }, whisper: [game.user.id] });
+                    console.log(game.i18n.localize("foundrytodiscord.serverStateOffline"));
+                    ChatMessage.create({ content: game.i18n.localize("foundrytodiscord.serverStateOfflineMessage"), speaker: { alias: game.i18n.localize("foundrytodiscord.moduleName") }, whisper: [game.user.id] });
                     msg.delete();
                 }
                 else {
-                    console.error('foundrytodiscord | Error editing embed:', response.status, response.statusText);
+                    console.error(game.i18n.format("foundrytodiscord.errorEditingEmbed", { status: response.status, statusText: response.statusText }));
                 }
             }
         }
@@ -86,7 +87,7 @@ Hooks.on('updateChatMessage', async (msg, change, options) => {
                 await delay(500);
                 await checkExist(msgChange); // Recursively retry
             } else {
-                console.log(`foundrytodiscord | Attempt to ${msgChange} message was unsuccessful due to the message not existing on Discord.`);
+                console.log(game.i18n.format("foundrytodiscord.info.unsuccessfulAttempt", { msgChange }));
             }
         } else {
             let msgObjects;

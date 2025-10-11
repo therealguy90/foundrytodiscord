@@ -1,5 +1,6 @@
 import { htmlTo2DTable, parse2DTable } from '../helpers/parser/tables.mjs';
 import { anonEnabled, getThisModuleSetting } from '../helpers/modulesettings.mjs';
+import { localizeWithPrefix } from '../helpers/localization.mjs';
 import { getPropertyByString, censorId, removeEmptyEmbeds, splitText, addEmbedsToRequests } from '../helpers/parser/messages.mjs';
 import { generateimglink, getDefaultAvatarLink } from '../helpers/parser/images.mjs';
 import { newEnrichedMessage, toHTML } from '../helpers/parser/enrich.mjs';
@@ -69,7 +70,7 @@ export class MessageParser {
             }
             else {
                 if (this._genericRolls) {
-                    console.log(`foundrytodiscord | System "${game.system.id}" is not supported for special roll embeds.`)
+                    console.log(localizeWithPrefix("foundrytodiscord.logs.systemNotSupportedRollEmbeds", { systemId: game.system.id }))
                 }
                 if (embeds.length === 0) {
                     embeds = this._createRollEmbed(enrichedMsg);
@@ -608,7 +609,7 @@ export class MessageParser {
                 }
             }
             else {
-                console.warn("foundrytodiscord | Could not generate Auto UUID Embed due to reason: Item does not exist.");
+                console.warn(localizeWithPrefix("foundrytodiscord.logs.autoUuidEmbedItemNotExist"));
             }
             if (embeds.length > 9) {
                 break;
@@ -658,7 +659,7 @@ export class MessageParser {
 
             if (listLanguages.length === 0) {
                 if (!playerActors && playerActors.length === 0) {
-                    console.log(`foundrytodiscord | Failed to find player-owned actors with specified language path "${this._polyglotPath}" for Polyglot integration.`);
+                    console.log(localizeWithPrefix("foundrytodiscord.logs.polyglotFailedLanguagePath", { path: this._polyglotPath }));
                     return message.content;
                 }
                 for (const actor of playerActors) {
@@ -700,7 +701,7 @@ export class MessageParser {
             return constructedMessage;
         }
         catch (e) {
-            console.log(`foundrytodiscord | Polyglot integration failed due to an error: ${e}`);
+            console.log(localizeWithPrefix("foundrytodiscord.logs.polyglotIntegrationFailed", { error: e }));
             return message.content;
         }
     }
@@ -773,12 +774,12 @@ export class MessageParser {
                     break;
             }
             if (embeds.length > 9) {
-                console.warn("foundrytodiscord: Limiting to 10 pages...");
+                console.warn(localizeWithPrefix("foundrytodiscord.logs.limitingTo10Pages"));
                 break;
             }
         }
         if (oneOrMoreUnsupported) {
-            ui.notifications.warn("foundrytodiscord: One or more journal pages are not supported to send to Discord automatically. Only text and images are supported.");
+            ui.notifications.warn(localizeWithPrefix("foundrytodiscord.notifications.journalPagesNotSupported", {}, false));
         }
         return embeds;
     }
@@ -895,7 +896,7 @@ export class MessageParser {
             termcount++;
         });
         if (!nextTerm && rollBreakdown.includes("error")) {
-            console.error("foundrytodiscord | Could not parse dice due to a unique roll structure.");
+            console.error(localizeWithPrefix("foundrytodiscord.logs.couldNotParseDice"));
             return roll.result;
         }
         return rollBreakdown.trim();
@@ -989,7 +990,7 @@ export class MessageParser {
                     allRequests.splice(-(lastTextMessageIndex - (shortestLinkedLength - 1)));
                 }*/
                 // For now, fail the edit.
-                ui.notifications.warn("foundrytodiscord | Foundry to Discord tried to edit a message, but the resulting edit is longer than the amount of discord messages that were linked to the message.");
+                ui.notifications.warn(localizeWithPrefix("foundrytodiscord.notifications.editLongerThanDiscordMessages", {}, false));
                 return undefined;
             }
             else if (allRequests.length < shortestLinkedLength) {

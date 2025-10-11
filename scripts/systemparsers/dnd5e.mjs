@@ -1,4 +1,5 @@
 import { anonEnabled, getThisModuleSetting } from '../helpers/modulesettings.mjs';
+import { localizeWithPrefix } from '../helpers/localization.mjs';
 import { parse2DTable } from '../helpers/parser/tables.mjs';
 import { MessageParser } from './generic.mjs';
 import { toHTML } from '../helpers/parser/enrich.mjs';
@@ -137,7 +138,7 @@ export class MessageParserDnD5e extends MessageParser {
                 }
             }
             else {
-                console.warn("foundrytodiscord | Could not generate Auto UUID Embed due to reason: Item does not exist.");
+                console.warn(localizeWithPrefix("foundrytodiscord.logs.autoUuidEmbedItemNotExist"));
             }
             if (embeds.length > 9) {
                 break;

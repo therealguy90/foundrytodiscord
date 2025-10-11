@@ -8,6 +8,8 @@
 * previously-sent messages, and for the messages to not be erased after the client reloads their browser.
 */
 
+import { localizeWithPrefix } from '../../scripts/helpers/localization.mjs';
+
 export class DiscordRequestQueue {
 
     constructor() {
@@ -108,25 +110,25 @@ export class DiscordRequestQueue {
 
         if (!method || !["POST", "PATCH", "DELETE"].includes(method)) {
             this._requestQueue.shift();
-            console.error("foundrytodiscord | Unknown request method.");
+            console.error(localizeWithPrefix("foundrytodiscord.error.unknownRequestMethod", {}, false));
             this.#progressQueue();
             return;
         }
 
-        console.log(`foundrytodiscord | Attempting ${method} request...`)
+        console.log(localizeWithPrefix("foundrytodiscord.info.attemptingRequest", { method }, false))
         if (method === "DELETE") {
             if (ignoreRescuePartyFor === 0) {
                 // Message flush rescue party!
                 await this.#delay(250); // wait for more requests
                 if (this._requestQueue.length > 1 && this._requestQueue[1].method === "DELETE" && this._requestQueue[0].msgID !== this._requestQueue[1].msgID) {
-                    console.log("foundrytodiscord | You're trying to delete two or more messages in quick succession. Thinking...");
+                    console.log(localizeWithPrefix("foundrytodiscord.logs.deletingMessagesQuickly"));
                     await this.#delay(1000);
                     const countedDeletions = this.#countSuccessiveDeletions();
                     if (countedDeletions > 10) {
-                        console.group('foundrytodiscord | Rescue party!');
-                        console.log("foundrytodiscord | Deletion rescue party triggered! More than 10 simultaneous deletions detected.");
-                        console.log("foundrytodiscord | ඞඞඞඞඞ You called? We're going to clean the message queue! ඞඞඞඞඞ");
-                        console.log("foundrytodiscord | Request queue cleared. Next request in 5 seconds...");
+                        console.group('Rescue party!');
+                        console.log(localizeWithPrefix("foundrytodiscord.logs.deletionRescuePartyTriggered"));
+                        console.log(localizeWithPrefix("foundrytodiscord.logs.deletionRescuePartyMessage"));
+                        console.log(localizeWithPrefix("foundrytodiscord.logs.requestQueueCleared"));
                         console.groupEnd();
                         this.#clearQueue();
                         await this.#delay(5000);
@@ -134,7 +136,7 @@ export class DiscordRequestQueue {
                         return;
                     }
                     else {
-                        console.log("foundrytodiscord | Deletion rescue party not triggered. Moving along...")
+                        console.log(localizeWithPrefix("foundrytodiscord.logs.deletionRescuePartyNotTriggered"))
                         ignoreRescuePartyFor = 10;
                     }
                 }
@@ -156,11 +158,11 @@ export class DiscordRequestQueue {
                 }
                 resolve(response);
                 this._requestQueue.shift();
-                console.log(`foundrytodiscord | ${method} request succeeded.`);
+                console.log(localizeWithPrefix("foundrytodiscord.logs.requestSucceeded", { method }));
                 this.#progressQueue(retry, ignoreRescuePartyFor);
             } else if (response.status === 429) {
                 const retryAfter = Number(response.headers.get("Retry-After")) || 1;
-                console.log(`foundrytodiscord | Rate Limit exceeded! Next request in ${retryAfter / 100} seconds.`);
+                console.log(localizeWithPrefix("foundrytodiscord.logs.rateLimitExceeded", { seconds: retryAfter / 100 }));
                 await this.#delay(retryAfter * 10);
                 this.#progressQueue(retry, ignoreRescuePartyFor);
             }
@@ -168,7 +170,7 @@ export class DiscordRequestQueue {
                 throw new Error(response);
             }
         } catch (response) {
-            console.error('foundrytodiscord | Fetch error:', response.status);
+            console.error(localizeWithPrefix("foundrytodiscord.logs.fetchError", { status: response.status }));
             if (retry >= 2) {
                 if (method === "DELETE") {
                     if (ignoreRescuePartyFor > 0) {
@@ -177,13 +179,13 @@ export class DiscordRequestQueue {
                 }
                 reject(response);
                 this._requestQueue.shift();
-                console.log("foundrytodiscord | Request discarded from the queue after retrying 2 times.");
+                console.log(localizeWithPrefix("foundrytodiscord.logs.requestDiscarded"));
                 retry = 0;
             }
             else {
                 retry++;
             }
-            console.log("foundrytodiscord | Retrying...");
+            console.log(localizeWithPrefix("foundrytodiscord.logs.retrying"));
             this.#progressQueue(retry, ignoreRescuePartyFor);
         }
     }
