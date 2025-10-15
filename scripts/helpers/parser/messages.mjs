@@ -306,7 +306,7 @@ export function censorId(docid) {
 
 export async function postParse(message, request, hookOverride = undefined) {
     if (request.params.avatar_url === "") {
-        console.warn(game.i18n.localize("foundrytodiscord.warningInviteURLNotSet"));
+        console.warn(game.i18n.localize("foundrytodiscord.warning.inviteURLNotSet"));
     }
     let formData = new FormData();
     if (game.modules.get("chat-media")?.active || game.modules.get("chatgifs")?.active) {

@@ -30,7 +30,7 @@
       "unsuccessfulAttempt": "Attempt to {msgChange} message was unsuccessful due to the message not existing on Discord."
     },
     "autoping": {
-      "title": "Foundry to Discord: Auto-Ping Mapper Tool",
+      "title": "Auto-Ping Mapper Tool",
       "description": "This is a tool for pinging a Discord user whenever their @username is mentioned in chat. Enter a keyword (case-sensitive) and assign a Discord user ID or Role ID to it. Whenever that keyword is mentioned in Foundry Chat, for example, the keyword foo, when mentioned in chat as @foo, the ping that corresponds to it will replace the keyword. To get the ID, simply Right-Click on the user or role, and Copy ID. Enable Developer Mode for this to work.",
       "selectType": "Select type",
       "user": "User",
@@ -38,7 +38,7 @@
       "delete": "Delete"
     },
     "threadedchat": {
-      "title": "Foundry to Discord: Scene-Thread Mapping",
+      "title": "Scene-Thread Mapping",
       "description": "Select a scene, and associate it with a Discord Thread! All chat from a scene will be directed to the associated thread and will override your default Webhook URL or Rolls Webhook URL. To get the ID of your thread, simply right-click on your thread in Discord, and Copy Thread ID. Make sure your Discord is in Developer Mode. Messages sent to Chat Thread IDs and Roll Thread IDs will be sent to threads in your main webhook URL and roll webhook URL respectively. You can leave either one blank, but if you want to update the thread IDs, you'll have to delete the entry first.",
       "selectScene": "Select scene",
       "delete": "Delete"
