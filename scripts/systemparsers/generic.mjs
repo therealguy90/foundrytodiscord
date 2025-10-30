@@ -385,6 +385,7 @@ export class MessageParser {
                 if (rollBreakdown) {
                     desc += `||(${rollBreakdown})||`;
                 }
+                desc += "\n\n"
             }
             else {
                 desc += `**${dieIcon()}Result: __${roll.total}__**\n\n`;
