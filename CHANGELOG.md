@@ -1,4 +1,9 @@
-# 3.1.3
+# 3.2.0
+
+- Preliminary support for Cosmere RPG.
+- Minor embed formatting fixes.
+
+## 3.1.3
 
 - Fix URI encoding on images with query parameters (@tmudway)
 - Add localization file and localize messages
