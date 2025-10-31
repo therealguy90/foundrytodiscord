@@ -212,9 +212,9 @@ export class MessageParserCosmereRPG extends MessageParser {
                 let spiSuccessFail = "";
 
                 if (d20Roll) {
-                    phySuccessFail = target.def.phy < d20Roll.total ? "✓" : "⨯";
-                    cogSuccessFail = target.def.cog < d20Roll.total ? "✓" : "⨯";
-                    spiSuccessFail = target.def.spi < d20Roll.total ? "✓" : "⨯";
+                    phySuccessFail = target.def.phy <= d20Roll.total ? "✓" : "⨯";
+                    cogSuccessFail = target.def.cog <= d20Roll.total ? "✓" : "⨯";
+                    spiSuccessFail = target.def.spi <= d20Roll.total ? "✓" : "⨯";
                 }
 
                 let row = [target.name, `${target.def.phy}${phySuccessFail}`, `${target.def.cog}${cogSuccessFail}`, `${target.def.spi}${spiSuccessFail}`];
