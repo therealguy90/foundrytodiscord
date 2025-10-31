@@ -1,4 +1,8 @@
-# 3.2.0
+# 3.2.1
+
+- (cosmere-rpg) Fix Skill Tests appearing as fail on test result == DEF.
+
+## 3.2.0
 
 - Preliminary support for Cosmere RPG.
 - Minor embed formatting fixes.
