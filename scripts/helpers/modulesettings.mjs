@@ -3,6 +3,7 @@ import { MessageParserPF2e } from '../systemparsers/pf2e.mjs';
 import { MessageParserDnD5e } from '../systemparsers/dnd5e.mjs';
 import { MessageParserPF1 } from '../systemparsers/pf1.mjs';
 import { MessageParserProjectFU } from '../systemparsers/projectfu.mjs';
+import { MessageParserCosmereRPG } from '../systemparsers/cosmere-rpg.mjs';
 import { ThreadedChatConfig } from '../../src/forms/threadedchatconfig.mjs'
 import { AutoPingConfig } from '../../src/forms/autopingconfig.mjs';
 import { updateServerStatus } from './monitor/serverstatus.mjs';
@@ -379,6 +380,10 @@ export function getSystemParser() {
         case "projectfu":
             console.log(localizeWithPrefix("foundrytodiscord.logs.systemDetected", { systemId: "projectfu" }));
             return new MessageParserProjectFU();
+            break;
+        case "cosmere-rpg":
+            console.log(localizeWithPrefix("foundrytodiscord.logs.systemDetected", { systemId: "cosmere-rpg" }));
+            return new MessageParserCosmereRPG();
             break;
         default:
             console.log(localizeWithPrefix("foundrytodiscord.logs.systemNotSupported", { systemId: SYSTEM_ID }));
