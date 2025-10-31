@@ -68,7 +68,7 @@ export async function initOtherHooks() {
                     const response = await api.sendMessageFromID(li.getAttribute ? li.getAttribute("data-message-id") : li.attr("data-message-id")) //v12 compatibility
                         .catch(error => {
                             ui.notifications.error(localizeWithPrefix("foundrytodiscord.error.sendToDiscord", {}, false));
-                            console.error(localizeWithPrefix("foundrytodiscord.error.generic", {}, false));
+                            console.error(error);
                         });
                     if (response?.ok) {
                         ui.notifications.info(localizeWithPrefix("foundrytodiscord.info.successfullySent", {}, false));
@@ -86,7 +86,7 @@ export async function initOtherHooks() {
                     const response = await api.sendMessageFromID(li.getAttribute ? li.getAttribute("data-message-id") : li.attr("data-message-id") /*v12 compatibility*/, getThisModuleSetting('notesWebHookURL'))
                         .catch(error => {
                             ui.notifications.error(localizeWithPrefix("foundrytodiscord.error.sendToDiscord", {}, false));
-                            console.error(localizeWithPrefix("foundrytodiscord.error.generic", {}, false));
+                            console.error(error);
                         });
                     if (response?.ok) {
                         ui.notifications.info(localizeWithPrefix("foundrytodiscord.info.successfullySent", {}, false));
