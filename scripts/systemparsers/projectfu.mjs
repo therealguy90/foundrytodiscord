@@ -46,12 +46,12 @@ export class MessageParserProjectFU extends MessageParser {
         let chatDescription = "";
         let detailDescription = "";
 
-        // Tags (if any)
+        // First Tags
+        const allTagElements = Array.from(descriptionDiv.querySelectorAll('div.fu-tags'));
         let tagText = "";
-        for (const tag of descriptionDiv.querySelectorAll('[data-tooltip=""].fu-tag')) {
-            if (!tag.textContent) continue;
-            tagText += `[${tag.textContent.trim()}] `;
-            tag.remove();
+        if (allTagElements.length > 0) {
+            tagText = await this.parseTagsFromElement(allTagElements[0]);
+            allTagElements.shift();
         }
         if (tagText.trim() !== "") {
             chatDescription += `\`${tagText.trim()}\`\n`;
@@ -92,6 +92,24 @@ export class MessageParserProjectFU extends MessageParser {
         for (const descBlock of descriptionDiv.querySelectorAll(`div.detail-desc:not([id="results"]):not(.difficulty)`)) {
             if (descBlock.querySelector('label.total, label.title, label.detail, label.damageType, .spin2win, .group-check-supporters')) continue; // Skip any unnecessary text
             detailDescription += descBlock.innerHTML + "\n";
+        }
+
+        const usingWeaponTitleDescLink = descriptionDiv.querySelector('div.title-desc a');
+        const usingWeapon = usingWeaponTitleDescLink ? usingWeaponTitleDescLink.closest('div[data-order]') : null;
+        if (usingWeapon) {
+            const weaponLabel = usingWeapon.querySelector('h2');
+            if (weaponLabel) {
+                weaponLabel.outerHTML = `\n### ${weaponLabel.textContent.trim()}\n`;
+            }
+            detailDescription += usingWeapon.innerHTML.trim() + "\n";
+            let weaponTagText = "";
+            if (allTagElements.length > 0) {
+                weaponTagText = await this.parseTagsFromElement(allTagElements[0]);
+                allTagElements.shift();
+            }
+            if (weaponTagText.trim() !== "") { 
+                detailDescription += `\`${weaponTagText.trim()}\`\n`;
+            }
         }
 
         const parseFieldsFromCheckElement = (attrCheckElement) => {
@@ -288,6 +306,15 @@ export class MessageParserProjectFU extends MessageParser {
         }
 
         return [{ title: titleDiv.textContent, description: description, fields: fields }];
+    }
+
+    async parseTagsFromElement(tagElement) {
+        let tagText = "";
+        for (const tag of tagElement.querySelectorAll('.fu-tag')) {
+            if (!tag.textContent) continue;
+            tagText += `[${tag.textContent.trim()}] `;
+        }
+        return tagText;
     }
 
     async _isPFUCard(message) {
