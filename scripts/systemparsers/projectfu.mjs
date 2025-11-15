@@ -17,6 +17,7 @@ export class MessageParserProjectFU extends MessageParser {
         if (htmldoc.hasChildNodes()) {
             this._removeElementsBySelector('span.button', htmldoc);
             this._formatTextBySelector('summary', text => `**${text}**\n`, htmldoc);
+            this._formatTextBySelector('div.d-contents', text => `\n${text.replace(/(\r\n|\n|\r)/gm, "")}`, htmldoc); // For XP award text
             reformattedText = htmldoc.innerHTML;
         }
         reformattedText = reformattedText.replace(/【(.*?)】/g, "[$1]");
