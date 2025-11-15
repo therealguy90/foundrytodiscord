@@ -233,6 +233,7 @@ export class MessageParser {
             { selector: "h1, h2", replacer: ["\n# ", "\n"] },
             { selector: "h3, h4", replacer: ["\n## ", "\n"] },
             { selector: "h5, h6", replacer: ["\n### ", "\n"] },
+            { selector: "legend", replacer: ["\n### ", "\n"] },
             { selector: "strong, b", replacer: ["**", "**"] },
             { selector: "u", replacer: ["__", "__"] },
             { selector: "em, i", replacer: ["*", "*"] },
