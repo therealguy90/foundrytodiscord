@@ -17,7 +17,6 @@ export class MessageParserCosmereRPG extends MessageParser {
         const htmldoc = document.createElement('div');
         htmldoc.innerHTML = reformattedText;
         if (htmldoc.hasChildNodes()) {
-            // Using PF2e symbols here for now...
             this._formatTextBySelector('.cosmere-icon.action1', () => `${swapOrNot('**`▶`**', actionGlyphEmojis['1'])}`, htmldoc);
             this._formatTextBySelector('.cosmere-icon.action2', () => `${swapOrNot('**`▶▶`**', actionGlyphEmojis['2'])}`, htmldoc);
             this._formatTextBySelector('.cosmere-icon.action3', () => `${swapOrNot('**`▶▶▶`**', actionGlyphEmojis['3'])}`, htmldoc);
@@ -177,10 +176,10 @@ export class MessageParserCosmereRPG extends MessageParser {
             fieldValue += `${dieIcon()}**Result: __${roll.total}__**`;
 
             if (roll.complicationsCount > 0) {
-                fieldValue += '✹'.repeat(roll.complicationsCount);
+                fieldValue += `${swapOrNot("✹", systemIcons.complication)}`.repeat(roll.complicationsCount);
             }
             if (roll.opportunitiesCount > 0) {
-                fieldValue += '✪'.repeat(roll.opportunitiesCount);
+                fieldValue += `${swapOrNot("✪", systemIcons.opportunity)}`.repeat(roll.opportunitiesCount);
             }
 
             if (showDetails && roll.dice[0]?.faces === 20) {
