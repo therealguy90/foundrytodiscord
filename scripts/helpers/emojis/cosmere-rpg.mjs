@@ -14,7 +14,7 @@ export const actionGlyphEmojis = {
 export const systemIcons = {
     complication: "<:complication:1442723268590174208>",
     opportunity: "<:opportunity:1442725641735766066>",
-    passive: "<:passive:1442710591167926342>",
+    passive: "<:passive:1442726521599955024>",
     special: "<:special:1442713957377773628>",
     cosmere: "<:cosmere:1442713923714416730>"
 }
