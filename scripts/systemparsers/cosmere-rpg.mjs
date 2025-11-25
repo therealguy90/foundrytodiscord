@@ -70,6 +70,33 @@ export class MessageParserCosmereRPG extends MessageParser {
                     dingbat.outerHTML = replacedText;
                 });
             }
+
+            // Roll link formatting
+            htmldoc.querySelectorAll('span.enricher-link').forEach(link => {
+                const a = link.querySelector('a');
+                if (!a) return;
+
+                const dieElement = a.querySelector('i[class*="fa-dice"]');
+                let dieText = "";
+                if (dieElement) {
+                    dieText = ` ${dieIcon(20)}`;
+                }
+
+                const anchorText = a.textContent.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+                const anchorCode = `**\`${anchorText}\`**`;
+
+                let remainderHtml = "";
+                for (const n of link.childNodes) {
+                    if (n === a) continue;
+                    remainderHtml += n.nodeType === Node.ELEMENT_NODE ? n.outerHTML : (n.nodeValue || "");
+                }
+
+                remainderHtml = remainderHtml.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+                link.outerHTML = `${dieText}${anchorCode}${remainderHtml ? ` ${remainderHtml}` : ''}`;
+            });
+
+
             reformattedText = htmldoc.innerHTML;
         }
         return reformattedText;
