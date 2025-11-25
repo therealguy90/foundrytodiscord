@@ -1,3 +1,11 @@
+# 3.2.2
+
+- (cosmere-rpg) Added new custom emojis for system symbols.
+- (cosmere-rpg) Fixed errors when not forcing GM rolls to show.
+- (cosmere-rpg) Formatting fixes.
+- (projectfu) Print weapon used for action.
+- (projectfu) Formatted XP award message.
+
 # 3.2.1
 
 - (cosmere-rpg) Fix Skill Tests appearing as fail on test result == DEF.
