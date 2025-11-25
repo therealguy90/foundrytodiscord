@@ -1,5 +1,5 @@
 import { MessageParser } from './generic.mjs';
-import { actionGlyphEmojis } from '../helpers/emojis/pf2e.mjs';
+import { actionGlyphEmojis, systemIcons } from '../helpers/emojis/cosmere-rpg.mjs';
 import { swapOrNot, dieIcon, getDieEmoji } from '../helpers/emojis/global.mjs';
 import { getThisModuleSetting } from '../helpers/modulesettings.mjs';
 import { parse2DTable } from '../helpers/parser/tables.mjs';
@@ -23,8 +23,8 @@ export class MessageParserCosmereRPG extends MessageParser {
             this._formatTextBySelector('.cosmere-icon.action3', () => `${swapOrNot('**`▶▶▶`**', actionGlyphEmojis['3'])}`, htmldoc);
             this._formatTextBySelector('.cosmere-icon.free', () => `${swapOrNot('**`▷`**', actionGlyphEmojis['f'])}`, htmldoc);
             this._formatTextBySelector('.cosmere-icon.reaction', () => `${swapOrNot('**`⮢`**', actionGlyphEmojis['r'])}`, htmldoc);
-            this._formatTextBySelector('.cosmere-icon.special', () => `★`, htmldoc);
-            this._formatTextBySelector('.cosmere-icon.passive', () => `∞`, htmldoc);
+            this._formatTextBySelector('.cosmere-icon.special', () => `${swapOrNot('**`★`**', systemIcons.special)}`, htmldoc);
+            this._formatTextBySelector('.cosmere-icon.passive', () => `${swapOrNot('**`∞`**', systemIcons.passive)}`, htmldoc);
             // Special glyphs from the Cosmere Dingbats font
             const dingbatElements = htmldoc.querySelectorAll(".cosmere-icon, [style*='Cosmere Dingbats']");
             if (dingbatElements.length > 0) {
@@ -48,19 +48,19 @@ export class MessageParserCosmereRPG extends MessageParser {
                                 replacedText += swapOrNot('**`⮢`**', actionGlyphEmojis['r']);
                                 break;
                             case "8":
-                                replacedText += `∞`;
+                                replacedText += swapOrNot('**`∞`**', systemIcons.passive);
                                 break;
                             case "c":
-                                replacedText += `✹`;
+                                replacedText += swapOrNot('**`✹`**', systemIcons.complication);
                                 break;
                             case "s":
-                                replacedText += `✧`;
+                                replacedText += swapOrNot('**`✧`**', systemIcons.cosmere);
                                 break;
                             case "o":
-                                replacedText += `✪`;
+                                replacedText += swapOrNot('**`✪`**', systemIcons.opportunity);
                                 break;
                             case "*":
-                                replacedText += `★`;
+                                replacedText += swapOrNot('**`★`**', systemIcons.special);
                                 break;
                             default:
                                 replacedText += dingbatChar;
