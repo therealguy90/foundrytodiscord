@@ -147,6 +147,8 @@ export class MessageParserCosmereRPG extends MessageParser {
         }
 
         // Part 2: rolls
+        const speakerActor = game.actors.get(message.speaker.actor);
+        const user = message.author || message.user;
         const showDetails = getThisModuleSetting('forceShowRolls') || speakerActor?.hasPlayerOwner || (!speakerActor && !user?.isGM);
         message.rolls.forEach((roll) => {
             let inline = false;
@@ -291,6 +293,8 @@ export class MessageParserCosmereRPG extends MessageParser {
             description += "<hr>"
         }
 
+        const speakerActor = game.actors.get(message.speaker.actor);
+        const user = message.author || message.user;
         const showDetails = getThisModuleSetting('forceShowRolls') || speakerActor?.hasPlayerOwner || (!speakerActor && !user?.isGM);
         if (message.flags?.['cosmere-rpg']?.injury?.roll) {
             const injuryRoll = message.flags['cosmere-rpg'].injury.roll;
