@@ -13,6 +13,10 @@ A lightweight FoundryVTT module that sends all FoundryVTT messages to a Discord 
 
 While it will work with other systems, the extent of compatibility may vary. Regular chat, chat cards, and rolls seem to work just fine on most other systems.
 
+## How does it work?
+
+Foundry to Discord works by transcribing ChatMessages and sending them through the webhook. Because every system has its own formatting and style of messages, this means that custom parsers have to be made for each system. Most common system formats are supported by the module to cover a wide range of ChatMessages through a generic parser used by the entire module, but anything that doesn't conform to those common formats will either not be caught by the module or simply parsed incorrectly.
+
 ### What it Supports
 
 **Anonymous:**
