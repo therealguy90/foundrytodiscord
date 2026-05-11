@@ -138,7 +138,7 @@ export class MessageParserPF2e extends MessageParser {
             }
         }
             if (descVisible) {
-                const originItemId = getSystemFlag(message, 'context.item');
+                const origiItemId = getSystemFlag(message, 'context.item');
                 if (originItemId) {
                     const item = game.actors.get(message.speaker.actor).items.get(originItemId);
                     const itemDesc = item.description;
@@ -747,7 +747,7 @@ export class MessageParserPF2e extends MessageParser {
         roll.terms.forEach((term) => {
             let currentTermString = "";
             switch (true) {
-                case (foundry.dice && term instanceof foundry.dice.terms.DiceTerm) || term instanceof DiceTerm:
+                case (foundry.dice && term instanceof foundry.dice.terms.DiceTerm):
                     let i = 1;
                     if (!term.flavor.includes("persistent")) {
                         const notDieEmoji = function () {
@@ -765,7 +765,7 @@ export class MessageParserPF2e extends MessageParser {
                             } else if (dieResult.discarded || dieResult.rerolled) {
                                 tempTermString += `${swapOrNot(` ${dieResult.result}ˣ`, `[${getDieEmoji(term.faces, dieResult.result)}ˣ]`)}`;
                             }
-                            if (tempTermString !== "" && ((notDieEmoji && i < term.results.length) || (nextTerm && (roll.terms[termcount] && ((foundry.dice && !roll.terms[termcount] instanceof foundry.dice.terms.OperatorTerm) || !roll.terms[termcount] instanceof OperatorTerm))))) {
+                            if (tempTermString !== "" && ((notDieEmoji && i < term.results.length) || (nextTerm && (roll.terms[termcount] && ((foundry.dice && !roll.terms[termcount] instanceof foundry.dice.terms.OperatorTerm) ))))) {
                                 tempTermString += " +";
                             }
                             currentTermString += tempTermString;
@@ -777,12 +777,12 @@ export class MessageParserPF2e extends MessageParser {
                     }
                     else {
                         currentTermString += `\`${term.expression}\``;
-                        if (nextTerm && (roll.terms[termcount] && ((foundry.dice && !roll.terms[termcount] instanceof foundry.dice.terms.OperatorTerm) || !roll.terms[termcount] instanceof OperatorTerm))) {
+                        if (nextTerm && (roll.terms[termcount] && ((foundry.dice && !roll.terms[termcount] instanceof foundry.dice.terms.OperatorTerm) ))) {
                             currentTermString += " +";
                         }
                     }
                     break;
-                case ((foundry.dice && term instanceof foundry.dice.terms.PoolTerm) || term instanceof PoolTerm) || term.hasOwnProperty("rolls"):
+                case ((foundry.dice && term instanceof foundry.dice.terms.PoolTerm) || term.hasOwnProperty("rolls")):
                     let poolRollCnt = 1;
                     term.rolls.forEach(poolRoll => {
                         currentTermString += ` ${this._generateRollBreakdown(poolRoll, true)}`;
@@ -792,10 +792,10 @@ export class MessageParserPF2e extends MessageParser {
                         poolRollCnt++;
                     });
                     break;
-                case (foundry.dice && term instanceof foundry.dice.terms.OperatorTerm) || term instanceof OperatorTerm:
+                case (foundry.dice && term instanceof foundry.dice.terms.OperatorTerm):
                     currentTermString += ` ${term.operator}`;
                     break;
-                case (foundry.dice && term instanceof foundry.dice.terms.NumericTerm) || term instanceof NumericTerm:
+                case (foundry.dice && term instanceof foundry.dice.terms.NumericTerm):
                     currentTermString += ` ${term.number}`
                     break;
                 case term.hasOwnProperty("operands"):
