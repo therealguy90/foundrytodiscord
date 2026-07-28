@@ -1,3 +1,8 @@
+# Unreleased
+
+- Added support for The Burning Wheel (`burningwheel`).
+- Added support for Cortex Prime [Unofficial] (`cortexprime`).
+
 # 4.0.1
 
 - (pf2e) Fix roll breakdowns causing errors when attempting to send rolls.
